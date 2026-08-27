@@ -1,50 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Background squircle gradient: emerald / forest green, glossy -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6ee7b7"/>
-      <stop offset="42%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#064e3b"/>
+    <!-- Dark bezel rim (visible border ring around the squircle face) -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a4a35"/>
+      <stop offset="100%" stop-color="#011a10"/>
     </linearGradient>
 
-    <!-- Subtle inner vignette for depth -->
-    <radialGradient id="vignette" cx="50%" cy="115%" r="80%">
-      <stop offset="0%" stop-color="#022c22" stop-opacity="0.55"/>
-      <stop offset="60%" stop-color="#022c22" stop-opacity="0"/>
+    <!-- Main glossy face: light top-left to deep forest bottom-right -->
+    <linearGradient id="bgGrad" x1="10%" y1="5%" x2="95%" y2="100%">
+      <stop offset="0%" stop-color="#7bf0c4"/>
+      <stop offset="30%" stop-color="#22c58f"/>
+      <stop offset="62%" stop-color="#0e9468"/>
+      <stop offset="100%" stop-color="#053e2c"/>
+    </linearGradient>
+
+    <radialGradient id="vignette" cx="72%" cy="88%" r="75%">
+      <stop offset="0%" stop-color="#011a10" stop-opacity="0.5"/>
+      <stop offset="55%" stop-color="#011a10" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Glossy top highlight on the background -->
-    <radialGradient id="glossGrad" cx="50%" cy="0%" r="75%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.12"/>
+    <!-- Diagonal glossy streak, upper-right -->
+    <linearGradient id="glossStreak" x1="20%" y1="0%" x2="70%" y2="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Chrome letter: radial light source upper-left falling off to dark lower-right -->
+    <radialGradient id="metalGrad" cx="34%" cy="26%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="18%" stop-color="#eef2f5"/>
+      <stop offset="34%" stop-color="#aab6c2"/>
+      <stop offset="48%" stop-color="#e4e9ed"/>
+      <stop offset="64%" stop-color="#7c8896"/>
+      <stop offset="80%" stop-color="#c3cbd2"/>
+      <stop offset="100%" stop-color="#4a5561"/>
+    </radialGradient>
+
+    <radialGradient id="letterHighlight" cx="30%" cy="22%" r="38%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Metallic silver gradient for the letter (chrome banding) -->
-    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fbfdff"/>
-      <stop offset="16%" stop-color="#e4eaf0"/>
-      <stop offset="34%" stop-color="#93a2b3"/>
-      <stop offset="50%" stop-color="#d8e0e8"/>
-      <stop offset="66%" stop-color="#5c6b7d"/>
-      <stop offset="84%" stop-color="#eef2f6"/>
-      <stop offset="100%" stop-color="#3f4c5c"/>
-    </linearGradient>
-
-    <!-- Specular highlight sweeping across the letter -->
-    <linearGradient id="letterShine" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
-      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.05"/>
-      <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.25"/>
-    </linearGradient>
-
-    <!-- Squircle clip -->
     <clipPath id="squircleClip">
       <rect x="16" y="16" width="480" height="480" rx="172" ry="172"/>
     </clipPath>
 
-    <!-- Letter silhouette, reused for shadow / clip / shine -->
     <path id="letterN" d="
       M146,140 L206,140 L206,372 L146,372 Z
       M306,140 L366,140 L366,372 L306,372 Z
@@ -57,30 +59,36 @@
     <filter id="softBlur" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="7"/>
     </filter>
+    <filter id="tightBlur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
   </defs>
 
-  <!-- Background squircle -->
-  <rect x="16" y="16" width="480" height="480" rx="172" ry="172" fill="url(#bgGrad)"/>
-  <rect x="16" y="16" width="480" height="480" rx="172" ry="172" fill="url(#vignette)"/>
-  <rect x="16" y="16" width="480" height="480" rx="172" ry="172" fill="url(#glossGrad)"/>
+  <!-- Dark bezel rim (slightly larger than the face, creates the border edge) -->
+  <rect x="12" y="12" width="488" height="488" rx="176" ry="176" fill="url(#rimGrad)"/>
 
-  <!-- Soft top gloss streak -->
+  <!-- Main face -->
+  <rect x="20" y="20" width="472" height="472" rx="166" ry="166" fill="url(#bgGrad)"/>
+  <rect x="20" y="20" width="472" height="472" rx="166" ry="166" fill="url(#vignette)"/>
+
   <g clip-path="url(#squircleClip)">
-    <ellipse cx="256" cy="70" rx="230" ry="110" fill="#ffffff" opacity="0.22" filter="url(#softBlur)"/>
+    <ellipse cx="330" cy="90" rx="180" ry="120" fill="url(#glossStreak)" transform="rotate(-18 330 90)"/>
   </g>
 
-  <!-- Letter drop shadow (relief) -->
-  <use href="#letterN" x="0" y="7" fill="#022c22" opacity="0.45" filter="url(#softBlur)"/>
+  <!-- Letter dark contour (bezel outline separating metal from face) -->
+  <use href="#letterN" fill="none" stroke="#02160e" stroke-width="6" stroke-opacity="0.55" filter="url(#tightBlur)"/>
 
-  <!-- Letter body: metallic silver -->
-  <use href="#letterN" fill="url(#metalGrad)" stroke="#1e293b" stroke-opacity="0.25" stroke-width="1.5"/>
+  <!-- Letter drop shadow (relief) -->
+  <use href="#letterN" x="0" y="6" fill="#011a10" opacity="0.4" filter="url(#softBlur)"/>
+
+  <!-- Letter body: chrome radial -->
+  <use href="#letterN" fill="url(#metalGrad)"/>
 
   <!-- Letter specular highlight -->
   <g clip-path="url(#letterClip)">
-    <rect x="146" y="140" width="220" height="232" fill="url(#letterShine)"/>
-    <ellipse cx="200" cy="185" rx="70" ry="40" fill="#ffffff" opacity="0.55" filter="url(#softBlur)"/>
+    <rect x="146" y="140" width="220" height="232" fill="url(#letterHighlight)"/>
   </g>
 
-  <!-- Fine top edge highlight for bevel feel -->
-  <use href="#letterN" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>
+  <!-- Fine top-left edge highlight for bevel feel -->
+  <use href="#letterN" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="1"/>
 </svg>

@@ -1,38 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6ee7b7"/>
-      <stop offset="42%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#064e3b"/>
+    <linearGradient id="bgGrad" x1="10%" y1="5%" x2="95%" y2="100%">
+      <stop offset="0%" stop-color="#7bf0c4"/>
+      <stop offset="30%" stop-color="#22c58f"/>
+      <stop offset="62%" stop-color="#0e9468"/>
+      <stop offset="100%" stop-color="#053e2c"/>
     </linearGradient>
 
-    <radialGradient id="vignette" cx="50%" cy="115%" r="85%">
-      <stop offset="0%" stop-color="#022c22" stop-opacity="0.55"/>
-      <stop offset="60%" stop-color="#022c22" stop-opacity="0"/>
+    <radialGradient id="vignette" cx="72%" cy="90%" r="80%">
+      <stop offset="0%" stop-color="#011a10" stop-opacity="0.5"/>
+      <stop offset="55%" stop-color="#011a10" stop-opacity="0"/>
     </radialGradient>
 
-    <radialGradient id="glossGrad" cx="50%" cy="-5%" r="75%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.12"/>
+    <linearGradient id="glossStreak" x1="20%" y1="-5%" x2="65%" y2="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <radialGradient id="metalGrad" cx="34%" cy="26%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="18%" stop-color="#eef2f5"/>
+      <stop offset="34%" stop-color="#aab6c2"/>
+      <stop offset="48%" stop-color="#e4e9ed"/>
+      <stop offset="64%" stop-color="#7c8896"/>
+      <stop offset="80%" stop-color="#c3cbd2"/>
+      <stop offset="100%" stop-color="#4a5561"/>
+    </radialGradient>
+
+    <radialGradient id="letterHighlight" cx="30%" cy="22%" r="38%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
-
-    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fbfdff"/>
-      <stop offset="16%" stop-color="#e4eaf0"/>
-      <stop offset="34%" stop-color="#93a2b3"/>
-      <stop offset="50%" stop-color="#d8e0e8"/>
-      <stop offset="66%" stop-color="#5c6b7d"/>
-      <stop offset="84%" stop-color="#eef2f6"/>
-      <stop offset="100%" stop-color="#3f4c5c"/>
-    </linearGradient>
-
-    <linearGradient id="letterShine" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
-      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.05"/>
-      <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.25"/>
-    </linearGradient>
 
     <!-- Letter scaled ~14% smaller and recentred to stay inside the maskable safe zone -->
     <path id="letterN" d="
@@ -47,22 +47,23 @@
     <filter id="softBlur" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="7"/>
     </filter>
+    <filter id="tightBlur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
   </defs>
 
-  <!-- Full-bleed background (no transparent corners, for maskable icons) -->
+  <!-- Full-bleed background (no transparent corners, required for maskable icons) -->
   <rect x="0" y="0" width="512" height="512" fill="url(#bgGrad)"/>
   <rect x="0" y="0" width="512" height="512" fill="url(#vignette)"/>
-  <rect x="0" y="0" width="512" height="512" fill="url(#glossGrad)"/>
+  <ellipse cx="340" cy="70" rx="200" ry="130" fill="url(#glossStreak)" transform="rotate(-18 340 70)"/>
 
-  <ellipse cx="256" cy="90" rx="260" ry="120" fill="#ffffff" opacity="0.20" filter="url(#softBlur)"/>
-
-  <use href="#letterN" x="0" y="7" fill="#022c22" opacity="0.45" filter="url(#softBlur)"/>
-  <use href="#letterN" fill="url(#metalGrad)" stroke="#1e293b" stroke-opacity="0.25" stroke-width="1.5"/>
+  <use href="#letterN" fill="none" stroke="#02160e" stroke-width="6" stroke-opacity="0.55" filter="url(#tightBlur)"/>
+  <use href="#letterN" x="0" y="6" fill="#011a10" opacity="0.4" filter="url(#softBlur)"/>
+  <use href="#letterN" fill="url(#metalGrad)"/>
 
   <g clip-path="url(#letterClip)">
-    <rect x="162" y="168" width="188" height="208" fill="url(#letterShine)"/>
-    <ellipse cx="212" cy="208" rx="60" ry="34" fill="#ffffff" opacity="0.55" filter="url(#softBlur)"/>
+    <rect x="162" y="168" width="188" height="208" fill="url(#letterHighlight)"/>
   </g>
 
-  <use href="#letterN" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>
+  <use href="#letterN" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="1"/>
 </svg>
