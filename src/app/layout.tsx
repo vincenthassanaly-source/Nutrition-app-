@@ -16,13 +16,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nutrition",
+  title: "Nutricio",
   description: "Liste de courses, recettes, suivi calorique et placard",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Nutrition",
+    title: "Nutricio",
   },
 };
 

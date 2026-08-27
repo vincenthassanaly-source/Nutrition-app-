@@ -14,7 +14,7 @@ export default function LoginPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-12">
       <div className="w-full max-w-sm rounded-3xl border border-line bg-surface p-8 shadow-card">
-        <h1 className="mb-1 text-center font-display text-2xl font-semibold text-kcal">Nutrition</h1>
+        <h1 className="mb-1 text-center font-display text-2xl font-semibold text-kcal">Nutricio</h1>
         <p className="mb-8 text-center text-sm text-ink-2">
           {mode === "signin" ? "Connexion" : "Créer un compte"}
         </p>

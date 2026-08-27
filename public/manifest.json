@@ -1,6 +1,6 @@
 {
-  "name": "Nutrition",
-  "short_name": "Nutrition",
+  "name": "Nutricio",
+  "short_name": "Nutricio",
   "description": "Liste de courses, recettes, suivi calorique et placard",
   "start_url": "/",
   "scope": "/",
