@@ -17,11 +17,22 @@ type AlimentInput = {
   proteines_100g: number;
   glucides_100g: number;
   lipides_100g: number;
+  sucres_100g: number | null;
+  acides_gras_satures_100g: number | null;
+  fibres_100g: number | null;
+  sel_100g: number | null;
 };
 
 type ParseResult =
   | { ok: true; value: AlimentInput }
   | { ok: false; error: string };
+
+function parseOptionalNonNegative(formData: FormData, key: string): number | null {
+  const raw = String(formData.get(key) ?? "").trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isNaN(value) ? NaN : value;
+}
 
 function parseAlimentInput(formData: FormData): ParseResult {
   const nom = String(formData.get("nom") ?? "").trim();
@@ -31,6 +42,13 @@ function parseAlimentInput(formData: FormData): ParseResult {
   const proteines_100g = Number(formData.get("proteines_100g") ?? 0);
   const glucides_100g = Number(formData.get("glucides_100g") ?? 0);
   const lipides_100g = Number(formData.get("lipides_100g") ?? 0);
+  const sucres_100g = parseOptionalNonNegative(formData, "sucres_100g");
+  const acides_gras_satures_100g = parseOptionalNonNegative(
+    formData,
+    "acides_gras_satures_100g"
+  );
+  const fibres_100g = parseOptionalNonNegative(formData, "fibres_100g");
+  const sel_100g = parseOptionalNonNegative(formData, "sel_100g");
 
   if (!nom) return { ok: false, error: "Le nom est requis." };
   if (!UNITES.includes(unite as Enums<"unite_mesure">)) {
@@ -39,6 +57,16 @@ function parseAlimentInput(formData: FormData): ParseResult {
   if (
     [kcal_100g, proteines_100g, glucides_100g, lipides_100g].some(
       (n) => Number.isNaN(n) || n < 0
+    )
+  ) {
+    return {
+      ok: false,
+      error: "Les valeurs nutritionnelles doivent être des nombres positifs.",
+    };
+  }
+  if (
+    [sucres_100g, acides_gras_satures_100g, fibres_100g, sel_100g].some(
+      (n) => n !== null && (Number.isNaN(n) || n < 0)
     )
   ) {
     return {
@@ -57,6 +85,10 @@ function parseAlimentInput(formData: FormData): ParseResult {
       proteines_100g,
       glucides_100g,
       lipides_100g,
+      sucres_100g,
+      acides_gras_satures_100g,
+      fibres_100g,
+      sel_100g,
     },
   };
 }

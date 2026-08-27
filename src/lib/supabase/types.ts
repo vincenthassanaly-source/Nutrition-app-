@@ -16,40 +16,52 @@ export type Database = {
     Tables: {
       aliments: {
         Row: {
+          acides_gras_satures_100g: number | null
           categorie: string | null
           created_at: string
+          fibres_100g: number | null
           glucides_100g: number
           id: string
           kcal_100g: number
           lipides_100g: number
           nom: string
           proteines_100g: number
+          sel_100g: number | null
+          sucres_100g: number | null
           unite: Database["public"]["Enums"]["unite_mesure"]
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          acides_gras_satures_100g?: number | null
           categorie?: string | null
           created_at?: string
+          fibres_100g?: number | null
           glucides_100g?: number
           id?: string
           kcal_100g: number
           lipides_100g?: number
           nom: string
           proteines_100g?: number
+          sel_100g?: number | null
+          sucres_100g?: number | null
           unite?: Database["public"]["Enums"]["unite_mesure"]
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          acides_gras_satures_100g?: number | null
           categorie?: string | null
           created_at?: string
+          fibres_100g?: number | null
           glucides_100g?: number
           id?: string
           kcal_100g?: number
           lipides_100g?: number
           nom?: string
           proteines_100g?: number
+          sel_100g?: number | null
+          sucres_100g?: number | null
           unite?: Database["public"]["Enums"]["unite_mesure"]
           updated_at?: string
           user_id?: string | null

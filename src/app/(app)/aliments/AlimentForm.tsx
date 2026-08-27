@@ -118,6 +118,62 @@ export function AlimentForm({
             className={input}
           />
         </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="sucres_100g" className={labelClass}>
+            dont sucres (g)
+          </label>
+          <input
+            id="sucres_100g"
+            name="sucres_100g"
+            type="number"
+            step="0.1"
+            min="0"
+            defaultValue={aliment?.sucres_100g ?? ""}
+            className={input}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="acides_gras_satures_100g" className={labelClass}>
+            dont acides gras saturés (g)
+          </label>
+          <input
+            id="acides_gras_satures_100g"
+            name="acides_gras_satures_100g"
+            type="number"
+            step="0.1"
+            min="0"
+            defaultValue={aliment?.acides_gras_satures_100g ?? ""}
+            className={input}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="fibres_100g" className={labelClass}>
+            Fibres (g)
+          </label>
+          <input
+            id="fibres_100g"
+            name="fibres_100g"
+            type="number"
+            step="0.1"
+            min="0"
+            defaultValue={aliment?.fibres_100g ?? ""}
+            className={input}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="sel_100g" className={labelClass}>
+            Sel (g)
+          </label>
+          <input
+            id="sel_100g"
+            name="sel_100g"
+            type="number"
+            step="0.01"
+            min="0"
+            defaultValue={aliment?.sel_100g ?? ""}
+            className={input}
+          />
+        </div>
       </div>
 
       {state.error && (
