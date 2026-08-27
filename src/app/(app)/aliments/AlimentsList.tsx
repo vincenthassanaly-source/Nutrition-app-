@@ -19,6 +19,15 @@ import {
 
 const UNITE_LABEL: Record<string, string> = { g: "g", ml: "ml", piece: "pièce" };
 
+function normalizeForSearch(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
 function AlimentRow({
   aliment,
   isOwner,
@@ -92,10 +101,10 @@ export function AlimentsList({
 }) {
   const [search, setSearch] = useState("");
 
-  const filtered = useMemo(
-    () => aliments.filter((a) => a.nom.toLowerCase().includes(search.toLowerCase())),
-    [aliments, search]
-  );
+  const filtered = useMemo(() => {
+    const query = normalizeForSearch(search);
+    return aliments.filter((a) => normalizeForSearch(a.nom).includes(query));
+  }, [aliments, search]);
 
   if (aliments.length === 0) {
     return <p className="text-ink-2">Aucun aliment pour l&apos;instant.</p>;
