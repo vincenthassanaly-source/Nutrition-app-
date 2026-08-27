@@ -7,6 +7,7 @@ import {
   type AlimentFormState,
 } from "@/app/actions/aliments";
 import type { Tables } from "@/lib/supabase/types";
+import { errorText, input, label as labelClass, primaryButton } from "@/lib/ui";
 
 const initialState: AlimentFormState = { error: null };
 
@@ -35,40 +36,24 @@ export function AlimentForm({
       {aliment && <input type="hidden" name="id" value={aliment.id} />}
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="nom" className="text-sm font-medium">
+        <label htmlFor="nom" className={labelClass}>
           Nom
         </label>
-        <input
-          id="nom"
-          name="nom"
-          required
-          defaultValue={aliment?.nom}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        />
+        <input id="nom" name="nom" required defaultValue={aliment?.nom} className={input} />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="categorie" className="text-sm font-medium">
+        <label htmlFor="categorie" className={labelClass}>
           Catégorie
         </label>
-        <input
-          id="categorie"
-          name="categorie"
-          defaultValue={aliment?.categorie ?? ""}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        />
+        <input id="categorie" name="categorie" defaultValue={aliment?.categorie ?? ""} className={input} />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="unite" className="text-sm font-medium">
+        <label htmlFor="unite" className={labelClass}>
           Unité
         </label>
-        <select
-          id="unite"
-          name="unite"
-          defaultValue={aliment?.unite ?? "g"}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        >
+        <select id="unite" name="unite" defaultValue={aliment?.unite ?? "g"} className={input}>
           <option value="g">grammes (g)</option>
           <option value="ml">millilitres (ml)</option>
           <option value="piece">pièce</option>
@@ -77,7 +62,7 @@ export function AlimentForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="kcal_100g" className="text-sm font-medium">
+          <label htmlFor="kcal_100g" className={labelClass}>
             Kcal / 100{aliment?.unite === "piece" ? " pièce" : ""}
           </label>
           <input
@@ -88,11 +73,11 @@ export function AlimentForm({
             min="0"
             required
             defaultValue={aliment?.kcal_100g}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="proteines_100g" className="text-sm font-medium">
+          <label htmlFor="proteines_100g" className={labelClass}>
             Protéines (g)
           </label>
           <input
@@ -102,11 +87,11 @@ export function AlimentForm({
             step="0.1"
             min="0"
             defaultValue={aliment?.proteines_100g ?? 0}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="glucides_100g" className="text-sm font-medium">
+          <label htmlFor="glucides_100g" className={labelClass}>
             Glucides (g)
           </label>
           <input
@@ -116,11 +101,11 @@ export function AlimentForm({
             step="0.1"
             min="0"
             defaultValue={aliment?.glucides_100g ?? 0}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="lipides_100g" className="text-sm font-medium">
+          <label htmlFor="lipides_100g" className={labelClass}>
             Lipides (g)
           </label>
           <input
@@ -130,22 +115,18 @@ export function AlimentForm({
             step="0.1"
             min="0"
             defaultValue={aliment?.lipides_100g ?? 0}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-green-700 px-4 py-2.5 text-white font-medium disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={primaryButton}>
         {pending ? "Enregistrement..." : aliment ? "Enregistrer" : "Ajouter l'aliment"}
       </button>
     </form>

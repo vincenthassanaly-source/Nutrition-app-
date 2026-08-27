@@ -1,52 +1,71 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Tables } from "@/lib/supabase/types";
+import { input, kcalPillTag, listCard, metaText, nameText, pillTag } from "@/lib/ui";
 
 const SOURCE_LABEL: Record<string, string> = {
   manuel: "Manuel",
   hellofresh: "HelloFresh",
 };
 
+type RecetteView = Tables<"recettes"> & { kcalParPortion: number };
+
 export function RecettesList({
   recettes,
   userId,
 }: {
-  recettes: Tables<"recettes">[];
+  recettes: RecetteView[];
   userId: string;
 }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(
+    () => recettes.filter((r) => r.nom.toLowerCase().includes(search.toLowerCase())),
+    [recettes, search]
+  );
+
   if (recettes.length === 0) {
-    return <p className="text-neutral-500">Aucune recette pour l&apos;instant.</p>;
+    return <p className="text-ink-2">Aucune recette pour l&apos;instant.</p>;
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      {recettes.map((recette) => (
-        <li key={recette.id}>
-          <Link
-            href={`/recettes/${recette.id}`}
-            className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 p-3"
-          >
-            <div className="min-w-0">
-              <p className="font-medium truncate">
-                {recette.nom}
-                {recette.user_id !== userId && (
-                  <span className="ml-2 rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-500">
-                    partagé
-                  </span>
-                )}
-              </p>
-              <p className="text-sm text-neutral-500">
-                {SOURCE_LABEL[recette.source]}
-                {recette.temps_prepa_min != null ? ` · ${recette.temps_prepa_min} min` : ""}
-                {" · "}
-                {recette.portions} portion{recette.portions > 1 ? "s" : ""}
-              </p>
-            </div>
-            <span aria-hidden className="text-neutral-400">
-              →
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-3">
+      <input
+        type="search"
+        placeholder="Rechercher une recette…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className={input}
+      />
+      {filtered.length === 0 ? (
+        <p className="py-5 text-center text-sm text-ink-3">Aucune recette ne correspond à ta recherche.</p>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {filtered.map((recette) => (
+            <li key={recette.id}>
+              <Link href={`/recettes/${recette.id}`} className={listCard}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className={nameText}>
+                    {recette.nom}
+                    {recette.user_id !== userId && <span className={`ml-2 align-middle ${pillTag}`}>partagé</span>}
+                  </p>
+                  <span className={kcalPillTag}>{recette.kcalParPortion} kcal/portion</span>
+                </div>
+                <p className={metaText}>
+                  {SOURCE_LABEL[recette.source]}
+                  {recette.temps_prepa_min != null ? ` · ${recette.temps_prepa_min} min` : ""}
+                  {" · "}
+                  {recette.portions} portion{recette.portions > 1 ? "s" : ""}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
+
+export type { RecetteView };

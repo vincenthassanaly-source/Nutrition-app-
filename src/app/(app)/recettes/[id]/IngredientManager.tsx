@@ -8,6 +8,7 @@ import {
   type IngredientFormState,
 } from "@/app/actions/recette-ingredients";
 import type { Tables } from "@/lib/supabase/types";
+import { cardTight, dangerButton, errorText, ghostButton, input, nameText, primaryButton } from "@/lib/ui";
 
 const UNITE_LABEL: Record<string, string> = { g: "g", ml: "ml", piece: "pièce" };
 
@@ -30,9 +31,9 @@ function IngredientLine({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 p-3">
+    <li className={`${cardTight} flex items-center justify-between gap-3`}>
       <div className="min-w-0">
-        <p className="font-medium truncate">{ingredient.aliment.nom}</p>
+        <p className={nameText}>{ingredient.aliment.nom}</p>
         {editing ? (
           <div className="mt-1 flex items-center gap-2">
             <input
@@ -41,21 +42,19 @@ function IngredientLine({
               min="0"
               value={quantite}
               onChange={(e) => setQuantite(e.target.value)}
-              className="w-24 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+              className="w-24 rounded-lg border border-line px-2 py-1 text-sm text-ink"
             />
-            <span className="text-sm text-neutral-500">
-              {UNITE_LABEL[ingredient.unite]}
-            </span>
+            <span className="text-sm text-ink-2">{UNITE_LABEL[ingredient.unite]}</span>
           </div>
         ) : (
-          <p className="text-sm text-neutral-500">
+          <p className="text-xs text-ink-2">
             {ingredient.quantite} {UNITE_LABEL[ingredient.unite]}
           </p>
         )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className={errorText}>{error}</p>}
       </div>
       {isOwner && (
-        <div className="flex shrink-0 gap-2 text-sm">
+        <div className="flex shrink-0 gap-2">
           {editing ? (
             <>
               <button
@@ -73,7 +72,7 @@ function IngredientLine({
                     }
                   });
                 }}
-                className="rounded-md border border-neutral-300 px-2 py-1"
+                className={ghostButton}
               >
                 OK
               </button>
@@ -83,18 +82,14 @@ function IngredientLine({
                   setQuantite(String(ingredient.quantite));
                   setEditing(false);
                 }}
-                className="rounded-md border border-neutral-300 px-2 py-1"
+                className={ghostButton}
               >
                 Annuler
               </button>
             </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="rounded-md border border-neutral-300 px-2 py-1"
-              >
+              <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
                 Éditer
               </button>
               <button
@@ -110,7 +105,7 @@ function IngredientLine({
                     }
                   });
                 }}
-                className="rounded-md border border-red-300 px-2 py-1 text-red-600 disabled:opacity-60"
+                className={dangerButton}
               >
                 Suppr.
               </button>
@@ -145,9 +140,9 @@ function AddIngredientForm({
 
   if (aliments.length === 0) {
     return (
-      <p className="text-sm text-neutral-500">
-        Ajoute d&apos;abord des aliments dans l&apos;onglet Aliments pour pouvoir composer
-        cette recette.
+      <p className="text-sm text-ink-2">
+        Ajoute d&apos;abord des aliments dans l&apos;onglet Aliments pour pouvoir composer cette
+        recette.
       </p>
     );
   }
@@ -164,7 +159,7 @@ function AddIngredientForm({
           name="aliment_id"
           value={alimentId}
           onChange={(e) => setAlimentId(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-2"
+          className={`min-w-0 flex-1 ${input}`}
         >
           {aliments.map((a) => (
             <option key={a.id} value={a.id}>
@@ -179,21 +174,17 @@ function AddIngredientForm({
           min="0"
           required
           placeholder={UNITE_LABEL[selected.unite]}
-          className="w-24 rounded-lg border border-neutral-300 px-3 py-2"
+          className={`w-24 ${input}`}
         />
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-green-700 px-4 py-2 text-white font-medium disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={primaryButton}>
         {pending ? "Ajout..." : "+ Ajouter l'ingrédient"}
       </button>
     </form>
@@ -213,19 +204,12 @@ export function IngredientManager({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="font-medium">Ingrédients</h2>
-
       {ingredients.length === 0 ? (
-        <p className="text-neutral-500 text-sm">Aucun ingrédient pour l&apos;instant.</p>
+        <p className="text-sm text-ink-2">Aucun ingrédient pour l&apos;instant.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2.5">
           {ingredients.map((ing) => (
-            <IngredientLine
-              key={ing.id}
-              ingredient={ing}
-              recetteId={recetteId}
-              isOwner={isOwner}
-            />
+            <IngredientLine key={ing.id} ingredient={ing} recetteId={recetteId} isOwner={isOwner} />
           ))}
         </ul>
       )}

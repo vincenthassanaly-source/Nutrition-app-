@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { updatePlacardQuantite, removePlacardItem } from "@/app/actions/placard";
 import type { Tables } from "@/lib/supabase/types";
+import { cardTight, dangerButton, errorText, ghostButton, nameText } from "@/lib/ui";
 
 const UNITE_LABEL: Record<string, string> = { g: "g", ml: "ml", piece: "pièce" };
 
@@ -20,36 +21,39 @@ function Row({ item }: { item: PlacardRow }) {
     new Date(item.date_peremption).getTime() - now < 3 * 24 * 60 * 60 * 1000;
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 p-3">
-      <div className="min-w-0">
-        <p className="font-medium truncate">{item.aliment.nom}</p>
-        {editing ? (
-          <div className="mt-1 flex items-center gap-2">
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              value={quantite}
-              onChange={(e) => setQuantite(e.target.value)}
-              className="w-24 rounded-md border border-neutral-300 px-2 py-1 text-sm"
-            />
-            <span className="text-sm text-neutral-500">
-              {UNITE_LABEL[item.aliment.unite]}
-            </span>
-          </div>
-        ) : (
-          <p className="text-sm text-neutral-500">
-            {item.quantite_disponible} {UNITE_LABEL[item.aliment.unite]}
-            {item.date_peremption && (
-              <span className={expireBientot ? "ml-2 text-amber-600" : "ml-2"}>
-                · péremption {new Date(item.date_peremption).toLocaleDateString("fr-FR")}
-              </span>
-            )}
-          </p>
+    <li className={`${cardTight} flex flex-col gap-1.5`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className={nameText}>{item.aliment.nom}</p>
+        {expireBientot && (
+          <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-bold text-white" style={{ background: "oklch(0.68 0.16 70)" }}>
+            péremption {new Date(item.date_peremption!).toLocaleDateString("fr-FR")}
+          </span>
         )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-      <div className="flex shrink-0 gap-2 text-sm">
+      {editing ? (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            value={quantite}
+            onChange={(e) => setQuantite(e.target.value)}
+            className="w-24 rounded-lg border border-line px-2 py-1 text-sm text-ink"
+          />
+          <span className="text-sm text-ink-2">{UNITE_LABEL[item.aliment.unite]}</span>
+        </div>
+      ) : (
+        <p className="font-mono text-xs text-ink-2">
+          {item.quantite_disponible} {UNITE_LABEL[item.aliment.unite]}
+          {item.date_peremption && !expireBientot && (
+            <span className="ml-2">
+              péremption {new Date(item.date_peremption).toLocaleDateString("fr-FR")}
+            </span>
+          )}
+        </p>
+      )}
+      {error && <p className={errorText}>{error}</p>}
+      <div className="flex gap-2 pt-0.5">
         {editing ? (
           <>
             <button
@@ -67,7 +71,7 @@ function Row({ item }: { item: PlacardRow }) {
                   }
                 });
               }}
-              className="rounded-md border border-neutral-300 px-2 py-1"
+              className={ghostButton}
             >
               OK
             </button>
@@ -77,18 +81,14 @@ function Row({ item }: { item: PlacardRow }) {
                 setQuantite(String(item.quantite_disponible));
                 setEditing(false);
               }}
-              className="rounded-md border border-neutral-300 px-2 py-1"
+              className={ghostButton}
             >
               Annuler
             </button>
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="rounded-md border border-neutral-300 px-2 py-1"
-            >
+            <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
               Éditer
             </button>
             <button
@@ -104,7 +104,7 @@ function Row({ item }: { item: PlacardRow }) {
                   }
                 });
               }}
-              className="rounded-md border border-red-300 px-2 py-1 text-red-600 disabled:opacity-60"
+              className={dangerButton}
             >
               Suppr.
             </button>
@@ -117,11 +117,11 @@ function Row({ item }: { item: PlacardRow }) {
 
 export function PlacardList({ items }: { items: PlacardRow[] }) {
   if (items.length === 0) {
-    return <p className="text-neutral-500">Ton placard est vide pour l&apos;instant.</p>;
+    return <p className="text-ink-2">Ton placard est vide pour l&apos;instant.</p>;
   }
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col gap-2.5">
       {items.map((item) => (
         <Row key={item.id} item={item} />
       ))}

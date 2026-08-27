@@ -12,6 +12,7 @@ import {
   zeroNutrition,
 } from "@/lib/nutrition/compute";
 import type { Enums } from "@/lib/supabase/types";
+import { card, eyebrow, screenTitle, sectionTitle } from "@/lib/ui";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -94,63 +95,87 @@ export default async function JournalPage({
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold capitalize">{dateLabel}</h1>
-        <div className="flex gap-2 text-sm">
+        <div>
+          <p className={`${eyebrow} capitalize`}>{dateLabel}</p>
+          <h1 className={screenTitle}>Journal</h1>
+        </div>
+        <div className="flex gap-1.5">
           <Link
             href={`/journal?date=${shiftDate(date, -1)}&jour=${jourType}`}
-            className="rounded-md border border-neutral-300 px-2 py-1"
+            aria-label="Jour précédent"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-xl border border-line bg-surface text-base text-ink"
           >
-            ← Veille
+            ‹
           </Link>
           <Link
             href={`/journal?date=${shiftDate(date, 1)}&jour=${jourType}`}
-            className="rounded-md border border-neutral-300 px-2 py-1"
+            aria-label="Jour suivant"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-xl border border-line bg-surface text-base text-ink"
           >
-            Lendemain →
+            ›
           </Link>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-neutral-500">Aujourd&apos;hui c&apos;est un jour :</span>
+      <div className="flex gap-1 rounded-xl bg-surface-alt p-1">
         <Link
           href={`/journal?date=${date}&jour=repos`}
-          className={`rounded-md border px-2 py-1 ${
-            jourType === "repos" ? "border-green-700 text-green-700" : "border-neutral-300"
-          }`}
+          className="flex-1 rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
+          style={
+            jourType === "repos"
+              ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 1px 3px oklch(0.2 0.02 255 / 0.1)" }
+              : { color: "var(--ink-2)" }
+          }
         >
           Repos
         </Link>
         <Link
           href={`/journal?date=${date}&jour=entrainement`}
-          className={`rounded-md border px-2 py-1 ${
-            jourType === "entrainement" ? "border-green-700 text-green-700" : "border-neutral-300"
-          }`}
+          className="flex-1 rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
+          style={
+            jourType === "entrainement"
+              ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 1px 3px oklch(0.2 0.02 255 / 0.1)" }
+              : { color: "var(--ink-2)" }
+          }
         >
           Entraînement
         </Link>
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-medium">Objectif ({jourType === "repos" ? "repos" : "entraînement"})</h2>
+        <h2 className={sectionTitle}>Objectif ({jourType === "repos" ? "repos" : "entraînement"})</h2>
         <ObjectifForm jourType={jourType} objectif={objectif} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-medium">Résumé du jour</h2>
+        <h2 className={sectionTitle}>Résumé du jour</h2>
         <ResumeJour consomme={consomme} cible={cible} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-medium">Ajout rapide</h2>
+        <h2 className={sectionTitle}>Ajout rapide</h2>
         <AddJournalEntryForm date={date} aliments={aliments ?? []} recettes={recettes ?? []} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className="font-medium">Repas du jour</h2>
-        <JournalEntriesList entries={views} />
+        <h2 className={sectionTitle}>Repas du jour</h2>
+        {views.length === 0 ? (
+          <div className={`${card} flex flex-col items-center gap-2.5 py-8 text-center`}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="1.6">
+              <line x1="5" y1="19" x2="5" y2="11" />
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <line x1="19" y1="19" x2="19" y2="14" />
+            </svg>
+            <p className="text-[15px] font-bold text-ink">Aucun repas enregistré</p>
+            <p className="text-[13px] leading-relaxed text-ink-2">
+              Ajoute un aliment ou une recette ci-dessus pour suivre tes macros.
+            </p>
+          </div>
+        ) : (
+          <JournalEntriesList entries={views} />
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { updateListeStatut, deleteListe } from "@/app/actions/listes-courses";
 import type { Tables } from "@/lib/supabase/types";
+import { dangerButton, errorText, ghostButton, linkButton } from "@/lib/ui";
 
 const STATUT_LABEL: Record<string, string> = {
   en_cours: "En cours",
@@ -17,12 +19,15 @@ export function ListeHeader({ liste }: { liste: Tables<"listes_courses"> }) {
 
   return (
     <div className="flex flex-col gap-2">
+      <Link href="/courses" className={linkButton}>
+        ‹ Courses
+      </Link>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold truncate">{liste.nom}</h1>
-          <p className="text-sm text-neutral-500">{STATUT_LABEL[liste.statut]}</p>
+          <h1 className="mt-1 truncate font-display text-[22px] font-semibold text-ink">{liste.nom}</h1>
+          <p className="text-[13px] text-ink-2">{STATUT_LABEL[liste.statut]}</p>
         </div>
-        <div className="flex shrink-0 gap-2 text-sm">
+        <div className="flex shrink-0 gap-2">
           <button
             type="button"
             disabled={isPending}
@@ -36,7 +41,7 @@ export function ListeHeader({ liste }: { liste: Tables<"listes_courses"> }) {
                 }
               });
             }}
-            className="rounded-md border border-neutral-300 px-2 py-1"
+            className={ghostButton}
           >
             {isTerminee ? "Rouvrir" : "Marquer terminée"}
           </button>
@@ -53,13 +58,13 @@ export function ListeHeader({ liste }: { liste: Tables<"listes_courses"> }) {
                 }
               });
             }}
-            className="rounded-md border border-red-300 px-2 py-1 text-red-600 disabled:opacity-60"
+            className={dangerButton}
           >
             Suppr.
           </button>
         </div>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className={errorText}>{error}</p>}
     </div>
   );
 }

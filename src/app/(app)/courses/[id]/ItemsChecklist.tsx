@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toggleItemCoche } from "@/app/actions/listes-courses";
 import type { Tables } from "@/lib/supabase/types";
+import { cardTight } from "@/lib/ui";
 
 const UNITE_LABEL: Record<string, string> = { g: "g", ml: "ml", piece: "pièce" };
 
@@ -16,11 +17,7 @@ function ItemRow({ item }: { item: ItemRow }) {
 
   return (
     <li>
-      <label
-        className={`flex items-center gap-3 rounded-lg border border-neutral-200 p-3 ${
-          coche ? "opacity-50" : ""
-        }`}
-      >
+      <label className={`${cardTight} flex cursor-pointer items-center gap-3 ${coche ? "opacity-50" : ""}`}>
         <input
           type="checkbox"
           checked={coche}
@@ -35,11 +32,11 @@ function ItemRow({ item }: { item: ItemRow }) {
               }
             });
           }}
-          className="h-5 w-5 shrink-0"
+          className="h-5 w-5 shrink-0 accent-kcal"
         />
-        <span className={`flex-1 ${coche ? "line-through" : ""}`}>
+        <span className={`flex-1 text-[14.5px] font-medium text-ink ${coche ? "line-through" : ""}`}>
           {item.aliment.nom}
-          <span className="ml-2 text-sm text-neutral-500">
+          <span className="ml-2 font-mono text-xs text-ink-2">
             {item.quantite_totale} {UNITE_LABEL[item.unite]}
           </span>
         </span>
@@ -50,7 +47,7 @@ function ItemRow({ item }: { item: ItemRow }) {
 
 export function ItemsChecklist({ items }: { items: ItemRow[] }) {
   if (items.length === 0) {
-    return <p className="text-neutral-500">Cette liste ne contient aucun article.</p>;
+    return <p className="text-ink-2">Cette liste ne contient aucun article.</p>;
   }
 
   const sorted = [...items].sort((a, b) => {
@@ -59,7 +56,7 @@ export function ItemsChecklist({ items }: { items: ItemRow[] }) {
   });
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col gap-2.5">
       {sorted.map((item) => (
         <ItemRow key={item.id} item={item} />
       ))}

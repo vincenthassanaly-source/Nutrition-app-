@@ -4,6 +4,7 @@ import { AddPlacardToggle } from "./AddPlacardToggle";
 import { PlacardList } from "./PlacardList";
 import { RecettesRealisables } from "./RecettesRealisables";
 import { matchRecetteAvecPlacard } from "@/lib/nutrition/matching";
+import { errorText, screenTitle, sectionTitle } from "@/lib/ui";
 
 export default async function PlacardPage() {
   await requireUser();
@@ -22,7 +23,7 @@ export default async function PlacardPage() {
   ]);
 
   if (error) {
-    return <p className="text-red-600">Erreur de chargement : {error.message}</p>;
+    return <p className={errorText}>Erreur de chargement : {error.message}</p>;
   }
 
   const placardMap = new Map(
@@ -45,13 +46,13 @@ export default async function PlacardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold">Placard</h1>
+        <h1 className={screenTitle}>Placard</h1>
         <AddPlacardToggle aliments={aliments ?? []} />
         <PlacardList items={placard ?? []} />
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="font-medium">Recettes réalisables</h2>
+        <h2 className={sectionTitle}>Ce que tu peux cuisiner</h2>
         <RecettesRealisables entries={entries} />
       </div>
     </div>

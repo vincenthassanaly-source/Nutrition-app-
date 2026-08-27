@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addJournalEntry, type JournalFormState } from "@/app/actions/journal";
 import type { Tables } from "@/lib/supabase/types";
+import { card, errorText, input, label as labelClass, primaryButton } from "@/lib/ui";
 
 const initialState: JournalFormState = { error: null };
 
@@ -38,52 +39,46 @@ export function AddJournalEntryForm({
 
   if (aliments.length === 0 && recettes.length === 0) {
     return (
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-ink-2">
         Ajoute des aliments ou des recettes pour pouvoir remplir ton journal.
       </p>
     );
   }
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-3"
-    >
+    <form ref={formRef} action={formAction} className={`${card} flex flex-col gap-3`}>
       <input type="hidden" name="date" value={date} />
 
-      <div className="flex gap-4 text-sm">
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
-            name="type"
-            value="aliment"
-            checked={type === "aliment"}
-            onChange={() => setType("aliment")}
-          />
-          Aliment
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
-            name="type"
-            value="recette"
-            checked={type === "recette"}
-            onChange={() => setType("recette")}
-          />
-          Recette
-        </label>
+      <div className="flex gap-1 rounded-xl bg-surface-alt p-1">
+        {(["aliment", "recette"] as const).map((t) => (
+          <label
+            key={t}
+            className="flex-1 cursor-pointer rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
+            style={
+              type === t
+                ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 1px 3px oklch(0.2 0.02 255 / 0.1)" }
+                : { color: "var(--ink-2)" }
+            }
+          >
+            <input
+              type="radio"
+              name="type"
+              value={t}
+              checked={type === t}
+              onChange={() => setType(t)}
+              className="sr-only"
+            />
+            {t === "aliment" ? "Aliment" : "Recette"}
+          </label>
+        ))}
       </div>
 
       {options.length === 0 ? (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-ink-2">
           Aucun{type === "recette" ? "e recette" : " aliment"} disponible.
         </p>
       ) : (
-        <select
-          name={type === "aliment" ? "aliment_id" : "recette_id"}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        >
+        <select name={type === "aliment" ? "aliment_id" : "recette_id"} className={input}>
           {options.map((o) => (
             <option key={o.id} value={o.id}>
               {o.nom}
@@ -94,7 +89,7 @@ export function AddJournalEntryForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="quantite" className="text-sm font-medium">
+          <label htmlFor="quantite" className={labelClass}>
             {type === "aliment" ? "Quantité" : "Portions"}
           </label>
           <input
@@ -105,18 +100,14 @@ export function AddJournalEntryForm({
             min="0"
             required
             placeholder={type === "aliment" ? "ex : 150" : "ex : 1"}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="moment" className="text-sm font-medium">
+          <label htmlFor="moment" className={labelClass}>
             Moment
           </label>
-          <select
-            id="moment"
-            name="moment"
-            className="rounded-lg border border-neutral-300 px-3 py-2"
-          >
+          <select id="moment" name="moment" className={input}>
             {MOMENTS.map((m) => (
               <option key={m.value} value={m.value}>
                 {m.label}
@@ -127,16 +118,12 @@ export function AddJournalEntryForm({
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending || options.length === 0}
-        className="rounded-lg bg-green-700 px-4 py-2.5 text-white font-medium disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending || options.length === 0} className={primaryButton}>
         {pending ? "Ajout..." : "+ Ajouter au journal"}
       </button>
     </form>

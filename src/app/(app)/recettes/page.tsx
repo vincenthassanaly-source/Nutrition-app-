@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/auth";
 import { AddRecetteToggle } from "./AddRecetteToggle";
 import { RecettesList } from "./RecettesList";
+import { nutritionRecette } from "@/lib/nutrition/compute";
+import { errorText, screenTitle } from "@/lib/ui";
 
 export default async function RecettesPage() {
   const user = await requireUser();
@@ -9,18 +11,30 @@ export default async function RecettesPage() {
 
   const { data: recettes, error } = await supabase
     .from("recettes")
-    .select("*")
+    .select(
+      "*, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g))"
+    )
     .order("nom", { ascending: true });
 
   if (error) {
-    return <p className="text-red-600">Erreur de chargement : {error.message}</p>;
+    return <p className={errorText}>Erreur de chargement : {error.message}</p>;
   }
+
+  const views = (recettes ?? []).map((recette) => {
+    const { recette_ingredients, ...rest } = recette;
+    return {
+      ...rest,
+      kcalParPortion: Math.round(
+        nutritionRecette(recette_ingredients, recette.portions, 1).kcal
+      ),
+    };
+  });
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Recettes</h1>
+      <h1 className={screenTitle}>Recettes</h1>
       <AddRecetteToggle />
-      <RecettesList recettes={recettes ?? []} userId={user.id} />
+      <RecettesList recettes={views} userId={user.id} />
     </div>
   );
 }

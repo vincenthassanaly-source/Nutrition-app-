@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/auth";
 import { NewListeToggle } from "./NewListeToggle";
 import { ListesCoursesList } from "./ListesCoursesList";
+import { errorText, screenTitle } from "@/lib/ui";
 
 export default async function CoursesPage() {
   await requireUser();
@@ -13,12 +14,12 @@ export default async function CoursesPage() {
   ]);
 
   if (error) {
-    return <p className="text-red-600">Erreur de chargement : {error.message}</p>;
+    return <p className={errorText}>Erreur de chargement : {error.message}</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Liste de courses</h1>
+      <h1 className={screenTitle}>Courses</h1>
       <NewListeToggle recettes={recettes ?? []} />
       <ListesCoursesList listes={listes ?? []} />
     </div>

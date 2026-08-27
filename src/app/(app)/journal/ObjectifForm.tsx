@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { upsertObjectif, type ObjectifFormState } from "@/app/actions/objectifs";
 import type { Enums, Tables } from "@/lib/supabase/types";
+import { card, errorText, input, label as labelClass, linkButton, primaryButton, secondaryButton } from "@/lib/ui";
 
 const initialState: ObjectifFormState = { error: null };
 
@@ -18,26 +19,19 @@ export function ObjectifForm({
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-sm text-green-700 underline"
-      >
+      <button type="button" onClick={() => setOpen(true)} className={linkButton}>
         Modifier l&apos;objectif
       </button>
     );
   }
 
   return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-3"
-    >
+    <form action={formAction} className={`${card} flex flex-col gap-3`}>
       <input type="hidden" name="jour_type" value={jourType} />
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="kcal_cible" className="text-sm font-medium">
+          <label htmlFor="kcal_cible" className={labelClass}>
             Kcal cible
           </label>
           <input
@@ -48,11 +42,11 @@ export function ObjectifForm({
             step="1"
             required
             defaultValue={objectif?.kcal_cible ?? ""}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="proteines_cible_g" className="text-sm font-medium">
+          <label htmlFor="proteines_cible_g" className={labelClass}>
             Protéines (g)
           </label>
           <input
@@ -62,11 +56,11 @@ export function ObjectifForm({
             min="0"
             step="1"
             defaultValue={objectif?.proteines_cible_g ?? 0}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="glucides_cible_g" className="text-sm font-medium">
+          <label htmlFor="glucides_cible_g" className={labelClass}>
             Glucides (g)
           </label>
           <input
@@ -76,11 +70,11 @@ export function ObjectifForm({
             min="0"
             step="1"
             defaultValue={objectif?.glucides_cible_g ?? 0}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="lipides_cible_g" className="text-sm font-medium">
+          <label htmlFor="lipides_cible_g" className={labelClass}>
             Lipides (g)
           </label>
           <input
@@ -90,31 +84,23 @@ export function ObjectifForm({
             min="0"
             step="1"
             defaultValue={objectif?.lipides_cible_g ?? 0}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-green-700 px-4 py-2 text-white font-medium disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className={primaryButton}>
           {pending ? "Enregistrement..." : "Enregistrer l'objectif"}
         </button>
         {objectif && (
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-lg border border-neutral-300 px-4 py-2"
-          >
+          <button type="button" onClick={() => setOpen(false)} className={secondaryButton}>
             Fermer
           </button>
         )}

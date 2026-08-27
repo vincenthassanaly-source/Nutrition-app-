@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { RecetteForm } from "../RecetteForm";
 import { deleteRecette } from "@/app/actions/recettes";
 import type { Tables } from "@/lib/supabase/types";
+import { card, dangerButton, errorText, ghostButton, linkButton, pillTag } from "@/lib/ui";
 
 const SOURCE_LABEL: Record<string, string> = {
   manuel: "Manuel",
@@ -23,13 +25,9 @@ export function RecetteHeader({
 
   if (editing) {
     return (
-      <div className="rounded-lg border border-neutral-200 p-3">
+      <div className={card}>
         <RecetteForm recette={recette} onDone={() => setEditing(false)} />
-        <button
-          type="button"
-          onClick={() => setEditing(false)}
-          className="mt-2 text-sm text-neutral-500 underline"
-        >
+        <button type="button" onClick={() => setEditing(false)} className="mt-2 text-sm text-ink-2 underline">
           Annuler
         </button>
       </div>
@@ -38,17 +36,16 @@ export function RecetteHeader({
 
   return (
     <div className="flex flex-col gap-2">
+      <Link href="/recettes" className={linkButton}>
+        ‹ Recettes
+      </Link>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold truncate">
+          <h1 className="mt-1 truncate font-display text-[22px] font-semibold text-ink">
             {recette.nom}
-            {!isOwner && (
-              <span className="ml-2 rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-500 align-middle">
-                partagé
-              </span>
-            )}
+            {!isOwner && <span className={`ml-2 align-middle ${pillTag}`}>partagé</span>}
           </h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-[13px] text-ink-2">
             {SOURCE_LABEL[recette.source]}
             {recette.temps_prepa_min != null ? ` · ${recette.temps_prepa_min} min` : ""}
             {" · "}
@@ -56,12 +53,8 @@ export function RecetteHeader({
           </p>
         </div>
         {isOwner && (
-          <div className="flex shrink-0 gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="rounded-md border border-neutral-300 px-2 py-1"
-            >
+          <div className="flex shrink-0 gap-2">
+            <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
               Éditer
             </button>
             <button
@@ -77,15 +70,15 @@ export function RecetteHeader({
                   }
                 });
               }}
-              className="rounded-md border border-red-300 px-2 py-1 text-red-600 disabled:opacity-60"
+              className={dangerButton}
             >
               Suppr.
             </button>
           </div>
         )}
       </div>
-      {recette.description && <p className="text-neutral-700">{recette.description}</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {recette.description && <p className="text-sm text-ink">{recette.description}</p>}
+      {error && <p className={errorText}>{error}</p>}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   type ListeFormState,
 } from "@/app/actions/listes-courses";
 import type { Tables } from "@/lib/supabase/types";
+import { card, dashedAddButton, errorText, input, label as labelClass, primaryButton, secondaryButton } from "@/lib/ui";
 
 const initialState: ListeFormState = { error: null };
 
@@ -15,11 +16,7 @@ export function NewListeToggle({ recettes }: { recettes: Tables<"recettes">[] })
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-full rounded-lg border border-dashed border-green-700 py-2.5 text-green-700 font-medium"
-      >
+      <button type="button" onClick={() => setOpen(true)} className={dashedAddButton}>
         + Nouvelle liste depuis des recettes
       </button>
     );
@@ -27,16 +24,12 @@ export function NewListeToggle({ recettes }: { recettes: Tables<"recettes">[] })
 
   if (recettes.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 p-3">
-        <p className="text-sm text-neutral-500">
-          Crée d&apos;abord une recette dans l&apos;onglet Recettes pour pouvoir générer une
-          liste de courses.
+      <div className={card}>
+        <p className="text-sm text-ink-2">
+          Crée d&apos;abord une recette dans l&apos;onglet Recettes pour pouvoir générer une liste
+          de courses.
         </p>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="mt-2 text-sm text-neutral-500 underline"
-        >
+        <button type="button" onClick={() => setOpen(false)} className="mt-2 text-sm text-ink-2 underline">
           Fermer
         </button>
       </div>
@@ -44,48 +37,35 @@ export function NewListeToggle({ recettes }: { recettes: Tables<"recettes">[] })
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-3">
+    <form action={formAction} className={`${card} flex flex-col gap-3`}>
       <div className="flex flex-col gap-1">
-        <label htmlFor="nom" className="text-sm font-medium">
+        <label htmlFor="nom" className={labelClass}>
           Nom de la liste
         </label>
-        <input
-          id="nom"
-          name="nom"
-          placeholder="Liste de courses"
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        />
+        <input id="nom" name="nom" placeholder="Liste de courses" className={input} />
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium mb-1">Recettes à inclure</legend>
+        <legend className="mb-1 text-sm font-medium text-ink">Recettes à inclure</legend>
         {recettes.map((recette) => (
-          <label key={recette.id} className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="recette_id" value={recette.id} className="h-4 w-4" />
+          <label key={recette.id} className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" name="recette_id" value={recette.id} className="h-4 w-4 accent-kcal" />
             {recette.nom}
           </label>
         ))}
       </fieldset>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-green-700 px-4 py-2.5 text-white font-medium disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className={primaryButton}>
           {pending ? "Génération..." : "Générer la liste"}
         </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-lg border border-neutral-300 px-4 py-2.5"
-        >
+        <button type="button" onClick={() => setOpen(false)} className={secondaryButton}>
           Annuler
         </button>
       </div>

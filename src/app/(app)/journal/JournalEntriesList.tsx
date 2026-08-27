@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { removeJournalEntry } from "@/app/actions/journal";
 import type { Nutrition } from "@/lib/nutrition/compute";
 import type { Enums } from "@/lib/supabase/types";
+import { cardTight, dangerButton } from "@/lib/ui";
 
 export type JournalEntryView = {
   id: string;
@@ -25,43 +26,48 @@ function EntryRow({ entry }: { entry: JournalEntryView }) {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 p-3">
-      <div className="min-w-0">
-        <p className="font-medium truncate">{entry.label}</p>
-        <p className="text-sm text-neutral-500">
-          {entry.detail} · {Math.round(entry.nutrition.kcal)} kcal
-        </p>
+    <li className={`${cardTight} flex flex-col gap-2`}>
+      <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-3">
+        {MOMENT_LABEL[entry.moment]}
+      </span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-[14.5px] font-semibold text-ink">{entry.label}</p>
+          <p className="text-xs text-ink-2">{entry.detail}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-display text-[15px] font-semibold text-ink">
+            {Math.round(entry.nutrition.kcal)} kcal
+          </span>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => startTransition(() => removeJournalEntry(entry.id))}
+            className={dangerButton}
+          >
+            Suppr.
+          </button>
+        </div>
       </div>
-      <button
-        type="button"
-        disabled={isPending}
-        onClick={() => startTransition(() => removeJournalEntry(entry.id))}
-        className="shrink-0 rounded-md border border-red-300 px-2 py-1 text-sm text-red-600 disabled:opacity-60"
-      >
-        Suppr.
-      </button>
     </li>
   );
 }
 
 export function JournalEntriesList({ entries }: { entries: JournalEntryView[] }) {
   if (entries.length === 0) {
-    return <p className="text-neutral-500">Aucun repas enregistré pour ce jour.</p>;
+    return <p className="text-ink-2">Aucun repas enregistré pour ce jour.</p>;
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {MOMENT_ORDER.filter((m) => entries.some((e) => e.moment === m)).map((moment) => (
-        <div key={moment} className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium text-neutral-500">{MOMENT_LABEL[moment]}</h3>
-          <ul className="flex flex-col gap-2">
-            {entries
-              .filter((e) => e.moment === moment)
-              .map((entry) => (
-                <EntryRow key={entry.id} entry={entry} />
-              ))}
-          </ul>
-        </div>
+        <ul key={moment} className="flex flex-col gap-2.5">
+          {entries
+            .filter((e) => e.moment === moment)
+            .map((entry) => (
+              <EntryRow key={entry.id} entry={entry} />
+            ))}
+        </ul>
       ))}
     </div>
   );

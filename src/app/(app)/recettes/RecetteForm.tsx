@@ -7,6 +7,7 @@ import {
   type RecetteFormState,
 } from "@/app/actions/recettes";
 import type { Tables } from "@/lib/supabase/types";
+import { errorText, input, label as labelClass, primaryButton } from "@/lib/ui";
 
 const initialState: RecetteFormState = { error: null };
 
@@ -33,20 +34,14 @@ export function RecetteForm({
       {recette && <input type="hidden" name="id" value={recette.id} />}
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="nom" className="text-sm font-medium">
+        <label htmlFor="nom" className={labelClass}>
           Nom
         </label>
-        <input
-          id="nom"
-          name="nom"
-          required
-          defaultValue={recette?.nom}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        />
+        <input id="nom" name="nom" required defaultValue={recette?.nom} className={input} />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="description" className="text-sm font-medium">
+        <label htmlFor="description" className={labelClass}>
           Description
         </label>
         <textarea
@@ -54,13 +49,13 @@ export function RecetteForm({
           name="description"
           rows={2}
           defaultValue={recette?.description ?? ""}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
+          className={input}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="temps_prepa_min" className="text-sm font-medium">
+          <label htmlFor="temps_prepa_min" className={labelClass}>
             Préparation (min)
           </label>
           <input
@@ -70,11 +65,11 @@ export function RecetteForm({
             min="0"
             step="1"
             defaultValue={recette?.temps_prepa_min ?? ""}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="portions" className="text-sm font-medium">
+          <label htmlFor="portions" className={labelClass}>
             Portions
           </label>
           <input
@@ -85,37 +80,28 @@ export function RecetteForm({
             step="1"
             required
             defaultValue={recette?.portions ?? 1}
-            className="rounded-lg border border-neutral-300 px-3 py-2"
+            className={input}
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="source" className="text-sm font-medium">
+        <label htmlFor="source" className={labelClass}>
           Source
         </label>
-        <select
-          id="source"
-          name="source"
-          defaultValue={recette?.source ?? "manuel"}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        >
+        <select id="source" name="source" defaultValue={recette?.source ?? "manuel"} className={input}>
           <option value="manuel">Manuel</option>
           <option value="hellofresh">HelloFresh</option>
         </select>
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-green-700 px-4 py-2.5 text-white font-medium disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={primaryButton}>
         {pending ? "Enregistrement..." : recette ? "Enregistrer" : "Créer la recette"}
       </button>
     </form>

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { upsertPlacardItem, type PlacardFormState } from "@/app/actions/placard";
 import type { Tables } from "@/lib/supabase/types";
+import { card, dashedAddButton, errorText, input, label as labelClass, primaryButton, secondaryButton } from "@/lib/ui";
 
 const UNITE_LABEL: Record<string, string> = { g: "g", ml: "ml", piece: "pièce" };
 
@@ -25,11 +26,7 @@ export function AddPlacardToggle({ aliments }: { aliments: Tables<"aliments">[] 
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-full rounded-lg border border-dashed border-green-700 py-2.5 text-green-700 font-medium"
-      >
+      <button type="button" onClick={() => setOpen(true)} className={dashedAddButton}>
         + Ajouter au placard
       </button>
     );
@@ -37,15 +34,9 @@ export function AddPlacardToggle({ aliments }: { aliments: Tables<"aliments">[] 
 
   if (aliments.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 p-3">
-        <p className="text-sm text-neutral-500">
-          Ajoute d&apos;abord des aliments dans l&apos;onglet Aliments.
-        </p>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="mt-2 text-sm text-neutral-500 underline"
-        >
+      <div className={card}>
+        <p className="text-sm text-ink-2">Ajoute d&apos;abord des aliments dans l&apos;onglet Aliments.</p>
+        <button type="button" onClick={() => setOpen(false)} className="mt-2 text-sm text-ink-2 underline">
           Fermer
         </button>
       </div>
@@ -55,13 +46,9 @@ export function AddPlacardToggle({ aliments }: { aliments: Tables<"aliments">[] 
   const selected = aliments.find((a) => a.id === alimentId) ?? aliments[0];
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-3"
-    >
+    <form ref={formRef} action={formAction} className={`${card} flex flex-col gap-3`}>
       <div className="flex flex-col gap-1">
-        <label htmlFor="aliment_id" className="text-sm font-medium">
+        <label htmlFor="aliment_id" className={labelClass}>
           Aliment
         </label>
         <select
@@ -69,7 +56,7 @@ export function AddPlacardToggle({ aliments }: { aliments: Tables<"aliments">[] 
           name="aliment_id"
           value={alimentId}
           onChange={(e) => setAlimentId(e.target.value)}
-          className="rounded-lg border border-neutral-300 px-3 py-2"
+          className={input}
         >
           {aliments.map((a) => (
             <option key={a.id} value={a.id}>
@@ -80,7 +67,7 @@ export function AddPlacardToggle({ aliments }: { aliments: Tables<"aliments">[] 
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="quantite_disponible" className="text-sm font-medium">
+        <label htmlFor="quantite_disponible" className={labelClass}>
           Quantité disponible ({UNITE_LABEL[selected.unite]})
         </label>
         <input
@@ -90,41 +77,28 @@ export function AddPlacardToggle({ aliments }: { aliments: Tables<"aliments">[] 
           step="0.1"
           min="0"
           required
-          className="rounded-lg border border-neutral-300 px-3 py-2"
+          className={input}
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="date_peremption" className="text-sm font-medium">
+        <label htmlFor="date_peremption" className={labelClass}>
           Date de péremption (optionnel)
         </label>
-        <input
-          id="date_peremption"
-          name="date_peremption"
-          type="date"
-          className="rounded-lg border border-neutral-300 px-3 py-2"
-        />
+        <input id="date_peremption" name="date_peremption" type="date" className={input} />
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className={errorText} role="alert">
           {state.error}
         </p>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-green-700 px-4 py-2.5 text-white font-medium disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className={primaryButton}>
           {pending ? "Enregistrement..." : "Ajouter / mettre à jour"}
         </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-lg border border-neutral-300 px-4 py-2.5"
-        >
+        <button type="button" onClick={() => setOpen(false)} className={secondaryButton}>
           Annuler
         </button>
       </div>

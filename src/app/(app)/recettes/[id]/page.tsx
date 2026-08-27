@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/auth";
 import { RecetteHeader } from "./RecetteHeader";
+import { RecetteMacros } from "./RecetteMacros";
 import { IngredientManager } from "./IngredientManager";
+import { nutritionRecette } from "@/lib/nutrition/compute";
+import { sectionTitle } from "@/lib/ui";
 
 export default async function RecetteDetailPage({
   params,
@@ -28,16 +31,21 @@ export default async function RecetteDetailPage({
   }
 
   const isOwner = recette.user_id === user.id;
+  const perPortion = nutritionRecette(ingredients ?? [], recette.portions, 1);
 
   return (
     <div className="flex flex-col gap-6">
       <RecetteHeader recette={recette} isOwner={isOwner} />
-      <IngredientManager
-        recetteId={id}
-        isOwner={isOwner}
-        ingredients={ingredients ?? []}
-        aliments={aliments ?? []}
-      />
+      {(ingredients ?? []).length > 0 && <RecetteMacros perPortion={perPortion} />}
+      <div className="flex flex-col gap-3">
+        <h2 className={sectionTitle}>Ingrédients</h2>
+        <IngredientManager
+          recetteId={id}
+          isOwner={isOwner}
+          ingredients={ingredients ?? []}
+          aliments={aliments ?? []}
+        />
+      </div>
     </div>
   );
 }
