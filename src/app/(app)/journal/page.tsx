@@ -55,12 +55,29 @@ export default async function JournalPage({
 
   const views: JournalEntryView[] = (entries ?? []).map((entry) => {
     if (entry.aliment) {
+      const { quantite, aliment } = entry;
+      // journal_repas.quantite est toujours en grammes/ml, y compris pour un
+      // aliment "pièce" (converti avant l'insert via poids_unite_g) : on
+      // affiche donc le poids réel, avec l'équivalent en pièces en rappel.
+      const piecesEquivalent =
+        aliment.unite === "piece" && aliment.poids_unite_g
+          ? quantite / aliment.poids_unite_g
+          : null;
+      const detail =
+        piecesEquivalent !== null
+          ? `${quantite} g (≈ ${
+              Number.isInteger(piecesEquivalent)
+                ? piecesEquivalent
+                : piecesEquivalent.toFixed(1)
+            } pièce${piecesEquivalent > 1 ? "s" : ""})`
+          : `${quantite} ${aliment.unite === "ml" ? "ml" : "g"}`;
+
       return {
         id: entry.id,
         moment: entry.moment,
-        label: entry.aliment.nom,
-        detail: `${entry.quantite} ${entry.aliment.unite === "piece" ? "pièce" : entry.aliment.unite}`,
-        nutrition: nutritionAliment(entry.aliment, entry.quantite),
+        label: aliment.nom,
+        detail,
+        nutrition: nutritionAliment(aliment, quantite),
       };
     }
 
