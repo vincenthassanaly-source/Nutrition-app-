@@ -76,30 +76,48 @@ export type Database = {
           aliment_id: string | null
           created_at: string
           date: string
+          description: string | null
+          glucides_g: number | null
           id: string
+          kcal: number | null
+          lipides_g: number | null
           moment: Database["public"]["Enums"]["moment_repas"]
-          quantite: number
+          proteines_g: number | null
+          quantite: number | null
           recette_id: string | null
+          source: string
           user_id: string
         }
         Insert: {
           aliment_id?: string | null
           created_at?: string
           date?: string
+          description?: string | null
+          glucides_g?: number | null
           id?: string
+          kcal?: number | null
+          lipides_g?: number | null
           moment: Database["public"]["Enums"]["moment_repas"]
-          quantite: number
+          proteines_g?: number | null
+          quantite?: number | null
           recette_id?: string | null
+          source?: string
           user_id: string
         }
         Update: {
           aliment_id?: string | null
           created_at?: string
           date?: string
+          description?: string | null
+          glucides_g?: number | null
           id?: string
+          kcal?: number | null
+          lipides_g?: number | null
           moment?: Database["public"]["Enums"]["moment_repas"]
-          quantite?: number
+          proteines_g?: number | null
+          quantite?: number | null
           recette_id?: string | null
+          source?: string
           user_id?: string
         }
         Relationships: [

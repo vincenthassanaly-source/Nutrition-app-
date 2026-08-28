@@ -78,6 +78,54 @@ export async function addJournalEntry(
   return { error: null };
 }
 
+export async function addJournalEntryLibre(
+  _prevState: JournalFormState,
+  formData: FormData
+): Promise<JournalFormState> {
+  const user = await requireUser();
+
+  const description = String(formData.get("description") ?? "").trim();
+  const kcal = Number(formData.get("kcal"));
+  const proteines_g = Number(formData.get("proteines_g"));
+  const glucides_g = Number(formData.get("glucides_g"));
+  const lipides_g = Number(formData.get("lipides_g"));
+  const date = String(formData.get("date") ?? "").trim();
+  const moment = String(formData.get("moment") ?? "");
+  const source = String(formData.get("source") ?? "manuel");
+
+  if (!description) return { error: "Description du repas requise." };
+  if (!date) return { error: "Date requise." };
+  if (!MOMENTS.includes(moment as Enums<"moment_repas">)) {
+    return { error: "Moment du repas invalide." };
+  }
+  if (
+    [kcal, proteines_g, glucides_g, lipides_g].some((n) => Number.isNaN(n) || n < 0)
+  ) {
+    return { error: "Les valeurs nutritionnelles doivent être des nombres positifs." };
+  }
+  if (source !== "ia" && source !== "manuel") {
+    return { error: "Source invalide." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("journal_repas").insert({
+    user_id: user.id,
+    description,
+    kcal,
+    proteines_g,
+    glucides_g,
+    lipides_g,
+    source,
+    date,
+    moment: moment as Enums<"moment_repas">,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/journal");
+  return { error: null };
+}
+
 export async function removeJournalEntry(id: string) {
   await requireUser();
   const supabase = await createClient();
