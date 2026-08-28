@@ -4,7 +4,6 @@ import { requireUser } from "@/lib/supabase/auth";
 import { ObjectifForm } from "./ObjectifForm";
 import { ResumeJour } from "./ResumeJour";
 import { AddJournalEntryForm } from "./AddJournalEntryForm";
-import { AddJournalEntryLibreForm } from "./AddJournalEntryLibreForm";
 import { JournalEntriesList, type JournalEntryView } from "./JournalEntriesList";
 import {
   addNutrition,
@@ -61,36 +60,21 @@ export default async function JournalPage({
         moment: entry.moment,
         label: entry.aliment.nom,
         detail: `${entry.quantite} ${entry.aliment.unite === "piece" ? "pièce" : entry.aliment.unite}`,
-        nutrition: nutritionAliment(entry.aliment, entry.quantite!),
+        nutrition: nutritionAliment(entry.aliment, entry.quantite),
       };
     }
 
-    if (entry.recette) {
-      const recette = entry.recette;
-      return {
-        id: entry.id,
-        moment: entry.moment,
-        label: recette.nom,
-        detail: `${entry.quantite} portion${entry.quantite! > 1 ? "s" : ""}`,
-        nutrition: nutritionRecette(
-          recette.recette_ingredients,
-          recette.portions,
-          entry.quantite!
-        ),
-      };
-    }
-
+    const recette = entry.recette!;
     return {
       id: entry.id,
       moment: entry.moment,
-      label: entry.description!,
-      detail: entry.source === "ia" ? "Estimé par IA" : "Repas libre",
-      nutrition: {
-        kcal: entry.kcal!,
-        proteines: entry.proteines_g!,
-        glucides: entry.glucides_g!,
-        lipides: entry.lipides_g!,
-      },
+      label: recette.nom,
+      detail: `${entry.quantite} portion${entry.quantite > 1 ? "s" : ""}`,
+      nutrition: nutritionRecette(
+        recette.recette_ingredients,
+        recette.portions,
+        entry.quantite
+      ),
     };
   });
 
@@ -173,11 +157,6 @@ export default async function JournalPage({
       <div className="flex flex-col gap-2">
         <h2 className={sectionTitle}>Ajout rapide</h2>
         <AddJournalEntryForm date={date} aliments={aliments ?? []} recettes={recettes ?? []} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h2 className={sectionTitle}>Décrire un repas (IA)</h2>
-        <AddJournalEntryLibreForm date={date} />
       </div>
 
       <div className="flex flex-col gap-2">
