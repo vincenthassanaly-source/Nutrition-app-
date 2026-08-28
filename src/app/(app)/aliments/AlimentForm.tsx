@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import {
   createAliment,
   updateAliment,
@@ -22,6 +22,7 @@ export function AlimentForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const prevPending = useRef(pending);
+  const [unite, setUnite] = useState(aliment?.unite ?? "g");
 
   useEffect(() => {
     if (prevPending.current && !pending && !state.error) {
@@ -53,12 +54,36 @@ export function AlimentForm({
         <label htmlFor="unite" className={labelClass}>
           Unité
         </label>
-        <select id="unite" name="unite" defaultValue={aliment?.unite ?? "g"} className={input}>
+        <select
+          id="unite"
+          name="unite"
+          value={unite}
+          onChange={(e) => setUnite(e.target.value as typeof unite)}
+          className={input}
+        >
           <option value="g">grammes (g)</option>
           <option value="ml">millilitres (ml)</option>
           <option value="piece">pièce</option>
         </select>
       </div>
+
+      {unite === "piece" && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="poids_unite_g" className={labelClass}>
+            Poids moyen d&apos;une pièce (g)
+          </label>
+          <input
+            id="poids_unite_g"
+            name="poids_unite_g"
+            type="number"
+            step="1"
+            min="1"
+            placeholder="ex : 120"
+            defaultValue={aliment?.poids_unite_g ?? ""}
+            className={input}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">

@@ -21,6 +21,7 @@ type AlimentInput = {
   acides_gras_satures_100g: number | null;
   fibres_100g: number | null;
   sel_100g: number | null;
+  poids_unite_g: number | null;
 };
 
 type ParseResult =
@@ -49,6 +50,7 @@ function parseAlimentInput(formData: FormData): ParseResult {
   );
   const fibres_100g = parseOptionalNonNegative(formData, "fibres_100g");
   const sel_100g = parseOptionalNonNegative(formData, "sel_100g");
+  const poids_unite_g = parseOptionalNonNegative(formData, "poids_unite_g");
 
   if (!nom) return { ok: false, error: "Le nom est requis." };
   if (!UNITES.includes(unite as Enums<"unite_mesure">)) {
@@ -74,6 +76,12 @@ function parseAlimentInput(formData: FormData): ParseResult {
       error: "Les valeurs nutritionnelles doivent être des nombres positifs.",
     };
   }
+  if (poids_unite_g !== null && (Number.isNaN(poids_unite_g) || poids_unite_g <= 0)) {
+    return {
+      ok: false,
+      error: "Le poids moyen d'une pièce doit être un nombre positif.",
+    };
+  }
 
   return {
     ok: true,
@@ -89,6 +97,7 @@ function parseAlimentInput(formData: FormData): ParseResult {
       acides_gras_satures_100g,
       fibres_100g,
       sel_100g,
+      poids_unite_g,
     },
   };
 }

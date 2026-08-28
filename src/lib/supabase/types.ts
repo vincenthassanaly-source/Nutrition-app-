@@ -25,6 +25,7 @@ export type Database = {
           kcal_100g: number
           lipides_100g: number
           nom: string
+          poids_unite_g: number | null
           proteines_100g: number
           sel_100g: number | null
           sucres_100g: number | null
@@ -42,6 +43,7 @@ export type Database = {
           kcal_100g: number
           lipides_100g?: number
           nom: string
+          poids_unite_g?: number | null
           proteines_100g?: number
           sel_100g?: number | null
           sucres_100g?: number | null
@@ -59,6 +61,7 @@ export type Database = {
           kcal_100g?: number
           lipides_100g?: number
           nom?: string
+          poids_unite_g?: number | null
           proteines_100g?: number
           sel_100g?: number | null
           sucres_100g?: number | null
