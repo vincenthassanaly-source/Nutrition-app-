@@ -23,7 +23,7 @@ export async function signIn(
     return { error: error.message };
   }
 
-  redirect("/aliments");
+  redirect("/journal");
 }
 
 export async function signUp(
@@ -47,7 +47,7 @@ export async function signUp(
     return { error: error.message };
   }
 
-  redirect("/aliments");
+  redirect("/journal");
 }
 
 export async function signOut() {

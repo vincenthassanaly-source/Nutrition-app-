@@ -119,72 +119,6 @@ export type Database = {
           },
         ]
       }
-      listes_courses: {
-        Row: {
-          created_at: string
-          id: string
-          nom: string
-          statut: Database["public"]["Enums"]["liste_statut"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          nom?: string
-          statut?: Database["public"]["Enums"]["liste_statut"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          nom?: string
-          statut?: Database["public"]["Enums"]["liste_statut"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      listes_courses_items: {
-        Row: {
-          aliment_id: string
-          coche: boolean
-          id: string
-          liste_id: string
-          quantite_totale: number
-          unite: Database["public"]["Enums"]["unite_mesure"]
-        }
-        Insert: {
-          aliment_id: string
-          coche?: boolean
-          id?: string
-          liste_id: string
-          quantite_totale: number
-          unite: Database["public"]["Enums"]["unite_mesure"]
-        }
-        Update: {
-          aliment_id?: string
-          coche?: boolean
-          id?: string
-          liste_id?: string
-          quantite_totale?: number
-          unite?: Database["public"]["Enums"]["unite_mesure"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "listes_courses_items_aliment_id_fkey"
-            columns: ["aliment_id"]
-            isOneToOne: false
-            referencedRelation: "aliments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listes_courses_items_liste_id_fkey"
-            columns: ["liste_id"]
-            isOneToOne: false
-            referencedRelation: "listes_courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       objectifs_nutritionnels: {
         Row: {
           created_at: string
@@ -220,41 +154,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      placard: {
-        Row: {
-          aliment_id: string
-          date_peremption: string | null
-          id: string
-          quantite_disponible: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          aliment_id: string
-          date_peremption?: string | null
-          id?: string
-          quantite_disponible?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          aliment_id?: string
-          date_peremption?: string | null
-          id?: string
-          quantite_disponible?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "placard_aliment_id_fkey"
-            columns: ["aliment_id"]
-            isOneToOne: false
-            referencedRelation: "aliments"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       recette_ingredients: {
         Row: {
@@ -340,7 +239,6 @@ export type Database = {
     }
     Enums: {
       jour_type_ppl: "entrainement" | "repos"
-      liste_statut: "en_cours" | "terminee"
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
       recette_source: "manuel" | "hellofresh"
       unite_mesure: "g" | "ml" | "piece"
@@ -472,7 +370,6 @@ export const Constants = {
   public: {
     Enums: {
       jour_type_ppl: ["entrainement", "repos"],
-      liste_statut: ["en_cours", "terminee"],
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],
       recette_source: ["manuel", "hellofresh"],
       unite_mesure: ["g", "ml", "piece"],
