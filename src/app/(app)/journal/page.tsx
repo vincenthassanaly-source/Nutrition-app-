@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/auth";
 import { ObjectifForm } from "./ObjectifForm";
 import { ResumeJour } from "./ResumeJour";
-import { AddJournalEntryForm } from "./AddJournalEntryForm";
 import { JournalEntriesList, type JournalEntryView } from "./JournalEntriesList";
 import {
   addNutrition,
@@ -36,22 +35,19 @@ export default async function JournalPage({
   await requireUser();
   const supabase = await createClient();
 
-  const [{ data: objectif }, { data: entries }, { data: aliments }, { data: recettes }] =
-    await Promise.all([
-      supabase
-        .from("objectifs_nutritionnels")
-        .select("*")
-        .eq("jour_type", jourType)
-        .maybeSingle(),
-      supabase
-        .from("journal_repas")
-        .select(
-          "*, aliment:aliments(*), recette:recettes(id, nom, portions, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
-        )
-        .eq("date", date),
-      supabase.from("aliments").select("*").order("nom", { ascending: true }),
-      supabase.from("recettes").select("*").order("nom", { ascending: true }),
-    ]);
+  const [{ data: objectif }, { data: entries }] = await Promise.all([
+    supabase
+      .from("objectifs_nutritionnels")
+      .select("*")
+      .eq("jour_type", jourType)
+      .maybeSingle(),
+    supabase
+      .from("journal_repas")
+      .select(
+        "*, aliment:aliments(*), recette:recettes(id, nom, portions, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
+      )
+      .eq("date", date),
+  ]);
 
   const views: JournalEntryView[] = (entries ?? []).map((entry) => {
     if (entry.aliment) {
@@ -172,11 +168,6 @@ export default async function JournalPage({
       </div>
 
       <div className="flex flex-col gap-2">
-        <h2 className={sectionTitle}>Ajout rapide</h2>
-        <AddJournalEntryForm date={date} aliments={aliments ?? []} recettes={recettes ?? []} />
-      </div>
-
-      <div className="flex flex-col gap-2">
         <h2 className={sectionTitle}>Repas du jour</h2>
         {views.length === 0 ? (
           <div className={`${card} flex flex-col items-center gap-2.5 py-8 text-center`}>
@@ -185,10 +176,7 @@ export default async function JournalPage({
               <line x1="12" y1="19" x2="12" y2="5" />
               <line x1="19" y1="19" x2="19" y2="14" />
             </svg>
-            <p className="text-[15px] font-bold text-ink">Aucun repas enregistré</p>
-            <p className="text-[13px] leading-relaxed text-ink-2">
-              Ajoute un aliment ou une recette ci-dessus pour suivre tes macros.
-            </p>
+            <p className="text-[15px] font-bold text-ink">Aucun repas enregistré pour ce jour.</p>
           </div>
         ) : (
           <JournalEntriesList entries={views} />
