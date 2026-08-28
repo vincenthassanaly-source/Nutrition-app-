@@ -1,4 +1,4 @@
-const CACHE_NAME = "nutrition-app-shell-v1";
+const CACHE_NAME = "nutrition-app-shell-v2";
 const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -21,8 +21,13 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-first pour la navigation (pages), cache-first pour le reste des
-// requêtes same-origin. Les appels Supabase (autre origine) ne passent pas ici.
+// Network-first pour les pages ET les fetch internes du routeur Next.js (payloads
+// RSC lors d'une navigation <Link>, qui ont mode "cors" et non "navigate") : sans
+// ça, le cache-first servirait indéfiniment une version périmée d'une page après
+// qu'une entrée ait été ajoutée côté serveur (ex: Supabase directement, sans passer
+// par une Server Action de ce site). Cache-first réservé aux vrais assets statiques
+// versionnés par build (_next/static) et aux icônes. Les appels Supabase (autre
+// origine) ne passent pas ici.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -30,7 +35,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === "navigate") {
+  const isStaticAsset =
+    url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/");
+
+  if (!isStaticAsset) {
     event.respondWith(
       fetch(request).catch(() => caches.match(request).then((r) => r || caches.match("/")))
     );
