@@ -47,13 +47,13 @@
       <rect x="16" y="16" width="480" height="480" rx="172" ry="172"/>
     </clipPath>
 
-    <path id="letterN" d="
+    <path id="letterK" d="
       M146,140 L206,140 L206,372 L146,372 Z
-      M306,140 L366,140 L366,372 L306,372 Z
-      M146,140 L206,140 L366,372 L306,372 Z
+      M206,256 L266,256 L366,140 L306,140 Z
+      M206,256 L266,256 L366,372 L306,372 Z
     "/>
     <clipPath id="letterClip">
-      <use href="#letterN"/>
+      <use href="#letterK"/>
     </clipPath>
 
     <filter id="softBlur" x="-40%" y="-40%" width="180%" height="180%">
@@ -76,13 +76,13 @@
   </g>
 
   <!-- Letter dark contour (bezel outline separating metal from face) -->
-  <use href="#letterN" fill="none" stroke="#02160e" stroke-width="6" stroke-opacity="0.55" filter="url(#tightBlur)"/>
+  <use href="#letterK" fill="none" stroke="#02160e" stroke-width="6" stroke-opacity="0.55" filter="url(#tightBlur)"/>
 
   <!-- Letter drop shadow (relief) -->
-  <use href="#letterN" x="0" y="6" fill="#011a10" opacity="0.4" filter="url(#softBlur)"/>
+  <use href="#letterK" x="0" y="6" fill="#011a10" opacity="0.4" filter="url(#softBlur)"/>
 
   <!-- Letter body: chrome radial -->
-  <use href="#letterN" fill="url(#metalGrad)"/>
+  <use href="#letterK" fill="url(#metalGrad)"/>
 
   <!-- Letter specular highlight -->
   <g clip-path="url(#letterClip)">
@@ -90,5 +90,5 @@
   </g>
 
   <!-- Fine top-left edge highlight for bevel feel -->
-  <use href="#letterN" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="1"/>
+  <use href="#letterK" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="1"/>
 </svg>

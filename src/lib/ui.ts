@@ -1,4 +1,4 @@
-// Shared Tailwind class fragments for the "Nutricio — mobile" design system.
+// Shared Tailwind class fragments for the "Kilio — mobile" design system.
 // Keeps cards/buttons/inputs visually consistent across screens.
 
 export const card = "rounded-2xl border border-line bg-surface p-4 shadow-card";
