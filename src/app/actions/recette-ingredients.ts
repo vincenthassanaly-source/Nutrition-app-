@@ -36,7 +36,7 @@ export async function addIngredient(
     return { error: error.message };
   }
 
-  revalidatePath(`/recettes/${recette_id}`);
+  revalidatePath(`/nutrition/recettes/${recette_id}`);
   return { error: null };
 }
 
@@ -60,7 +60,7 @@ export async function updateIngredient(
     throw new Error("Modification impossible : cette recette est partagée et non modifiable.");
   }
 
-  revalidatePath(`/recettes/${recette_id}`);
+  revalidatePath(`/nutrition/recettes/${recette_id}`);
 }
 
 export async function removeIngredient(id: string, recette_id: string) {
@@ -75,5 +75,5 @@ export async function removeIngredient(id: string, recette_id: string) {
     throw new Error("Suppression impossible : cette recette est partagée et non modifiable.");
   }
 
-  revalidatePath(`/recettes/${recette_id}`);
+  revalidatePath(`/nutrition/recettes/${recette_id}`);
 }
