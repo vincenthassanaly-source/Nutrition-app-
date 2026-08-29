@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { AppResumeRefresh } from "@/components/AppResumeRefresh";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-background text-ink font-sans">
         {children}
         <ServiceWorkerRegister />
+        <AppResumeRefresh />
       </body>
     </html>
   );
