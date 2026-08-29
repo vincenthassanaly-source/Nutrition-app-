@@ -43,6 +43,6 @@ export async function upsertObjectif(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/journal");
+  revalidatePath("/nutrition/journal");
   return { error: null };
 }

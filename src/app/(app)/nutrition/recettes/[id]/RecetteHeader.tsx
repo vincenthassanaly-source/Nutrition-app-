@@ -34,7 +34,7 @@ export function RecetteHeader({
 
   return (
     <div className="flex flex-col gap-2">
-      <Link href="/recettes" className={linkButton}>
+      <Link href="/nutrition/recettes" className={linkButton}>
         ‹ Recettes
       </Link>
       <div className="flex items-start justify-between gap-3">

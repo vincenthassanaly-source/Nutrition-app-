@@ -72,8 +72,8 @@ export async function createRecette(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/recettes");
-  redirect(`/recettes/${data.id}`);
+  revalidatePath("/nutrition/recettes");
+  redirect(`/nutrition/recettes/${data.id}`);
 }
 
 export async function updateRecette(
@@ -99,8 +99,8 @@ export async function updateRecette(
     };
   }
 
-  revalidatePath("/recettes");
-  revalidatePath(`/recettes/${id}`);
+  revalidatePath("/nutrition/recettes");
+  revalidatePath(`/nutrition/recettes/${id}`);
   return { error: null };
 }
 
@@ -116,6 +116,6 @@ export async function deleteRecette(id: string) {
     throw new Error("Suppression impossible : cette recette est partagée et non modifiable.");
   }
 
-  revalidatePath("/recettes");
-  redirect("/recettes");
+  revalidatePath("/nutrition/recettes");
+  redirect("/nutrition/recettes");
 }

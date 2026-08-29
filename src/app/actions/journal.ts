@@ -70,7 +70,7 @@ export async function addJournalEntry(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/journal");
+  revalidatePath("/nutrition/journal");
   return { error: null };
 }
 
@@ -80,5 +80,5 @@ export async function removeJournalEntry(id: string) {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/journal");
+  revalidatePath("/nutrition/journal");
 }

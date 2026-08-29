@@ -43,7 +43,7 @@ export function RecettesList({
         <ul className="flex flex-col gap-2.5">
           {filtered.map((recette) => (
             <li key={recette.id}>
-              <Link href={`/recettes/${recette.id}`} className={listCard}>
+              <Link href={`/nutrition/recettes/${recette.id}`} className={listCard}>
                 <div className="flex items-center justify-between gap-2">
                   <p className={nameText}>{recette.nom}</p>
                   <span className={kcalPillTag}>{recette.kcalParPortion} kcal/portion</span>

@@ -11,6 +11,7 @@ import {
 } from "@/lib/nutrition/compute";
 import type { Enums } from "@/lib/supabase/types";
 import { card, eyebrow, screenTitle, sectionTitle } from "@/lib/ui";
+import { NutritionSubNav } from "@/components/NutritionSubNav";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -107,6 +108,7 @@ export default async function JournalPage({
 
   return (
     <div className="flex flex-col gap-5">
+      <NutritionSubNav />
       <div className="flex items-center justify-between">
         <div>
           <p className={`${eyebrow} capitalize`}>{dateLabel}</p>
@@ -114,14 +116,14 @@ export default async function JournalPage({
         </div>
         <div className="flex gap-1.5">
           <Link
-            href={`/journal?date=${shiftDate(date, -1)}&jour=${jourType}`}
+            href={`/nutrition/journal?date=${shiftDate(date, -1)}&jour=${jourType}`}
             aria-label="Jour précédent"
             className="flex h-[34px] w-[34px] items-center justify-center rounded-xl border border-line bg-surface text-base text-ink"
           >
             ‹
           </Link>
           <Link
-            href={`/journal?date=${shiftDate(date, 1)}&jour=${jourType}`}
+            href={`/nutrition/journal?date=${shiftDate(date, 1)}&jour=${jourType}`}
             aria-label="Jour suivant"
             className="flex h-[34px] w-[34px] items-center justify-center rounded-xl border border-line bg-surface text-base text-ink"
           >
@@ -132,7 +134,7 @@ export default async function JournalPage({
 
       <div className="flex gap-1 rounded-xl bg-surface-alt p-1">
         <Link
-          href={`/journal?date=${date}&jour=repos`}
+          href={`/nutrition/journal?date=${date}&jour=repos`}
           className="flex-1 rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
           style={
             jourType === "repos"
@@ -143,7 +145,7 @@ export default async function JournalPage({
           Repos
         </Link>
         <Link
-          href={`/journal?date=${date}&jour=entrainement`}
+          href={`/nutrition/journal?date=${date}&jour=entrainement`}
           className="flex-1 rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
           style={
             jourType === "entrainement"
