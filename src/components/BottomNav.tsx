@@ -26,6 +26,16 @@ const ITEMS: { href: string; label: string; icon: (color: string) => ReactNode }
       </svg>
     ),
   },
+  {
+    href: "/notes",
+    label: "Notes",
+    icon: (c) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 3.5h9l3 3V19a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5z" />
+        <path d="M9 9.5h6M9 13h6M9 16.5h3.5" />
+      </svg>
+    ),
+  },
 ];
 
 export function BottomNav() {
