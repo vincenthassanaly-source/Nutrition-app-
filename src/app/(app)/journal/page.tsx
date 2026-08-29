@@ -22,6 +22,12 @@ function shiftDate(date: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+// La page est déjà rendue dynamiquement (l'usage de `searchParams` est une
+// API de requête qui force ça), mais on le rend explicite : les entrées sont
+// désormais ajoutées quasi exclusivement en écriture directe en base (hors
+// Server Action), donc rien ne doit jamais mettre cette route en cache.
+export const dynamic = "force-dynamic";
+
 export default async function JournalPage({
   searchParams,
 }: {
