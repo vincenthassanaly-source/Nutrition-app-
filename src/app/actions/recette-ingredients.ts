@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/auth";
 import type { Enums } from "@/lib/supabase/types";
 
 export type IngredientFormState = { error: string | null };
@@ -11,8 +10,6 @@ export async function addIngredient(
   _prevState: IngredientFormState,
   formData: FormData
 ): Promise<IngredientFormState> {
-  await requireUser();
-
   const recette_id = String(formData.get("recette_id") ?? "");
   const aliment_id = String(formData.get("aliment_id") ?? "");
   const unite = String(formData.get("unite") ?? "") as Enums<"unite_mesure">;
@@ -48,7 +45,6 @@ export async function updateIngredient(
   recette_id: string,
   quantite: number
 ) {
-  await requireUser();
   if (!Number.isFinite(quantite) || quantite <= 0) {
     throw new Error("La quantité doit être un nombre positif.");
   }
@@ -68,7 +64,6 @@ export async function updateIngredient(
 }
 
 export async function removeIngredient(id: string, recette_id: string) {
-  await requireUser();
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("recette_ingredients")

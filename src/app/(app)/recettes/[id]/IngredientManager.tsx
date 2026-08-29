@@ -19,11 +19,9 @@ type IngredientRow = Tables<"recette_ingredients"> & {
 function IngredientLine({
   ingredient,
   recetteId,
-  isOwner,
 }: {
   ingredient: IngredientRow;
   recetteId: string;
-  isOwner: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [quantite, setQuantite] = useState(String(ingredient.quantite));
@@ -53,66 +51,64 @@ function IngredientLine({
         )}
         {error && <p className={errorText}>{error}</p>}
       </div>
-      {isOwner && (
-        <div className="flex shrink-0 gap-2">
-          {editing ? (
-            <>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => {
-                  setError(null);
-                  const n = Number(quantite);
-                  startTransition(async () => {
-                    try {
-                      await updateIngredient(ingredient.id, recetteId, n);
-                      setEditing(false);
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : "Erreur inconnue.");
-                    }
-                  });
-                }}
-                className={ghostButton}
-              >
-                OK
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuantite(String(ingredient.quantite));
-                  setEditing(false);
-                }}
-                className={ghostButton}
-              >
-                Annuler
-              </button>
-            </>
-          ) : (
-            <>
-              <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
-                Éditer
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => {
-                  setError(null);
-                  startTransition(async () => {
-                    try {
-                      await removeIngredient(ingredient.id, recetteId);
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : "Erreur inconnue.");
-                    }
-                  });
-                }}
-                className={dangerButton}
-              >
-                Suppr.
-              </button>
-            </>
-          )}
-        </div>
-      )}
+      <div className="flex shrink-0 gap-2">
+        {editing ? (
+          <>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => {
+                setError(null);
+                const n = Number(quantite);
+                startTransition(async () => {
+                  try {
+                    await updateIngredient(ingredient.id, recetteId, n);
+                    setEditing(false);
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Erreur inconnue.");
+                  }
+                });
+              }}
+              className={ghostButton}
+            >
+              OK
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setQuantite(String(ingredient.quantite));
+                setEditing(false);
+              }}
+              className={ghostButton}
+            >
+              Annuler
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+              Éditer
+            </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => {
+                setError(null);
+                startTransition(async () => {
+                  try {
+                    await removeIngredient(ingredient.id, recetteId);
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Erreur inconnue.");
+                  }
+                });
+              }}
+              className={dangerButton}
+            >
+              Suppr.
+            </button>
+          </>
+        )}
+      </div>
     </li>
   );
 }
@@ -193,12 +189,10 @@ function AddIngredientForm({
 
 export function IngredientManager({
   recetteId,
-  isOwner,
   ingredients,
   aliments,
 }: {
   recetteId: string;
-  isOwner: boolean;
   ingredients: IngredientRow[];
   aliments: Tables<"aliments">[];
 }) {
@@ -209,12 +203,12 @@ export function IngredientManager({
       ) : (
         <ul className="flex flex-col gap-2.5">
           {ingredients.map((ing) => (
-            <IngredientLine key={ing.id} ingredient={ing} recetteId={recetteId} isOwner={isOwner} />
+            <IngredientLine key={ing.id} ingredient={ing} recetteId={recetteId} />
           ))}
         </ul>
       )}
 
-      {isOwner && <AddIngredientForm recetteId={recetteId} aliments={aliments} />}
+      <AddIngredientForm recetteId={recetteId} aliments={aliments} />
     </div>
   );
 }

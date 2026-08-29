@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/auth";
 import type { Enums } from "@/lib/supabase/types";
 
 export type RecetteFormState = { error: string | null };
@@ -61,14 +60,13 @@ export async function createRecette(
   _prevState: RecetteFormState,
   formData: FormData
 ): Promise<RecetteFormState> {
-  const user = await requireUser();
   const parsed = parseRecetteInput(formData);
   if (!parsed.ok) return { error: parsed.error };
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("recettes")
-    .insert({ ...parsed.value, user_id: user.id })
+    .insert(parsed.value)
     .select("id")
     .single();
 
@@ -82,7 +80,6 @@ export async function updateRecette(
   _prevState: RecetteFormState,
   formData: FormData
 ): Promise<RecetteFormState> {
-  await requireUser();
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "Recette introuvable." };
 
@@ -108,7 +105,6 @@ export async function updateRecette(
 }
 
 export async function deleteRecette(id: string) {
-  await requireUser();
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("recettes")

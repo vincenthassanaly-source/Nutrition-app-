@@ -31,7 +31,6 @@ export type Database = {
           sucres_100g: number | null
           unite: Database["public"]["Enums"]["unite_mesure"]
           updated_at: string
-          user_id: string | null
         }
         Insert: {
           acides_gras_satures_100g?: number | null
@@ -49,7 +48,6 @@ export type Database = {
           sucres_100g?: number | null
           unite?: Database["public"]["Enums"]["unite_mesure"]
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
           acides_gras_satures_100g?: number | null
@@ -67,7 +65,6 @@ export type Database = {
           sucres_100g?: number | null
           unite?: Database["public"]["Enums"]["unite_mesure"]
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -80,7 +77,6 @@ export type Database = {
           moment: Database["public"]["Enums"]["moment_repas"]
           quantite: number
           recette_id: string | null
-          user_id: string
         }
         Insert: {
           aliment_id?: string | null
@@ -90,7 +86,6 @@ export type Database = {
           moment: Database["public"]["Enums"]["moment_repas"]
           quantite: number
           recette_id?: string | null
-          user_id: string
         }
         Update: {
           aliment_id?: string | null
@@ -100,7 +95,6 @@ export type Database = {
           moment?: Database["public"]["Enums"]["moment_repas"]
           quantite?: number
           recette_id?: string | null
-          user_id?: string
         }
         Relationships: [
           {
@@ -129,7 +123,6 @@ export type Database = {
           lipides_cible_g: number
           proteines_cible_g: number
           updated_at: string
-          user_id: string
         }
         Insert: {
           created_at?: string
@@ -140,7 +133,6 @@ export type Database = {
           lipides_cible_g?: number
           proteines_cible_g?: number
           updated_at?: string
-          user_id: string
         }
         Update: {
           created_at?: string
@@ -151,7 +143,6 @@ export type Database = {
           lipides_cible_g?: number
           proteines_cible_g?: number
           updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -204,7 +195,6 @@ export type Database = {
           source: Database["public"]["Enums"]["recette_source"]
           temps_prepa_min: number | null
           updated_at: string
-          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -215,7 +205,6 @@ export type Database = {
           source?: Database["public"]["Enums"]["recette_source"]
           temps_prepa_min?: number | null
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -226,7 +215,6 @@ export type Database = {
           source?: Database["public"]["Enums"]["recette_source"]
           temps_prepa_min?: number | null
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: []
       }

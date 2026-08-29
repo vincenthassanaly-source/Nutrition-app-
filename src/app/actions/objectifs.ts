@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/auth";
 import type { Enums } from "@/lib/supabase/types";
 
 export type ObjectifFormState = { error: string | null };
@@ -13,8 +12,6 @@ export async function upsertObjectif(
   _prevState: ObjectifFormState,
   formData: FormData
 ): Promise<ObjectifFormState> {
-  const user = await requireUser();
-
   const jour_type = String(formData.get("jour_type") ?? "");
   const kcal_cible = Number(formData.get("kcal_cible"));
   const proteines_cible_g = Number(formData.get("proteines_cible_g") ?? 0);
@@ -35,14 +32,13 @@ export async function upsertObjectif(
   const supabase = await createClient();
   const { error } = await supabase.from("objectifs_nutritionnels").upsert(
     {
-      user_id: user.id,
       jour_type: jour_type as Enums<"jour_type_ppl">,
       kcal_cible,
       proteines_cible_g,
       glucides_cible_g,
       lipides_cible_g,
     },
-    { onConflict: "user_id,jour_type" }
+    { onConflict: "jour_type" }
   );
 
   if (error) return { error: error.message };

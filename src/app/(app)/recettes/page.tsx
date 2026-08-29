@@ -1,12 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/supabase/auth";
 import { AddRecetteToggle } from "./AddRecetteToggle";
 import { RecettesList } from "./RecettesList";
 import { nutritionRecette } from "@/lib/nutrition/compute";
 import { errorText, screenTitle } from "@/lib/ui";
 
 export default async function RecettesPage() {
-  const user = await requireUser();
   const supabase = await createClient();
 
   const { data: recettes, error } = await supabase
@@ -34,7 +32,7 @@ export default async function RecettesPage() {
     <div className="flex flex-col gap-4">
       <h1 className={screenTitle}>Recettes</h1>
       <AddRecetteToggle />
-      <RecettesList recettes={views} userId={user.id} />
+      <RecettesList recettes={views} />
     </div>
   );
 }

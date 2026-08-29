@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { RecetteForm } from "../RecetteForm";
 import { deleteRecette } from "@/app/actions/recettes";
 import type { Tables } from "@/lib/supabase/types";
-import { card, dangerButton, errorText, ghostButton, linkButton, pillTag } from "@/lib/ui";
+import { card, dangerButton, errorText, ghostButton, linkButton } from "@/lib/ui";
 
 const SOURCE_LABEL: Record<string, string> = {
   manuel: "Manuel",
@@ -14,10 +14,8 @@ const SOURCE_LABEL: Record<string, string> = {
 
 export function RecetteHeader({
   recette,
-  isOwner,
 }: {
   recette: Tables<"recettes">;
-  isOwner: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -43,7 +41,6 @@ export function RecetteHeader({
         <div className="min-w-0">
           <h1 className="mt-1 truncate font-display text-[22px] font-semibold text-ink">
             {recette.nom}
-            {!isOwner && <span className={`ml-2 align-middle ${pillTag}`}>partagé</span>}
           </h1>
           <p className="text-[13px] text-ink-2">
             {SOURCE_LABEL[recette.source]}
@@ -52,30 +49,28 @@ export function RecetteHeader({
             {recette.portions} portion{recette.portions > 1 ? "s" : ""}
           </p>
         </div>
-        {isOwner && (
-          <div className="flex shrink-0 gap-2">
-            <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
-              Éditer
-            </button>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => {
-                setError(null);
-                startTransition(async () => {
-                  try {
-                    await deleteRecette(recette.id);
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : "Erreur inconnue.");
-                  }
-                });
-              }}
-              className={dangerButton}
-            >
-              Suppr.
-            </button>
-          </div>
-        )}
+        <div className="flex shrink-0 gap-2">
+          <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+            Éditer
+          </button>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => {
+              setError(null);
+              startTransition(async () => {
+                try {
+                  await deleteRecette(recette.id);
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : "Erreur inconnue.");
+                }
+              });
+            }}
+            className={dangerButton}
+          >
+            Suppr.
+          </button>
+        </div>
       </div>
       {recette.description && <p className="text-sm text-ink">{recette.description}</p>}
       {error && <p className={errorText}>{error}</p>}

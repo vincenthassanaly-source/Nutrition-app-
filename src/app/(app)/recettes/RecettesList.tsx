@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Tables } from "@/lib/supabase/types";
-import { input, kcalPillTag, listCard, metaText, nameText, pillTag } from "@/lib/ui";
+import { input, kcalPillTag, listCard, metaText, nameText } from "@/lib/ui";
 
 const SOURCE_LABEL: Record<string, string> = {
   manuel: "Manuel",
@@ -14,10 +14,8 @@ type RecetteView = Tables<"recettes"> & { kcalParPortion: number };
 
 export function RecettesList({
   recettes,
-  userId,
 }: {
   recettes: RecetteView[];
-  userId: string;
 }) {
   const [search, setSearch] = useState("");
 
@@ -47,10 +45,7 @@ export function RecettesList({
             <li key={recette.id}>
               <Link href={`/recettes/${recette.id}`} className={listCard}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className={nameText}>
-                    {recette.nom}
-                    {recette.user_id !== userId && <span className={`ml-2 align-middle ${pillTag}`}>partagé</span>}
-                  </p>
+                  <p className={nameText}>{recette.nom}</p>
                   <span className={kcalPillTag}>{recette.kcalParPortion} kcal/portion</span>
                 </div>
                 <p className={metaText}>
