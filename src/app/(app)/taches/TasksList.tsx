@@ -14,6 +14,7 @@ import {
 import { AddTaskForm } from "./AddTaskForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, nameText, pillTag } from "@/lib/ui";
+import { CheckToggle } from "@/components/CheckToggle";
 
 export function formatEcheance(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
@@ -65,14 +66,12 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
         <ul className="flex flex-col gap-1">
           {tache.sous_taches.map((sousTache, index) => (
             <li key={sousTache.id} className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <CheckToggle
                 checked={sousTache.fait}
                 disabled={isPending}
-                onChange={() =>
-                  startTransition(() => toggleSousTache(sousTache.id, !sousTache.fait))
-                }
-                className="h-4 w-4 shrink-0 accent-kcal"
+                onToggle={() => startTransition(() => toggleSousTache(sousTache.id, !sousTache.fait))}
+                size={17}
+                label={sousTache.fait ? "Marquer non fait" : "Marquer fait"}
               />
               <span
                 className={`flex-1 text-[13.5px] ${
@@ -168,12 +167,12 @@ export function TaskCard({
   return (
     <li className={listCard}>
       <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
+        <CheckToggle
           checked={tache.fait}
           disabled={isPending}
-          onChange={() => startTransition(() => toggleTache(tache.id))}
-          className="mt-0.5 h-5 w-5 shrink-0 accent-kcal"
+          onToggle={() => startTransition(() => toggleTache(tache.id))}
+          className="mt-0.5"
+          label={tache.fait ? "Marquer non fait" : "Marquer fait"}
         />
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between gap-2">

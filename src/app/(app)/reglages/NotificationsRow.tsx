@@ -1,28 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-const NOTIFS_STORAGE_KEY = "kilio-notifs";
-
+// Pas de backend de notifications pour l'instant : préférence locale à la
+// session, pas persistée (rien à synchroniser côté serveur).
 export function NotificationsRow() {
   const [on, setOn] = useState(true);
-
-  useEffect(() => {
-    setOn(localStorage.getItem(NOTIFS_STORAGE_KEY) !== "off");
-  }, []);
-
-  function toggle() {
-    const next = !on;
-    setOn(next);
-    localStorage.setItem(NOTIFS_STORAGE_KEY, next ? "on" : "off");
-  }
 
   return (
     <div className="flex items-center justify-between border-t border-line py-3.5">
       <span className="text-[14px] font-medium text-ink">Notifications</span>
       <button
         type="button"
-        onClick={toggle}
+        onClick={() => setOn((v) => !v)}
         aria-pressed={on}
         className="relative h-[26px] w-11 rounded-full transition-colors"
         style={{ background: on ? "var(--accent-kcal)" : "var(--surface-alt)" }}

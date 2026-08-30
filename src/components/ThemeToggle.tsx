@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 
 function SunIcon() {
@@ -20,30 +19,31 @@ function MoonIcon() {
   );
 }
 
+function toggleTheme() {
+  const next = !document.documentElement.classList.contains("dark");
+  document.documentElement.classList.toggle("dark", next);
+  localStorage.setItem(THEME_STORAGE_KEY, next ? "dark" : "light");
+}
+
 /** Bouton rond pour basculer clair/sombre. Persisté en localStorage, appliqué
- * via la classe `dark` sur <html> (voir lib/theme.ts pour le script anti-flash). */
+ * via la classe `dark` sur <html> (voir lib/theme.ts pour le script anti-flash).
+ * Les deux icônes sont rendues côté serveur, la classe `dark:` choisit
+ * laquelle afficher : pas d'état React, donc pas de flash ni de mismatch
+ * d'hydratation. */
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [isDark, setIsDark] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  function toggle() {
-    const next = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem(THEME_STORAGE_KEY, next ? "dark" : "light");
-    setIsDark(next);
-  }
-
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={toggleTheme}
       aria-label="Basculer le thème clair/sombre"
       className={`flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card ${className}`}
     >
-      {isDark === null ? null : isDark ? <MoonIcon /> : <SunIcon />}
+      <span className="dark:hidden">
+        <SunIcon />
+      </span>
+      <span className="hidden dark:block">
+        <MoonIcon />
+      </span>
     </button>
   );
 }

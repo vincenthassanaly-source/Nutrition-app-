@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { deleteCourseItem, toggleCourseItem } from "@/app/actions/courses";
 import type { Tables } from "@/lib/supabase/types";
 import { dangerButton, listCard, nameText } from "@/lib/ui";
+import { CheckToggle } from "@/components/CheckToggle";
 
 function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
   const [isPending, startTransition] = useTransition();
@@ -11,12 +12,12 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
   return (
     <li className={listCard}>
       <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
+        <CheckToggle
           checked={item.coche}
           disabled={isPending}
-          onChange={() => startTransition(() => toggleCourseItem(item.id, !item.coche))}
-          className="h-5 w-5 shrink-0 accent-courses"
+          onToggle={() => startTransition(() => toggleCourseItem(item.id, !item.coche))}
+          color="var(--accent-courses)"
+          label={item.coche ? "Décocher l'article" : "Cocher l'article"}
         />
         <p className={`flex-1 ${nameText} ${item.coche ? "text-ink-2 line-through" : ""}`}>
           {item.libelle}

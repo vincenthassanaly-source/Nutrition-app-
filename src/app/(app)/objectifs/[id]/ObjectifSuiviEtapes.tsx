@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/objectifs";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, input, sectionTitle } from "@/lib/ui";
+import { CheckToggle } from "@/components/CheckToggle";
 
 export function ObjectifSuiviEtapes({
   objectifId,
@@ -48,12 +49,12 @@ export function ObjectifSuiviEtapes({
         <ul className="flex flex-col gap-2">
           {etapes.map((etape, index) => (
             <li key={etape.id} className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <CheckToggle
                 checked={etape.fait}
                 disabled={isPending}
-                onChange={() => startTransition(() => toggleEtape(objectifId, etape.id, !etape.fait))}
-                className="h-5 w-5 shrink-0 accent-kcal"
+                onToggle={() => startTransition(() => toggleEtape(objectifId, etape.id, !etape.fait))}
+                color="var(--accent-objectifs)"
+                label={etape.fait ? "Marquer non fait" : "Marquer fait"}
               />
               <span className={`flex-1 text-[14.5px] text-ink ${etape.fait ? "text-ink-2 line-through" : ""}`}>
                 {etape.titre}

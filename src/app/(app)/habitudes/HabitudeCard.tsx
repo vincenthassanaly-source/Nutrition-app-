@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { enregistrerEntreeHabitude, supprimerHabitude, type HabitudeDuJour } from "@/app/actions/habitudes";
 import { HabitudeForm } from "./HabitudeForm";
+import { ProgressRing } from "@/components/ProgressRing";
 import { card, dangerButton, ghostButton, input, listCard, metaText, nameText, pillTag } from "@/lib/ui";
 
 export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; date: string }) {
@@ -27,9 +28,10 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
     );
   }
 
-  const fait = (habitude.entreeDuJour?.valeur ?? 0) > 0;
-  const atteint =
-    habitude.valeur_cible != null && (habitude.entreeDuJour?.valeur ?? 0) >= habitude.valeur_cible;
+  const valeur = habitude.entreeDuJour?.valeur ?? 0;
+  const fait = valeur > 0;
+  const atteint = habitude.valeur_cible != null && valeur >= habitude.valeur_cible;
+  const pct = habitude.type === "quantifiee" && habitude.valeur_cible ? valeur / habitude.valeur_cible : fait ? 1 : 0;
 
   function toggleFait() {
     startTransition(() => enregistrerEntreeHabitude(habitude.id, date, fait ? 0 : 1));
@@ -44,15 +46,25 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
   return (
     <li className={listCard}>
       <div className="flex items-start gap-3">
-        {habitude.type !== "quantifiee" && (
-          <input
-            type="checkbox"
-            checked={fait}
-            disabled={isPending}
-            onChange={toggleFait}
-            className="mt-0.5 h-5 w-5 shrink-0 accent-habitudes"
-          />
-        )}
+        <ProgressRing size={34} strokeWidth={4} pct={pct} color="var(--accent-habitudes)">
+          {habitude.type !== "quantifiee" && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={toggleFait}
+              aria-label={fait ? "Marquer non fait" : "Marquer fait"}
+              className="flex h-full w-full items-center justify-center"
+            >
+              {fait ? (
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                  <path d="M1 6l3.2 3.2L11 2" stroke="var(--accent-habitudes)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <span className="text-sm">{habitude.icone || ""}</span>
+              )}
+            </button>
+          )}
+        </ProgressRing>
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between gap-2">
             <p className={nameText}>

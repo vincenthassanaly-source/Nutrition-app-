@@ -138,26 +138,20 @@ export default async function JournalPage({
         </div>
       </div>
 
-      <div className="flex gap-1 rounded-xl bg-surface-alt p-1">
+      <div className="flex gap-1.5 rounded-2xl bg-surface-alt p-1">
         <Link
           href={`/nutrition/journal?date=${date}&jour=repos`}
-          className="flex-1 rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
-          style={
-            jourType === "repos"
-              ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 1px 3px oklch(0.2 0.02 255 / 0.1)" }
-              : { color: "var(--ink-2)" }
-          }
+          className={`flex-1 rounded-xl py-2 text-center text-[13.5px] font-semibold transition-colors ${
+            jourType === "repos" ? "bg-kcal text-white" : "text-ink-2"
+          }`}
         >
           Repos
         </Link>
         <Link
           href={`/nutrition/journal?date=${date}&jour=entrainement`}
-          className="flex-1 rounded-lg py-2 text-center text-[13.5px] font-semibold transition-colors"
-          style={
-            jourType === "entrainement"
-              ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 1px 3px oklch(0.2 0.02 255 / 0.1)" }
-              : { color: "var(--ink-2)" }
-          }
+          className={`flex-1 rounded-xl py-2 text-center text-[13.5px] font-semibold transition-colors ${
+            jourType === "entrainement" ? "bg-kcal text-white" : "text-ink-2"
+          }`}
         >
           Entraînement
         </Link>
