@@ -2,16 +2,16 @@
   <defs>
     <!-- Dark bezel rim (visible border ring around the squircle face) -->
     <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a4a35"/>
+      <stop offset="0%" stop-color="#111C10"/>
       <stop offset="100%" stop-color="#011a10"/>
     </linearGradient>
 
     <!-- Main glossy face: light top-left to deep forest bottom-right -->
     <linearGradient id="bgGrad" x1="10%" y1="5%" x2="95%" y2="100%">
-      <stop offset="0%" stop-color="#7bf0c4"/>
-      <stop offset="30%" stop-color="#22c58f"/>
-      <stop offset="62%" stop-color="#0e9468"/>
-      <stop offset="100%" stop-color="#053e2c"/>
+      <stop offset="0%" stop-color="#5A7A4E"/>
+      <stop offset="30%" stop-color="#3D5A32"/>
+      <stop offset="62%" stop-color="#2B4023"/>
+      <stop offset="100%" stop-color="#111C10"/>
     </linearGradient>
 
     <radialGradient id="vignette" cx="72%" cy="88%" r="75%">
