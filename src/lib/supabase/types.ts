@@ -68,6 +68,77 @@ export type Database = {
         }
         Relationships: []
       }
+      habitude_entries: {
+        Row: {
+          created_at: string
+          date: string
+          habitude_id: string
+          id: string
+          valeur: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          habitude_id: string
+          id?: string
+          valeur?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          habitude_id?: string
+          id?: string
+          valeur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habitude_entries_habitude_id_fkey"
+            columns: ["habitude_id"]
+            isOneToOne: false
+            referencedRelation: "habitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habitudes: {
+        Row: {
+          actif: boolean
+          created_at: string
+          icone: string | null
+          id: string
+          nom: string
+          ordre: number
+          type: Database["public"]["Enums"]["habitude_type"]
+          unite: string | null
+          updated_at: string
+          valeur_cible: number | null
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nom: string
+          ordre?: number
+          type?: Database["public"]["Enums"]["habitude_type"]
+          unite?: string | null
+          updated_at?: string
+          valeur_cible?: number | null
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nom?: string
+          ordre?: number
+          type?: Database["public"]["Enums"]["habitude_type"]
+          unite?: string | null
+          updated_at?: string
+          valeur_cible?: number | null
+        }
+        Relationships: []
+      }
       journal_repas: {
         Row: {
           aliment_id: string | null
@@ -280,6 +351,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      habitude_type: "boolean" | "streak" | "quantifiee"
       jour_type_ppl: "entrainement" | "repos"
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
       recette_source: "manuel" | "hellofresh"
@@ -411,6 +483,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      habitude_type: ["boolean", "streak", "quantifiee"],
       jour_type_ppl: ["entrainement", "repos"],
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],
       recette_source: ["manuel", "hellofresh"],

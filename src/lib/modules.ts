@@ -62,4 +62,18 @@ export const MODULES: AppModule[] = [
         createElement("path", { d: "M8 3v3M16 3v3" })
       ),
   },
+  {
+    href: "/habitudes",
+    label: "Habitudes",
+    description: "Suivi quotidien et streaks",
+    accentVar: "var(--accent-habitudes)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("path", {
+          d: "M12 3.5c1.2 2.6-.4 3.9-1.4 5-1.3 1.4-1.9 2.7-1.9 4.2a5.3 5.3 0 0 0 10.6 0c0-1.9-1-3.4-2.1-4.5.2 1.6-.5 2.3-1.2 2.3-1 0-1.4-.9-1.1-2 .4-1.5.4-3.2-2.9-5z",
+        })
+      ),
+  },
 ];
