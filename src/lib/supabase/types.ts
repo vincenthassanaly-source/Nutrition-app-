@@ -68,6 +68,30 @@ export type Database = {
         }
         Relationships: []
       }
+      courses_items: {
+        Row: {
+          coche: boolean
+          created_at: string
+          id: string
+          libelle: string
+          updated_at: string
+        }
+        Insert: {
+          coche?: boolean
+          created_at?: string
+          id?: string
+          libelle: string
+          updated_at?: string
+        }
+        Update: {
+          coche?: boolean
+          created_at?: string
+          id?: string
+          libelle?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       habitude_entries: {
         Row: {
           created_at: string

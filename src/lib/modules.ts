@@ -63,6 +63,19 @@ export const MODULES: AppModule[] = [
       ),
   },
   {
+    href: "/courses",
+    label: "Courses",
+    description: "Liste de courses",
+    accentVar: "var(--accent-courses)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("path", { d: "M7 8V6a5 5 0 0 1 10 0v2" }),
+        createElement("path", { d: "M5.5 8h13l-1 11.5a1.5 1.5 0 0 1-1.5 1.5H8a1.5 1.5 0 0 1-1.5-1.5L5.5 8z" })
+      ),
+  },
+  {
     href: "/habitudes",
     label: "Habitudes",
     description: "Suivi quotidien et streaks",

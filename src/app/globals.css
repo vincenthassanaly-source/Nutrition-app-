@@ -15,6 +15,7 @@
   --accent-alert: oklch(0.55 0.19 25);
   --accent-agenda: oklch(0.56 0.13 230);
   --accent-habitudes: oklch(0.62 0.17 45);
+  --accent-courses: oklch(0.58 0.16 305);
   --shadow-card: 0 1px 2px oklch(0.2 0.02 255 / 0.05), 0 14px 30px oklch(0.2 0.03 255 / 0.07);
 }
 
@@ -34,6 +35,7 @@
   --color-alert: var(--accent-alert);
   --color-agenda: var(--accent-agenda);
   --color-habitudes: var(--accent-habitudes);
+  --color-courses: var(--accent-courses);
   --shadow-card: var(--shadow-card);
   --font-display: var(--font-space-grotesk);
   --font-sans: var(--font-inter);
