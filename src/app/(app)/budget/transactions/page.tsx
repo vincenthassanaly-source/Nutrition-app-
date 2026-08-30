@@ -16,9 +16,15 @@ export const dynamic = "force-dynamic";
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ compte?: string; categorie?: string; mois?: string }>;
+  searchParams: Promise<{
+    compte?: string;
+    categorie?: string;
+    mois?: string;
+    date?: string;
+    q?: string;
+  }>;
 }) {
-  const { compte, categorie, mois } = await searchParams;
+  const { compte, categorie, mois, date, q } = await searchParams;
 
   // Pas de cron dans ce repo : les occurrences récurrentes dues sont
   // générées ici, avant les lectures ci-dessous, pour apparaître
@@ -31,16 +37,52 @@ export default async function TransactionsPage({
     compteId: compte,
     categorieId: categorie,
     mois: mois ? `${mois}-01` : undefined,
+    date,
+    recherche: q,
   });
+
+  // Filtre "jour" posé depuis /budget/calendrier (choix retenu plutôt qu'un
+  // panneau inline sous le calendrier — cf. rapport : réutilise directement
+  // le filtrage déjà en place ici, sans dupliquer l'affichage d'une liste de
+  // transactions à deux endroits). "Effacer" retire uniquement `date`, les
+  // autres filtres éventuellement actifs restent appliqués.
+  const parametresSansDate = new URLSearchParams();
+  if (compte) parametresSansDate.set("compte", compte);
+  if (categorie) parametresSansDate.set("categorie", categorie);
+  if (mois) parametresSansDate.set("mois", mois);
+  if (q) parametresSansDate.set("q", q);
+  const hrefSansDate = parametresSansDate.toString()
+    ? `/budget/transactions?${parametresSansDate}`
+    : "/budget/transactions";
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className={screenTitle}>Transactions</h1>
-        <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
-          🔁 Récurrentes →
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/budget/calendrier" className="text-sm font-semibold text-budget">
+            📅 Calendrier →
+          </Link>
+          <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
+            🔁 Récurrentes →
+          </Link>
+        </div>
       </div>
+      {date && (
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-surface-alt px-3 py-2 text-[13px] text-ink">
+          <span>
+            Transactions du{" "}
+            {new Date(`${date}T00:00:00`).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </span>
+          <Link href={hrefSansDate} className="font-semibold text-budget">
+            Effacer ✕
+          </Link>
+        </div>
+      )}
       <TransactionsFilters comptes={comptes} categories={categories} />
       <AddTransactionToggle comptes={comptes} categories={categories} />
       <TransactionsList

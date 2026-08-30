@@ -157,6 +157,43 @@ export function formatPeriode(
   });
 }
 
+export type JourCalendrier = { date: string; horsMois: boolean };
+
+/**
+ * Grille calendrier d'un mois : semaines complètes (lundi en première
+ * colonne), avec les jours de fin du mois précédent / début du mois suivant
+ * nécessaires pour compléter la première et la dernière semaine
+ * (`horsMois: true` pour ces jours de padding, à griser dans l'UI).
+ *
+ * @param periode Format "YYYY-MM-01" (premier jour du mois).
+ */
+export function grilleCalendrierMois(periode: string): JourCalendrier[][] {
+  const [annee, mois] = periode.split("-").map(Number);
+
+  const premierJourMoisDate = new Date(annee, mois - 1, 1);
+  const decalageDebut = premierJourMoisDate.getDay() === 0 ? 6 : premierJourMoisDate.getDay() - 1;
+  const debutGrille = new Date(annee, mois - 1, 1 - decalageDebut);
+
+  const dernierJourMoisDate = new Date(annee, mois, 0);
+  const finJourSemaine = dernierJourMoisDate.getDay();
+  const decalageFin = finJourSemaine === 0 ? 0 : 7 - finJourSemaine;
+  const finGrille = new Date(annee, mois - 1, dernierJourMoisDate.getDate() + decalageFin);
+
+  const semaines: JourCalendrier[][] = [];
+  let semaineCourante: JourCalendrier[] = [];
+  const curseur = new Date(debutGrille);
+  while (curseur <= finGrille) {
+    const iso = `${curseur.getFullYear()}-${String(curseur.getMonth() + 1).padStart(2, "0")}-${String(curseur.getDate()).padStart(2, "0")}`;
+    semaineCourante.push({ date: iso, horsMois: curseur.getMonth() !== mois - 1 });
+    if (semaineCourante.length === 7) {
+      semaines.push(semaineCourante);
+      semaineCourante = [];
+    }
+    curseur.setDate(curseur.getDate() + 1);
+  }
+  return semaines;
+}
+
 export const FREQUENCE_LABELS: Record<Enums<"frequence_recurrence">, string> = {
   quotidien: "Quotidien",
   hebdomadaire: "Hebdomadaire",

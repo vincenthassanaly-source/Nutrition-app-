@@ -23,38 +23,47 @@ export function TransactionsFilters({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <select
-        value={searchParams.get("compte") ?? ""}
-        onChange={(e) => updateParam("compte", e.target.value)}
-        className={`${input} flex-1 py-2 text-[13px]`}
-      >
-        <option value="">Tous les comptes</option>
-        {comptes.map((compte) => (
-          <option key={compte.id} value={compte.id}>
-            {compte.nom}
-          </option>
-        ))}
-      </select>
-      <select
-        value={searchParams.get("categorie") ?? ""}
-        onChange={(e) => updateParam("categorie", e.target.value)}
-        className={`${input} flex-1 py-2 text-[13px]`}
-      >
-        <option value="">Toutes les catégories</option>
-        {categories.map((categorie) => (
-          <option key={categorie.id} value={categorie.id}>
-            {categorie.icone ? `${categorie.icone} ` : ""}
-            {categorie.nom}
-          </option>
-        ))}
-      </select>
+    <div className="flex flex-col gap-2">
       <input
-        type="month"
-        value={searchParams.get("mois") ?? ""}
-        onChange={(e) => updateParam("mois", e.target.value)}
+        type="text"
+        placeholder="Rechercher un libellé..."
+        value={searchParams.get("q") ?? ""}
+        onChange={(e) => updateParam("q", e.target.value)}
         className={`${input} py-2 text-[13px]`}
       />
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={searchParams.get("compte") ?? ""}
+          onChange={(e) => updateParam("compte", e.target.value)}
+          className={`${input} flex-1 py-2 text-[13px]`}
+        >
+          <option value="">Tous les comptes</option>
+          {comptes.map((compte) => (
+            <option key={compte.id} value={compte.id}>
+              {compte.nom}
+            </option>
+          ))}
+        </select>
+        <select
+          value={searchParams.get("categorie") ?? ""}
+          onChange={(e) => updateParam("categorie", e.target.value)}
+          className={`${input} flex-1 py-2 text-[13px]`}
+        >
+          <option value="">Toutes les catégories</option>
+          {categories.map((categorie) => (
+            <option key={categorie.id} value={categorie.id}>
+              {categorie.icone ? `${categorie.icone} ` : ""}
+              {categorie.nom}
+            </option>
+          ))}
+        </select>
+        <input
+          type="month"
+          value={searchParams.get("mois") ?? ""}
+          onChange={(e) => updateParam("mois", e.target.value)}
+          className={`${input} py-2 text-[13px]`}
+        />
+      </div>
     </div>
   );
 }

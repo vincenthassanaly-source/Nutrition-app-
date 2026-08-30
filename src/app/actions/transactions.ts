@@ -200,6 +200,10 @@ export async function getTransactions(filtres?: {
   categorieId?: string;
   /** Format "YYYY-MM-01" (premier jour du mois). */
   mois?: string;
+  /** Format "YYYY-MM-DD" : filtre sur une date exacte (vue calendrier). */
+  date?: string;
+  /** Recherche insensible à la casse sur `libelle` (ilike). */
+  recherche?: string;
 }): Promise<TransactionAvecRelations[]> {
   const supabase = await createClient();
 
@@ -221,8 +225,15 @@ export async function getTransactions(filtres?: {
     );
   }
   if (filtres?.categorieId) query = query.eq("categorie_id", filtres.categorieId);
+  if (filtres?.date) query = query.eq("date_operation", filtres.date);
   if (filtres?.mois) {
     query = query.gte("date_operation", filtres.mois).lt("date_operation", finDuMois(filtres.mois));
+  }
+  // `ilike` sur une colonne nulle ne matche jamais (NULL en SQL) : une
+  // transaction sans libellé est donc naturellement exclue d'une recherche
+  // non vide, sans traitement particulier.
+  if (filtres?.recherche?.trim()) {
+    query = query.ilike("libelle", `%${filtres.recherche.trim()}%`);
   }
 
   const { data, error } = await query;
@@ -252,4 +263,83 @@ export async function getResumeMois(periode: string): Promise<ResumeMois> {
     .reduce((acc, t) => acc + t.montant, 0);
 
   return { totalDepenses, totalRevenus };
+}
+
+export type TotauxParJour = Record<string, { depenses: number; revenus: number }>;
+
+/**
+ * Totaux dépenses/revenus par jour sur un mois, pour la vue calendrier — une
+ * seule requête sur le mois entier, agrégée en JS (pas une requête par
+ * jour). Les virements n'apparaissent pas dans ces totaux, cohérent avec
+ * `getResumeMois`.
+ *
+ * @param periode Format "YYYY-MM-01" (premier jour du mois).
+ */
+export async function getTransactionsParJour(periode: string): Promise<TotauxParJour> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("date_operation, montant, type")
+    .in("type", ["depense", "revenu"])
+    .gte("date_operation", periode)
+    .lt("date_operation", finDuMois(periode));
+
+  if (error) throw new Error(error.message);
+
+  const totaux: TotauxParJour = {};
+  for (const t of data ?? []) {
+    const jour = (totaux[t.date_operation] ??= { depenses: 0, revenus: 0 });
+    if (t.type === "depense") jour.depenses += t.montant;
+    else jour.revenus += t.montant;
+  }
+  return totaux;
+}
+
+export type ResumeMoisPlage = ResumeMois & { periode: string };
+
+/**
+ * Résumé dépenses/revenus pour chacun des `nbMois` mois se terminant (mois
+ * inclus) à `periodeFin` — une seule requête large sur toute la plage,
+ * agrégée en JS par mois (pas de N+1 requête par mois), pour le graphique de
+ * tendance de /budget/statistiques.
+ *
+ * @param periodeFin Format "YYYY-MM-01" (dernier mois de la plage, inclus).
+ */
+export async function getResumeMoisPlage(
+  periodeFin: string,
+  nbMois: number
+): Promise<ResumeMoisPlage[]> {
+  const supabase = await createClient();
+
+  const [anneeFin, moisFin] = periodeFin.split("-").map(Number);
+  const debutPlageDate = new Date(anneeFin, moisFin - 1 - (nbMois - 1), 1);
+  const debutPlage = `${debutPlageDate.getFullYear()}-${String(debutPlageDate.getMonth() + 1).padStart(2, "0")}-01`;
+  const finPlage = finDuMois(periodeFin);
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("date_operation, montant, type")
+    .in("type", ["depense", "revenu"])
+    .gte("date_operation", debutPlage)
+    .lt("date_operation", finPlage);
+
+  if (error) throw new Error(error.message);
+
+  const parMois = new Map<string, ResumeMoisPlage>();
+  for (let i = 0; i < nbMois; i++) {
+    const d = new Date(debutPlageDate.getFullYear(), debutPlageDate.getMonth() + i, 1);
+    const cle = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+    parMois.set(cle, { periode: cle, totalDepenses: 0, totalRevenus: 0 });
+  }
+
+  for (const t of data ?? []) {
+    const cle = `${t.date_operation.slice(0, 7)}-01`;
+    const bucket = parMois.get(cle);
+    if (!bucket) continue;
+    if (t.type === "depense") bucket.totalDepenses += t.montant;
+    else bucket.totalRevenus += t.montant;
+  }
+
+  return Array.from(parMois.values());
 }

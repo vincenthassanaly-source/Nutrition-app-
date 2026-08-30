@@ -119,9 +119,18 @@ export default async function BudgetPage() {
         </Link>
       </div>
 
-      <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
-        🔁 Transactions récurrentes →
-      </Link>
+      <div className={`${card} flex flex-col gap-2`}>
+        <p className={sectionTitle}>Autres vues</p>
+        <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
+          🔁 Transactions récurrentes →
+        </Link>
+        <Link href="/budget/calendrier" className="text-sm font-semibold text-budget">
+          📅 Calendrier →
+        </Link>
+        <Link href="/budget/statistiques" className="text-sm font-semibold text-budget">
+          📊 Statistiques →
+        </Link>
+      </div>
     </div>
   );
 }
