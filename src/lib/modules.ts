@@ -35,4 +35,17 @@ export const MODULES: AppModule[] = [
         createElement("path", { d: "M9 9.5h6M9 13h6M9 16.5h3.5" })
       ),
   },
+  {
+    href: "/taches",
+    label: "Tâches",
+    description: "Liste de tâches à cocher",
+    accentVar: "var(--accent-carbs)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("rect", { x: 3.5, y: 3.5, width: 17, height: 17, rx: 3 }),
+        createElement("path", { d: "M7.5 12.5l2.5 2.5 6-6" })
+      ),
+  },
 ];

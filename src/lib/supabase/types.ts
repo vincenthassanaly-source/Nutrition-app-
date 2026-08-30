@@ -242,6 +242,33 @@ export type Database = {
         }
         Relationships: []
       }
+      taches: {
+        Row: {
+          created_at: string
+          echeance: string | null
+          fait: boolean
+          id: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          echeance?: string | null
+          fait?: boolean
+          id?: string
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          echeance?: string | null
+          fait?: boolean
+          id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
