@@ -1,24 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: oklch(0.965 0.005 250);
-  --surface: oklch(0.995 0.003 250);
-  --surface-alt: oklch(0.95 0.006 250);
-  --line: oklch(0.89 0.008 255);
-  --ink: oklch(0.2 0.012 255);
-  --ink-2: oklch(0.52 0.014 255);
-  --ink-3: oklch(0.68 0.012 255);
-  --accent-kcal: oklch(0.5 0.13 155);
-  --accent-protein: oklch(0.55 0.14 265);
-  --accent-carbs: oklch(0.68 0.13 85);
-  --accent-fat: oklch(0.62 0.15 345);
+  --background: oklch(0.97 0.012 95);
+  --surface: oklch(0.995 0.006 95);
+  --surface-alt: oklch(0.935 0.012 95);
+  --line: oklch(0.9 0.012 95);
+  --ink: oklch(0.22 0.02 150);
+  --ink-2: oklch(0.5 0.018 150);
+  --ink-3: oklch(0.64 0.014 150);
+  --accent-kcal: oklch(0.55 0.14 165);
+  --accent-kcal-soft: oklch(0.55 0.14 165 / 0.12);
+  --accent-protein: oklch(0.55 0.13 265);
+  --accent-carbs: oklch(0.58 0.14 85);
+  --accent-fat: oklch(0.56 0.15 340);
   --accent-alert: oklch(0.55 0.19 25);
-  --accent-agenda: oklch(0.56 0.13 230);
-  --accent-habitudes: oklch(0.62 0.17 45);
-  --accent-courses: oklch(0.58 0.16 305);
-  --accent-objectifs: oklch(0.55 0.15 200);
-  --accent-budget: oklch(0.6 0.16 65);
-  --shadow-card: 0 1px 2px oklch(0.2 0.02 255 / 0.05), 0 14px 30px oklch(0.2 0.03 255 / 0.07);
+  --accent-agenda: oklch(0.55 0.14 230);
+  --accent-habitudes: oklch(0.55 0.14 45);
+  --accent-courses: oklch(0.55 0.14 305);
+  --accent-objectifs: oklch(0.55 0.14 200);
+  --accent-budget: oklch(0.55 0.14 65);
+  --accent-reglages: oklch(0.55 0.14 150);
+  --nav-bg: oklch(0.995 0.006 95 / 0.78);
+  --shadow-card: 0 10px 24px oklch(0.35 0.03 150 / 0.09);
+}
+
+:root.dark {
+  --background: oklch(0.17 0.016 195);
+  --surface: oklch(0.215 0.018 195);
+  --surface-alt: oklch(0.27 0.02 195);
+  --line: oklch(0.33 0.022 195);
+  --ink: oklch(0.95 0.008 195);
+  --ink-2: oklch(0.72 0.014 195);
+  --ink-3: oklch(0.54 0.014 195);
+  --accent-kcal: oklch(0.72 0.13 165);
+  --accent-kcal-soft: oklch(0.72 0.13 165 / 0.18);
+  --accent-protein: oklch(0.72 0.12 265);
+  --accent-carbs: oklch(0.75 0.13 85);
+  --accent-fat: oklch(0.72 0.14 340);
+  --accent-alert: oklch(0.7 0.17 25);
+  --accent-agenda: oklch(0.72 0.13 230);
+  --accent-habitudes: oklch(0.72 0.13 45);
+  --accent-courses: oklch(0.72 0.13 305);
+  --accent-objectifs: oklch(0.72 0.13 200);
+  --accent-budget: oklch(0.72 0.13 65);
+  --accent-reglages: oklch(0.72 0.13 150);
+  --nav-bg: oklch(0.22 0.018 195 / 0.72);
+  --shadow-card: 0 10px 26px rgba(0, 0, 0, 0.42);
 }
 
 @theme inline {
@@ -31,6 +58,7 @@
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-kcal: var(--accent-kcal);
+  --color-kcal-soft: var(--accent-kcal-soft);
   --color-protein: var(--accent-protein);
   --color-carbs: var(--accent-carbs);
   --color-fat: var(--accent-fat);
@@ -40,8 +68,10 @@
   --color-courses: var(--accent-courses);
   --color-objectifs: var(--accent-objectifs);
   --color-budget: var(--accent-budget);
+  --color-reglages: var(--accent-reglages);
+  --color-nav: var(--nav-bg);
   --shadow-card: var(--shadow-card);
-  --font-display: var(--font-space-grotesk);
+  --font-display: var(--font-sora);
   --font-sans: var(--font-inter);
 }
 

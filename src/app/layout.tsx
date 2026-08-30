@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Sora, Inter } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { AppResumeRefresh } from "@/components/AppResumeRefresh";
+import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  weight: ["500", "600", "700"],
+const sora = Sora({
+  variable: "--font-sora",
+  weight: ["600", "700", "800"],
   subsets: ["latin"],
 });
 
@@ -31,15 +32,22 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#f4f4f6",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f6f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#292f2d" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${sora.variable} ${inter.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-ink font-sans">
         {children}
         <ServiceWorkerRegister />
