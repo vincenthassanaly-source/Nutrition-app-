@@ -5,7 +5,7 @@ import { supprimerTransaction, type TransactionAvecRelations } from "@/app/actio
 import type { CompteAvecSolde } from "@/app/actions/comptes";
 import type { Tables } from "@/lib/supabase/types";
 import { formatMontant } from "@/lib/budget/compute";
-import { card, dangerButton, ghostButton, listCard, metaText } from "@/lib/ui";
+import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { TransactionModeForm } from "./TransactionModeForm";
 
 function formatDateOperation(iso: string) {
@@ -80,6 +80,9 @@ function TransactionRow({
             {virement
               ? transaction.libelle || libelleVirement(transaction, compteFiltre)
               : transaction.libelle || transaction.categorie?.nom || "Sans catégorie"}
+            {transaction.transaction_recurrente_id && (
+              <span className={`${pillTag} ml-2`}>🔁 récurrent</span>
+            )}
           </p>
           <span className={metaText}>
             {formatDateOperation(transaction.date_operation)} ·{" "}

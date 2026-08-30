@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getComptesAvecSolde } from "@/app/actions/comptes";
 import { getResumeMois } from "@/app/actions/transactions";
 import { getSuiviCategories } from "@/app/actions/budgets";
+import { genererOccurrencesDues } from "@/app/actions/transactions-recurrentes";
 import { formatMontant, formatPeriode, premierJourDuMois } from "@/lib/budget/compute";
 import { card, eyebrow, screenTitle, sectionTitle } from "@/lib/ui";
 
@@ -12,6 +13,11 @@ export const dynamic = "force-dynamic";
 
 export default async function BudgetPage() {
   const periode = premierJourDuMois();
+
+  // Pas de cron dans ce repo : les occurrences récurrentes dues sont
+  // générées ici, avant les lectures ci-dessous, pour qu'elles apparaissent
+  // immédiatement dans les totaux du mois affichés.
+  await genererOccurrencesDues();
 
   const [comptes, resumeMois, suiviCategories] = await Promise.all([
     getComptesAvecSolde(),
@@ -112,6 +118,10 @@ export default async function BudgetPage() {
           Voir toutes les catégories →
         </Link>
       </div>
+
+      <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
+        🔁 Transactions récurrentes →
+      </Link>
     </div>
   );
 }

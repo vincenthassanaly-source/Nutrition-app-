@@ -592,6 +592,7 @@ export type Database = {
           id: string
           libelle: string | null
           montant: number
+          transaction_recurrente_id: string | null
           type: Database["public"]["Enums"]["type_mouvement"]
           updated_at: string
         }
@@ -604,6 +605,7 @@ export type Database = {
           id?: string
           libelle?: string | null
           montant: number
+          transaction_recurrente_id?: string | null
           type: Database["public"]["Enums"]["type_mouvement"]
           updated_at?: string
         }
@@ -616,6 +618,7 @@ export type Database = {
           id?: string
           libelle?: string | null
           montant?: number
+          transaction_recurrente_id?: string | null
           type?: Database["public"]["Enums"]["type_mouvement"]
           updated_at?: string
         }
@@ -641,6 +644,86 @@ export type Database = {
             referencedRelation: "comptes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_transaction_recurrente_id_fkey"
+            columns: ["transaction_recurrente_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_recurrentes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions_recurrentes: {
+        Row: {
+          active: boolean
+          categorie_id: string | null
+          compte_destination_id: string | null
+          compte_id: string
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          frequence: Database["public"]["Enums"]["frequence_recurrence"]
+          id: string
+          libelle: string | null
+          montant: number
+          prochaine_occurrence: string
+          type: Database["public"]["Enums"]["type_mouvement"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          categorie_id?: string | null
+          compte_destination_id?: string | null
+          compte_id: string
+          created_at?: string
+          date_debut: string
+          date_fin?: string | null
+          frequence: Database["public"]["Enums"]["frequence_recurrence"]
+          id?: string
+          libelle?: string | null
+          montant: number
+          prochaine_occurrence: string
+          type: Database["public"]["Enums"]["type_mouvement"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          categorie_id?: string | null
+          compte_destination_id?: string | null
+          compte_id?: string
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          frequence?: Database["public"]["Enums"]["frequence_recurrence"]
+          id?: string
+          libelle?: string | null
+          montant?: number
+          prochaine_occurrence?: string
+          type?: Database["public"]["Enums"]["type_mouvement"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_recurrentes_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "categories_budget"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_recurrentes_compte_destination_id_fkey"
+            columns: ["compte_destination_id"]
+            isOneToOne: false
+            referencedRelation: "comptes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_recurrentes_compte_id_fkey"
+            columns: ["compte_id"]
+            isOneToOne: false
+            referencedRelation: "comptes"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -652,6 +735,7 @@ export type Database = {
     }
     Enums: {
       categorie_objectif: "perso" | "pro"
+      frequence_recurrence: "quotidien" | "hebdomadaire" | "mensuel" | "annuel"
       habitude_type: "boolean" | "streak" | "quantifiee"
       jour_type_ppl: "entrainement" | "repos"
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
@@ -789,6 +873,7 @@ export const Constants = {
   public: {
     Enums: {
       categorie_objectif: ["perso", "pro"],
+      frequence_recurrence: ["quotidien", "hebdomadaire", "mensuel", "annuel"],
       habitude_type: ["boolean", "streak", "quantifiee"],
       jour_type_ppl: ["entrainement", "repos"],
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],

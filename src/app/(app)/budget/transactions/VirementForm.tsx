@@ -8,13 +8,10 @@ import {
   type TransactionFormState,
 } from "@/app/actions/transactions";
 import type { CompteAvecSolde } from "@/app/actions/comptes";
+import { aujourdhuiISO } from "@/lib/budget/compute";
 import { errorText, input, label as labelClass, primaryButton } from "@/lib/ui";
 
 const initialState: TransactionFormState = { error: null };
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export function VirementForm({
   transaction,
@@ -104,7 +101,7 @@ export function VirementForm({
           name="date_operation"
           type="date"
           required
-          defaultValue={transaction?.date_operation ?? todayISO()}
+          defaultValue={transaction?.date_operation ?? aujourdhuiISO()}
           className={input}
         />
       </div>
