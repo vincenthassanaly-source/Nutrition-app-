@@ -90,6 +90,20 @@ export const MODULES: AppModule[] = [
       ),
   },
   {
+    href: "/budget",
+    label: "Budget",
+    description: "Comptes, dépenses et budgets par catégorie",
+    accentVar: "var(--accent-budget)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("rect", { x: 3.5, y: 6.5, width: 17, height: 12.5, rx: 2.5 }),
+        createElement("path", { d: "M3.5 10.5h17" }),
+        createElement("circle", { cx: 16.5, cy: 14.5, r: 1.1, fill: c, stroke: "none" })
+      ),
+  },
+  {
     href: "/habitudes",
     label: "Habitudes",
     description: "Suivi quotidien et streaks",

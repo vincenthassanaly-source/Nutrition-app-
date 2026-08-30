@@ -68,6 +68,98 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          categorie_id: string
+          created_at: string
+          id: string
+          montant_cible: number
+          periode: string
+          updated_at: string
+        }
+        Insert: {
+          categorie_id: string
+          created_at?: string
+          id?: string
+          montant_cible: number
+          periode: string
+          updated_at?: string
+        }
+        Update: {
+          categorie_id?: string
+          created_at?: string
+          id?: string
+          montant_cible?: number
+          periode?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "categories_budget"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories_budget: {
+        Row: {
+          created_at: string
+          icone: string | null
+          id: string
+          is_predefinie: boolean
+          nom: string
+          type: Database["public"]["Enums"]["type_mouvement"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          is_predefinie?: boolean
+          nom: string
+          type: Database["public"]["Enums"]["type_mouvement"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          is_predefinie?: boolean
+          nom?: string
+          type?: Database["public"]["Enums"]["type_mouvement"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      comptes: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          solde_initial: number
+          type: Database["public"]["Enums"]["type_compte"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          solde_initial?: number
+          type?: Database["public"]["Enums"]["type_compte"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          solde_initial?: number
+          type?: Database["public"]["Enums"]["type_compte"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courses_items: {
         Row: {
           coche: boolean
@@ -479,6 +571,57 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          categorie_id: string
+          compte_id: string
+          created_at: string
+          date_operation: string
+          id: string
+          libelle: string | null
+          montant: number
+          type: Database["public"]["Enums"]["type_mouvement"]
+          updated_at: string
+        }
+        Insert: {
+          categorie_id: string
+          compte_id: string
+          created_at?: string
+          date_operation?: string
+          id?: string
+          libelle?: string | null
+          montant: number
+          type: Database["public"]["Enums"]["type_mouvement"]
+          updated_at?: string
+        }
+        Update: {
+          categorie_id?: string
+          compte_id?: string
+          created_at?: string
+          date_operation?: string
+          id?: string
+          libelle?: string | null
+          montant?: number
+          type?: Database["public"]["Enums"]["type_mouvement"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "categories_budget"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_compte_id_fkey"
+            columns: ["compte_id"]
+            isOneToOne: false
+            referencedRelation: "comptes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -493,6 +636,8 @@ export type Database = {
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
       recette_source: "manuel" | "hellofresh"
       statut_objectif: "en_cours" | "atteint" | "abandonne"
+      type_compte: "courant" | "epargne" | "autre"
+      type_mouvement: "depense" | "revenu"
       type_suivi_objectif: "valeur" | "etapes" | "binaire"
       unite_mesure: "g" | "ml" | "piece"
     }
@@ -628,6 +773,8 @@ export const Constants = {
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],
       recette_source: ["manuel", "hellofresh"],
       statut_objectif: ["en_cours", "atteint", "abandonne"],
+      type_compte: ["courant", "epargne", "autre"],
+      type_mouvement: ["depense", "revenu"],
       type_suivi_objectif: ["valeur", "etapes", "binaire"],
       unite_mesure: ["g", "ml", "piece"],
     },
