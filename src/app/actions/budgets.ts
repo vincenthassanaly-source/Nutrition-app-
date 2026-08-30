@@ -25,6 +25,20 @@ export async function upsertBudget(
   }
 
   const supabase = await createClient();
+
+  // Le budget cible se définit uniquement sur les catégories principales : le
+  // suivi (getSuiviCategories) agrège déjà les dépenses des sous-catégories
+  // dans le total de leur parent, cf. décision documentée dans le rapport.
+  const { data: categorie, error: categorieError } = await supabase
+    .from("categories_budget")
+    .select("categorie_parent_id")
+    .eq("id", categorie_id)
+    .maybeSingle();
+  if (categorieError) return { error: categorieError.message };
+  if (categorie?.categorie_parent_id) {
+    return { error: "Le budget cible se définit sur la catégorie principale, pas sur une sous-catégorie." };
+  }
+
   const { error } = await supabase
     .from("budgets")
     .upsert({ categorie_id, periode, montant_cible }, { onConflict: "categorie_id,periode" });
@@ -54,9 +68,16 @@ export type SuiviCategorie = {
 };
 
 /**
- * Pour chaque catégorie de dépense, calcule la somme des transactions de la
- * période vs le montant cible du budget, avec un statut ok / proche / dépassé
- * pour piloter l'indicateur visuel (cf. `statutBudget`).
+ * Pour chaque catégorie principale de dépense, calcule la somme des
+ * transactions de la période (celles de la catégorie elle-même **et** de ses
+ * sous-catégories, agrégées dans un seul total) vs le montant cible du
+ * budget, avec un statut ok / proche / dépassé pour piloter l'indicateur
+ * visuel (cf. `statutBudget`).
+ *
+ * Décision : le suivi de dépassement n'a qu'un niveau de granularité, celui
+ * de la catégorie principale — les sous-catégories n'ont pas de budget cible
+ * indépendant (cf. `upsertBudget`, qui le refuse). Une catégorie principale
+ * sans sous-catégorie se comporte exactement comme avant.
  *
  * @param periode Format "YYYY-MM-01" (premier jour du mois).
  */
@@ -82,10 +103,18 @@ export async function getSuiviCategories(periode: string): Promise<SuiviCategori
   if (budgetsError) throw new Error(budgetsError.message);
   if (transactionsError) throw new Error(transactionsError.message);
 
-  return (categories ?? []).map((categorie) => {
+  const categoriesPrincipales = (categories ?? []).filter((c) => !c.categorie_parent_id);
+
+  return categoriesPrincipales.map((categorie) => {
+    const idsInclus = new Set([
+      categorie.id,
+      ...(categories ?? [])
+        .filter((c) => c.categorie_parent_id === categorie.id)
+        .map((c) => c.id),
+    ]);
     const budget = (budgets ?? []).find((b) => b.categorie_id === categorie.id) ?? null;
     const consomme = (transactions ?? [])
-      .filter((t) => t.categorie_id === categorie.id)
+      .filter((t) => t.categorie_id && idsInclus.has(t.categorie_id))
       .reduce((acc, t) => acc + t.montant, 0);
     const cible = budget?.montant_cible ?? 0;
 

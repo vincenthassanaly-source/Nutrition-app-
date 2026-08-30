@@ -12,8 +12,6 @@ export default async function CategoriesBudgetPage() {
     getCategories(),
   ]);
 
-  const categoriesRevenu = categories.filter((c) => c.type === "revenu");
-
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -21,7 +19,7 @@ export default async function CategoriesBudgetPage() {
         <h1 className={screenTitle}>Catégories</h1>
       </div>
       <AddCategorieToggle />
-      <CategoriesList suiviDepenses={suiviDepenses} categoriesRevenu={categoriesRevenu} periode={periode} />
+      <CategoriesList suiviDepenses={suiviDepenses} categories={categories} periode={periode} />
     </div>
   );
 }

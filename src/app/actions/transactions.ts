@@ -114,10 +114,86 @@ export async function supprimerTransaction(id: string) {
   revalidateTransactionPaths();
 }
 
+type VirementInput = {
+  compte_id: string;
+  compte_destination_id: string;
+  montant: number;
+  date_operation: string;
+  libelle: string | null;
+};
+
+type ParseVirementResult = { ok: true; value: VirementInput } | { ok: false; error: string };
+
+function parseVirementInput(formData: FormData): ParseVirementResult {
+  const compte_id = String(formData.get("compte_id") ?? "").trim();
+  const compte_destination_id = String(formData.get("compte_destination_id") ?? "").trim();
+  const montantRaw = String(formData.get("montant") ?? "").trim();
+  const date_operation = String(formData.get("date_operation") ?? "").trim();
+  const libelle = String(formData.get("libelle") ?? "").trim();
+
+  if (!compte_id) return { ok: false, error: "Le compte source est requis." };
+  if (!compte_destination_id) return { ok: false, error: "Le compte destination est requis." };
+  if (compte_id === compte_destination_id) {
+    return { ok: false, error: "Les comptes source et destination doivent être différents." };
+  }
+  if (!date_operation) return { ok: false, error: "La date est requise." };
+
+  const montant = Number(montantRaw);
+  if (!Number.isFinite(montant) || montant <= 0) {
+    return { ok: false, error: "Le montant doit être un nombre positif." };
+  }
+
+  return {
+    ok: true,
+    value: { compte_id, compte_destination_id, montant, date_operation, libelle: libelle || null },
+  };
+}
+
+export async function creerVirement(
+  _prevState: TransactionFormState,
+  formData: FormData
+): Promise<TransactionFormState> {
+  const parsed = parseVirementInput(formData);
+  if (!parsed.ok) return { error: parsed.error };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("transactions")
+    .insert({ ...parsed.value, type: "virement", categorie_id: null });
+  if (error) return { error: error.message };
+
+  revalidateTransactionPaths();
+  return { error: null };
+}
+
+export async function modifierVirement(
+  _prevState: TransactionFormState,
+  formData: FormData
+): Promise<TransactionFormState> {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Virement introuvable." };
+
+  const parsed = parseVirementInput(formData);
+  if (!parsed.ok) return { error: parsed.error };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("transactions")
+    .update({ ...parsed.value, type: "virement", categorie_id: null })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidateTransactionPaths();
+  return { error: null };
+}
+
 export type TransactionAvecRelations = Tables<"transactions"> & {
   compte: Pick<Tables<"comptes">, "id" | "nom"> | null;
+  compte_destination: Pick<Tables<"comptes">, "id" | "nom"> | null;
   categorie: Pick<Tables<"categories_budget">, "id" | "nom" | "icone"> | null;
 };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getTransactions(filtres?: {
   compteId?: string;
@@ -127,13 +203,23 @@ export async function getTransactions(filtres?: {
 }): Promise<TransactionAvecRelations[]> {
   const supabase = await createClient();
 
+  // Deux FK vers `comptes` (compte_id, compte_destination_id) : il faut
+  // désambiguïser chaque embed PostgREST avec le nom de la contrainte.
   let query = supabase
     .from("transactions")
-    .select("*, compte:comptes(id, nom), categorie:categories_budget(id, nom, icone)")
+    .select(
+      "*, compte:comptes!transactions_compte_id_fkey(id, nom), compte_destination:comptes!transactions_compte_destination_id_fkey(id, nom), categorie:categories_budget(id, nom, icone)"
+    )
     .order("date_operation", { ascending: false })
     .order("created_at", { ascending: false });
 
-  if (filtres?.compteId) query = query.eq("compte_id", filtres.compteId);
+  if (filtres?.compteId && UUID_RE.test(filtres.compteId)) {
+    // Un virement doit apparaître dans l'historique filtré du compte crédité
+    // comme de celui débité, pas seulement de la source.
+    query = query.or(
+      `compte_id.eq.${filtres.compteId},compte_destination_id.eq.${filtres.compteId}`
+    );
+  }
   if (filtres?.categorieId) query = query.eq("categorie_id", filtres.categorieId);
   if (filtres?.mois) {
     query = query.gte("date_operation", filtres.mois).lt("date_operation", finDuMois(filtres.mois));

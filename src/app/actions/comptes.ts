@@ -89,17 +89,30 @@ export async function getComptesAvecSolde(): Promise<CompteAvecSolde[]> {
     { data: transactions, error: transactionsError },
   ] = await Promise.all([
     supabase.from("comptes").select("*").order("created_at", { ascending: true }),
-    supabase.from("transactions").select("compte_id, montant, type"),
+    supabase.from("transactions").select("compte_id, compte_destination_id, montant, type"),
   ]);
 
   if (comptesError) throw new Error(comptesError.message);
   if (transactionsError) throw new Error(transactionsError.message);
 
-  return (comptes ?? []).map((compte) => {
-    const mouvement = (transactions ?? [])
-      .filter((t) => t.compte_id === compte.id)
-      .reduce((acc, t) => acc + (t.type === "revenu" ? t.montant : -t.montant), 0);
+  // Un virement ne passe pas par solde_initial : il diminue le compte source
+  // et augmente le compte destination, en plus (et indépendamment) des
+  // dépenses/revenus classiques.
+  const mouvements = new Map<string, number>();
+  function ajouter(compteId: string, delta: number) {
+    mouvements.set(compteId, (mouvements.get(compteId) ?? 0) + delta);
+  }
+  for (const t of transactions ?? []) {
+    if (t.type === "revenu") ajouter(t.compte_id, t.montant);
+    else if (t.type === "depense") ajouter(t.compte_id, -t.montant);
+    else if (t.type === "virement" && t.compte_destination_id) {
+      ajouter(t.compte_id, -t.montant);
+      ajouter(t.compte_destination_id, t.montant);
+    }
+  }
 
-    return { ...compte, solde: compte.solde_initial + mouvement };
-  });
+  return (comptes ?? []).map((compte) => ({
+    ...compte,
+    solde: compte.solde_initial + (mouvements.get(compte.id) ?? 0),
+  }));
 }

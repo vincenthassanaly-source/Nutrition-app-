@@ -1,10 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import { upsertBudget, type BudgetFormState, type SuiviCategorie } from "@/app/actions/budgets";
+import { supprimerCategorie } from "@/app/actions/categories-budget";
+import type { Tables } from "@/lib/supabase/types";
 import { formatMontant } from "@/lib/budget/compute";
-import { card, errorText, input } from "@/lib/ui";
+import { card, dangerButton, errorText, input } from "@/lib/ui";
 import type { StatutBudget } from "@/lib/budget/compute";
+import { AddSousCategorieToggle } from "./AddSousCategorieToggle";
 
 const STATUT_COLOR: Record<StatutBudget, string> = {
   ok: "var(--accent-kcal)",
@@ -14,12 +17,35 @@ const STATUT_COLOR: Record<StatutBudget, string> = {
 
 const initialState: BudgetFormState = { error: null };
 
+function SousCategorieRow({ categorie }: { categorie: Tables<"categories_budget"> }) {
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <li className="flex items-center justify-between gap-2 rounded-xl bg-surface-alt/60 px-3 py-2">
+      <p className="text-[13.5px] font-medium text-ink">
+        {categorie.icone && <span className="mr-1.5">{categorie.icone}</span>}
+        {categorie.nom}
+      </p>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => startTransition(() => supprimerCategorie(categorie.id))}
+        className={dangerButton}
+      >
+        Suppr.
+      </button>
+    </li>
+  );
+}
+
 export function CategorieProgressCard({
   suivi,
   periode,
+  sousCategories,
 }: {
   suivi: SuiviCategorie;
   periode: string;
+  sousCategories: Tables<"categories_budget">[];
 }) {
   const [state, formAction, pending] = useActionState(upsertBudget, initialState);
   const pct =
@@ -69,6 +95,14 @@ export function CategorieProgressCard({
           {state.error}
         </p>
       )}
+      {sousCategories.length > 0 && (
+        <ul className="flex flex-col gap-1.5 pl-1">
+          {sousCategories.map((sc) => (
+            <SousCategorieRow key={sc.id} categorie={sc} />
+          ))}
+        </ul>
+      )}
+      <AddSousCategorieToggle categorieParentId={suivi.categorie.id} />
     </li>
   );
 }

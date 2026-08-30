@@ -88,6 +88,50 @@ export async function supprimerCategorie(id: string) {
   revalidatePath("/budget/categories");
 }
 
+/**
+ * Crée une sous-catégorie (1 seul niveau de profondeur) : le type est
+ * toujours hérité de la catégorie parente, jamais lu depuis le formulaire,
+ * et une catégorie qui est déjà elle-même une sous-catégorie ne peut pas
+ * servir de parent (cf. prompt Phase 2).
+ */
+export async function creerSousCategorie(
+  _prevState: CategorieFormState,
+  formData: FormData
+): Promise<CategorieFormState> {
+  const nom = String(formData.get("nom") ?? "").trim();
+  const icone = String(formData.get("icone") ?? "").trim();
+  const categorie_parent_id = String(formData.get("categorie_parent_id") ?? "").trim();
+
+  if (!nom) return { error: "Le nom est requis." };
+  if (!categorie_parent_id) return { error: "Catégorie parente introuvable." };
+
+  const supabase = await createClient();
+  const { data: parent, error: parentError } = await supabase
+    .from("categories_budget")
+    .select("type, categorie_parent_id")
+    .eq("id", categorie_parent_id)
+    .maybeSingle();
+
+  if (parentError) return { error: parentError.message };
+  if (!parent) return { error: "Catégorie parente introuvable." };
+  if (parent.categorie_parent_id) {
+    return { error: "Une sous-catégorie ne peut pas avoir sa propre sous-catégorie." };
+  }
+
+  const { error } = await supabase.from("categories_budget").insert({
+    nom,
+    type: parent.type,
+    icone: icone || null,
+    categorie_parent_id,
+    is_predefinie: false,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/budget/categories");
+  return { error: null };
+}
+
 export async function getCategories(): Promise<Tables<"categories_budget">[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

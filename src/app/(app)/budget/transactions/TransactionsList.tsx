@@ -6,7 +6,7 @@ import type { CompteAvecSolde } from "@/app/actions/comptes";
 import type { Tables } from "@/lib/supabase/types";
 import { formatMontant } from "@/lib/budget/compute";
 import { card, dangerButton, ghostButton, listCard, metaText } from "@/lib/ui";
-import { TransactionForm } from "./TransactionForm";
+import { TransactionModeForm } from "./TransactionModeForm";
 
 function formatDateOperation(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
@@ -15,14 +15,31 @@ function formatDateOperation(iso: string) {
   });
 }
 
+function libelleVirement(transaction: TransactionAvecRelations, compteFiltre?: string) {
+  const versDestination = transaction.compte_destination?.nom ?? "?";
+  const depuisSource = transaction.compte?.nom ?? "?";
+
+  // Vue filtrée sur un compte précis : on affiche le virement du point de vue
+  // de ce compte (crédité ou débité). Vue globale : on montre les deux bouts.
+  if (compteFiltre && transaction.compte_destination_id === compteFiltre) {
+    return `Depuis ${depuisSource}`;
+  }
+  if (compteFiltre && transaction.compte_id === compteFiltre) {
+    return `Vers ${versDestination}`;
+  }
+  return `${depuisSource} → ${versDestination}`;
+}
+
 function TransactionRow({
   transaction,
   comptes,
   categories,
+  compteFiltre,
 }: {
   transaction: TransactionAvecRelations;
   comptes: CompteAvecSolde[];
   categories: Tables<"categories_budget">[];
+  compteFiltre?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -30,7 +47,7 @@ function TransactionRow({
   if (editing) {
     return (
       <li className={card}>
-        <TransactionForm
+        <TransactionModeForm
           transaction={transaction}
           comptes={comptes}
           categories={categories}
@@ -47,6 +64,7 @@ function TransactionRow({
     );
   }
 
+  const virement = transaction.type === "virement";
   const revenu = transaction.type === "revenu";
 
   return (
@@ -54,16 +72,27 @@ function TransactionRow({
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-1 flex-col gap-0.5">
           <p className="text-[14.5px] font-semibold text-ink">
-            {transaction.categorie?.icone && <span className="mr-1.5">{transaction.categorie.icone}</span>}
-            {transaction.libelle || transaction.categorie?.nom || "Sans catégorie"}
+            {virement ? (
+              <span className="mr-1.5">⇄</span>
+            ) : (
+              transaction.categorie?.icone && <span className="mr-1.5">{transaction.categorie.icone}</span>
+            )}
+            {virement
+              ? transaction.libelle || libelleVirement(transaction, compteFiltre)
+              : transaction.libelle || transaction.categorie?.nom || "Sans catégorie"}
           </p>
           <span className={metaText}>
-            {formatDateOperation(transaction.date_operation)} · {transaction.compte?.nom ?? "?"}
-            {transaction.libelle && transaction.categorie && ` · ${transaction.categorie.nom}`}
+            {formatDateOperation(transaction.date_operation)} ·{" "}
+            {virement ? libelleVirement(transaction, compteFiltre) : transaction.compte?.nom ?? "?"}
+            {!virement && transaction.libelle && transaction.categorie && ` · ${transaction.categorie.nom}`}
           </span>
         </div>
-        <p className={`font-display text-[15px] font-semibold ${revenu ? "text-kcal" : "text-ink"}`}>
-          {revenu ? "+" : "-"}
+        <p
+          className={`font-display text-[15px] font-semibold ${
+            virement ? "text-ink-2" : revenu ? "text-kcal" : "text-ink"
+          }`}
+        >
+          {virement ? "" : revenu ? "+" : "-"}
           {formatMontant(transaction.montant)}
         </p>
       </div>
@@ -88,10 +117,12 @@ export function TransactionsList({
   transactions,
   comptes,
   categories,
+  compteFiltre,
 }: {
   transactions: TransactionAvecRelations[];
   comptes: CompteAvecSolde[];
   categories: Tables<"categories_budget">[];
+  compteFiltre?: string;
 }) {
   if (transactions.length === 0) {
     return <p className="text-ink-2">Aucune transaction pour cette sélection.</p>;
@@ -105,6 +136,7 @@ export function TransactionsList({
           transaction={transaction}
           comptes={comptes}
           categories={categories}
+          compteFiltre={compteFiltre}
         />
       ))}
     </ul>

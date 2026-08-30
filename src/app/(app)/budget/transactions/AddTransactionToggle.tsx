@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { CompteAvecSolde } from "@/app/actions/comptes";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
-import { TransactionForm } from "./TransactionForm";
+import { TransactionModeForm } from "./TransactionModeForm";
 
 export function AddTransactionToggle({
   comptes,
@@ -29,7 +29,7 @@ export function AddTransactionToggle({
 
   return (
     <div className={card}>
-      <TransactionForm comptes={comptes} categories={categories} onDone={() => setOpen(false)} />
+      <TransactionModeForm comptes={comptes} categories={categories} onDone={() => setOpen(false)} />
       <button
         type="button"
         onClick={() => setOpen(false)}

@@ -1,5 +1,22 @@
 export type StatutBudget = "ok" | "proche" | "depasse";
 
+type CategorieBudgetLike = { id: string; categorie_parent_id: string | null };
+
+/**
+ * Regroupe une liste plate de catégories en arborescence à un seul niveau
+ * (catégories principales + leurs sous-catégories), pour l'affichage imbriqué
+ * dans /budget/categories et le regroupement du sélecteur de /budget/transactions.
+ */
+export function regrouperParCategorieParente<T extends CategorieBudgetLike>(
+  categories: T[]
+): { parent: T; sousCategories: T[] }[] {
+  const parents = categories.filter((c) => !c.categorie_parent_id);
+  return parents.map((parent) => ({
+    parent,
+    sousCategories: categories.filter((c) => c.categorie_parent_id === parent.id),
+  }));
+}
+
 const SEUIL_PROCHE = 0.8;
 
 /** cible <= 0 signifie "pas de budget défini" : toute dépense est alors considérée

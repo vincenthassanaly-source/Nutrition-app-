@@ -1,15 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import {
-  creerTransaction,
-  modifierTransaction,
+  creerVirement,
+  modifierVirement,
   type TransactionAvecRelations,
   type TransactionFormState,
 } from "@/app/actions/transactions";
 import type { CompteAvecSolde } from "@/app/actions/comptes";
-import type { Enums, Tables } from "@/lib/supabase/types";
-import { regrouperParCategorieParente } from "@/lib/budget/compute";
 import { errorText, input, label as labelClass, primaryButton } from "@/lib/ui";
 
 const initialState: TransactionFormState = { error: null };
@@ -18,30 +16,18 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function TransactionForm({
+export function VirementForm({
   transaction,
-  typeMouvement,
   comptes,
-  categories,
   onDone,
 }: {
   transaction?: TransactionAvecRelations;
-  /** Dépense ou revenu : fixé par l'onglet actif du formulaire (cf. TransactionModeForm). */
-  typeMouvement: Enums<"type_mouvement">;
   comptes: CompteAvecSolde[];
-  categories: Tables<"categories_budget">[];
   onDone?: () => void;
 }) {
-  const action = transaction ? modifierTransaction : creerTransaction;
+  const action = transaction ? modifierVirement : creerVirement;
   const [state, formAction, pending] = useActionState(action, initialState);
   const prevPending = useRef(pending);
-
-  const categoriesDuType = categories.filter((c) => c.type === typeMouvement);
-  const groupesCategories = regrouperParCategorieParente(categoriesDuType);
-
-  const [categorieId, setCategorieId] = useState(
-    transaction?.categorie_id ?? categoriesDuType[0]?.id ?? ""
-  );
 
   useEffect(() => {
     if (prevPending.current && !pending && !state.error) {
@@ -50,20 +36,23 @@ export function TransactionForm({
     prevPending.current = pending;
   }, [pending, state.error, onDone]);
 
+  if (comptes.length < 2) {
+    return <p className="text-ink-2">Il faut au moins 2 comptes pour faire un virement.</p>;
+  }
+
+  const defaultSource = transaction?.compte_id ?? comptes[0]?.id ?? "";
+  const defaultDestination =
+    transaction?.compte_destination_id ?? comptes.find((c) => c.id !== defaultSource)?.id ?? "";
+
   return (
     <form action={formAction} className="flex flex-col gap-3">
       {transaction && <input type="hidden" name="id" value={transaction.id} />}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="compte_id" className={labelClass}>
-          Compte
+          Compte source
         </label>
-        <select
-          id="compte_id"
-          name="compte_id"
-          defaultValue={transaction?.compte_id ?? comptes[0]?.id ?? ""}
-          className={input}
-        >
+        <select id="compte_id" name="compte_id" defaultValue={defaultSource} className={input}>
           {comptes.map((compte) => (
             <option key={compte.id} value={compte.id}>
               {compte.nom}
@@ -73,40 +62,20 @@ export function TransactionForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="categorie_id" className={labelClass}>
-          Catégorie
+        <label htmlFor="compte_destination_id" className={labelClass}>
+          Compte destination
         </label>
         <select
-          id="categorie_id"
-          name="categorie_id"
-          value={categorieId}
-          onChange={(e) => setCategorieId(e.target.value)}
+          id="compte_destination_id"
+          name="compte_destination_id"
+          defaultValue={defaultDestination}
           className={input}
         >
-          {groupesCategories.map(({ parent, sousCategories }) =>
-            sousCategories.length === 0 ? (
-              <option key={parent.id} value={parent.id}>
-                {parent.icone ? `${parent.icone} ` : ""}
-                {parent.nom}
-              </option>
-            ) : (
-              <optgroup
-                key={parent.id}
-                label={`${parent.icone ? `${parent.icone} ` : ""}${parent.nom}`}
-              >
-                <option value={parent.id}>
-                  {parent.icone ? `${parent.icone} ` : ""}
-                  {parent.nom} (général)
-                </option>
-                {sousCategories.map((sc) => (
-                  <option key={sc.id} value={sc.id}>
-                    {sc.icone ? `${sc.icone} ` : ""}
-                    {sc.nom}
-                  </option>
-                ))}
-              </optgroup>
-            )
-          )}
+          {comptes.map((compte) => (
+            <option key={compte.id} value={compte.id}>
+              {compte.nom}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -154,7 +123,7 @@ export function TransactionForm({
       )}
 
       <button type="submit" disabled={pending} className={primaryButton}>
-        {pending ? "Enregistrement..." : transaction ? "Enregistrer" : "Ajouter la transaction"}
+        {pending ? "Enregistrement..." : transaction ? "Enregistrer" : "Effectuer le virement"}
       </button>
     </form>
   );

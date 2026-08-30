@@ -4,14 +4,43 @@ import { useTransition } from "react";
 import { supprimerCategorie } from "@/app/actions/categories-budget";
 import type { SuiviCategorie } from "@/app/actions/budgets";
 import type { Tables } from "@/lib/supabase/types";
+import { regrouperParCategorieParente } from "@/lib/budget/compute";
 import { dangerButton, eyebrow, listCard, nameText, pillTag, sectionTitle } from "@/lib/ui";
 import { CategorieProgressCard } from "./CategorieProgressCard";
+import { AddSousCategorieToggle } from "./AddSousCategorieToggle";
 
-function CategorieRevenuRow({ categorie }: { categorie: Tables<"categories_budget"> }) {
+function SousCategorieRow({ categorie }: { categorie: Tables<"categories_budget"> }) {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <li className={listCard}>
+    <li className="flex items-center justify-between gap-2 rounded-xl bg-surface-alt/60 px-3 py-2">
+      <p className="text-[13.5px] font-medium text-ink">
+        {categorie.icone && <span className="mr-1.5">{categorie.icone}</span>}
+        {categorie.nom}
+      </p>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => startTransition(() => supprimerCategorie(categorie.id))}
+        className={dangerButton}
+      >
+        Suppr.
+      </button>
+    </li>
+  );
+}
+
+function CategorieRevenuRow({
+  categorie,
+  sousCategories,
+}: {
+  categorie: Tables<"categories_budget">;
+  sousCategories: Tables<"categories_budget">[];
+}) {
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <li className={`${listCard} gap-2.5`}>
       <div className="flex items-center justify-between gap-2">
         <p className={nameText}>
           {categorie.icone && <span className="mr-1.5">{categorie.icone}</span>}
@@ -30,19 +59,31 @@ function CategorieRevenuRow({ categorie }: { categorie: Tables<"categories_budge
           </button>
         )}
       </div>
+      {sousCategories.length > 0 && (
+        <ul className="flex flex-col gap-1.5 pl-1">
+          {sousCategories.map((sc) => (
+            <SousCategorieRow key={sc.id} categorie={sc} />
+          ))}
+        </ul>
+      )}
+      <AddSousCategorieToggle categorieParentId={categorie.id} />
     </li>
   );
 }
 
 export function CategoriesList({
   suiviDepenses,
-  categoriesRevenu,
+  categories,
   periode,
 }: {
   suiviDepenses: SuiviCategorie[];
-  categoriesRevenu: Tables<"categories_budget">[];
+  categories: Tables<"categories_budget">[];
   periode: string;
 }) {
+  const categoriesRevenu = regrouperParCategorieParente(
+    categories.filter((c) => c.type === "revenu")
+  );
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2.5">
@@ -52,7 +93,14 @@ export function CategoriesList({
         ) : (
           <ul className="flex flex-col gap-2.5">
             {suiviDepenses.map((suivi) => (
-              <CategorieProgressCard key={suivi.categorie.id} suivi={suivi} periode={periode} />
+              <CategorieProgressCard
+                key={suivi.categorie.id}
+                suivi={suivi}
+                periode={periode}
+                sousCategories={categories.filter(
+                  (c) => c.categorie_parent_id === suivi.categorie.id
+                )}
+              />
             ))}
           </ul>
         )}
@@ -64,8 +112,8 @@ export function CategoriesList({
           <p className={eyebrow}>Aucune catégorie de revenu pour l&apos;instant.</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {categoriesRevenu.map((categorie) => (
-              <CategorieRevenuRow key={categorie.id} categorie={categorie} />
+            {categoriesRevenu.map(({ parent, sousCategories }) => (
+              <CategorieRevenuRow key={parent.id} categorie={parent} sousCategories={sousCategories} />
             ))}
           </ul>
         )}

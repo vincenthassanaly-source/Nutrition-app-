@@ -31,7 +31,12 @@ export default async function TransactionsPage({
       <h1 className={screenTitle}>Transactions</h1>
       <TransactionsFilters comptes={comptes} categories={categories} />
       <AddTransactionToggle comptes={comptes} categories={categories} />
-      <TransactionsList transactions={transactions} comptes={comptes} categories={categories} />
+      <TransactionsList
+        transactions={transactions}
+        comptes={comptes}
+        categories={categories}
+        compteFiltre={compte}
+      />
     </div>
   );
 }
