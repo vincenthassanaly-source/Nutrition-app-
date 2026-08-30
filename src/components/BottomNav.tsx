@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { MODULES } from "@/lib/modules";
 
 const ACCUEIL_ICON = (c: string) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -12,16 +11,25 @@ const ACCUEIL_ICON = (c: string) => (
   </svg>
 );
 
+const PLUS_ICON = (c: string) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1.6" />
+    <rect x="13.5" y="3.5" width="7" height="7" rx="1.6" />
+    <rect x="3.5" y="13.5" width="7" height="7" rx="1.6" />
+    <rect x="13.5" y="13.5" width="7" height="7" rx="1.6" />
+  </svg>
+);
+
 const ITEMS: { href: string; label: string; icon: (color: string) => ReactNode }[] = [
   { href: "/", label: "Accueil", icon: ACCUEIL_ICON },
-  ...MODULES.map((mod) => ({ href: mod.href, label: mod.label, icon: mod.icon })),
+  { href: "/plus", label: "Plus", icon: PLUS_ICON },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 inset-x-0 z-10 flex justify-center gap-10 border-t border-line bg-surface/92 px-2 pt-2.5 backdrop-blur-md pb-[calc(env(safe-area-inset-bottom)+10px)]">
+    <nav className="sticky bottom-0 inset-x-0 z-10 flex justify-center gap-16 border-t border-line bg-surface/92 px-2 pt-2.5 backdrop-blur-md pb-[calc(env(safe-area-inset-bottom)+10px)]">
       {ITEMS.map((item) => {
         const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         const color = active ? "var(--accent-kcal)" : "var(--ink-3)";
