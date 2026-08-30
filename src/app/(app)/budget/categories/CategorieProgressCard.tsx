@@ -3,7 +3,7 @@
 import { useActionState, useTransition } from "react";
 import { upsertBudget, type BudgetFormState, type SuiviCategorie } from "@/app/actions/budgets";
 import { supprimerCategorie } from "@/app/actions/categories-budget";
-import type { Tables } from "@/lib/supabase/types";
+import type { Enums, Tables } from "@/lib/supabase/types";
 import { formatMontant } from "@/lib/budget/compute";
 import { card, dangerButton, errorText, input } from "@/lib/ui";
 import type { StatutBudget } from "@/lib/budget/compute";
@@ -41,10 +41,12 @@ function SousCategorieRow({ categorie }: { categorie: Tables<"categories_budget"
 export function CategorieProgressCard({
   suivi,
   periode,
+  typePeriode,
   sousCategories,
 }: {
   suivi: SuiviCategorie;
   periode: string;
+  typePeriode: Enums<"type_periode_budget">;
   sousCategories: Tables<"categories_budget">[];
 }) {
   const [state, formAction, pending] = useActionState(upsertBudget, initialState);
@@ -77,13 +79,20 @@ export function CategorieProgressCard({
       <form action={formAction} className="flex items-center gap-2">
         <input type="hidden" name="categorie_id" value={suivi.categorie.id} />
         <input type="hidden" name="periode" value={periode} />
+        <input type="hidden" name="type_periode" value={typePeriode} />
         <input
           name="montant_cible"
           type="number"
           step="0.01"
           min="0"
           defaultValue={suivi.cible || undefined}
-          placeholder="Budget cible du mois"
+          placeholder={
+            typePeriode === "hebdomadaire"
+              ? "Budget cible de la semaine"
+              : typePeriode === "annuel"
+                ? "Budget cible de l'année"
+                : "Budget cible du mois"
+          }
           className={`${input} flex-1 py-1.5 text-[13px]`}
         />
         <button type="submit" disabled={pending} className="shrink-0 text-sm font-semibold text-budget">

@@ -2,27 +2,57 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { finDuMois, statutBudget, type StatutBudget } from "@/lib/budget/compute";
-import type { Tables } from "@/lib/supabase/types";
+import {
+  bornesPeriode,
+  premierJourDeLAnnee,
+  premierJourDeLaSemaine,
+  premierJourDuMois,
+  statutBudget,
+  type StatutBudget,
+} from "@/lib/budget/compute";
+import type { Enums, Tables } from "@/lib/supabase/types";
 
 export type BudgetFormState = { error: string | null };
 
-/** Upsert par (categorie_id, periode) : un seul montant cible par catégorie et par mois. */
+const TYPES_PERIODE: readonly Enums<"type_periode_budget">[] = ["hebdomadaire", "mensuel", "annuel"];
+
+/** Upsert par (categorie_id, periode, type_periode) : un seul montant cible par
+ * catégorie, par type de période (semaine/mois/année) et par période — les 3
+ * types peuvent coexister sur une même catégorie, indépendamment les uns des
+ * autres. */
 export async function upsertBudget(
   _prevState: BudgetFormState,
   formData: FormData
 ): Promise<BudgetFormState> {
   const categorie_id = String(formData.get("categorie_id") ?? "").trim();
-  const periode = String(formData.get("periode") ?? "").trim();
+  const periodeRaw = String(formData.get("periode") ?? "").trim();
+  const typePeriodeRaw = String(formData.get("type_periode") ?? "");
   const montantRaw = String(formData.get("montant_cible") ?? "").trim();
 
   if (!categorie_id) return { error: "La catégorie est requise." };
-  if (!periode) return { error: "La période est requise." };
+  if (!periodeRaw) return { error: "La période est requise." };
+  if (!TYPES_PERIODE.includes(typePeriodeRaw as Enums<"type_periode_budget">)) {
+    return { error: "Type de période invalide." };
+  }
+  const type_periode = typePeriodeRaw as Enums<"type_periode_budget">;
 
   const montant_cible = Number(montantRaw);
   if (!Number.isFinite(montant_cible) || montant_cible < 0) {
     return { error: "Le montant cible doit être un nombre positif ou nul." };
   }
+
+  // La période reçue du client est re-calée côté serveur (jamais telle
+  // quelle) au premier jour de la semaine/mois/année concerné — cf. contrainte
+  // `budgets_periode_calee` en base, qui rejetterait sinon une valeur non
+  // calée avant même d'atteindre ce code.
+  const [annee, mois, jour] = periodeRaw.split("-").map(Number);
+  const dateReference = new Date(annee, (mois || 1) - 1, jour || 1);
+  const periode =
+    type_periode === "hebdomadaire"
+      ? premierJourDeLaSemaine(dateReference)
+      : type_periode === "annuel"
+        ? premierJourDeLAnnee(dateReference)
+        : premierJourDuMois(dateReference);
 
   const supabase = await createClient();
 
@@ -41,7 +71,10 @@ export async function upsertBudget(
 
   const { error } = await supabase
     .from("budgets")
-    .upsert({ categorie_id, periode, montant_cible }, { onConflict: "categorie_id,periode" });
+    .upsert(
+      { categorie_id, periode, type_periode, montant_cible },
+      { onConflict: "categorie_id,periode,type_periode" }
+    );
 
   if (error) return { error: error.message };
 
@@ -76,13 +109,21 @@ export type SuiviCategorie = {
  *
  * Décision : le suivi de dépassement n'a qu'un niveau de granularité, celui
  * de la catégorie principale — les sous-catégories n'ont pas de budget cible
- * indépendant (cf. `upsertBudget`, qui le refuse). Une catégorie principale
- * sans sous-catégorie se comporte exactement comme avant.
+ * indépendant (cf. `upsertBudget`, qui le refuse), quel que soit le type de
+ * période. Une catégorie principale sans sous-catégorie se comporte
+ * exactement comme avant.
  *
- * @param periode Format "YYYY-MM-01" (premier jour du mois).
+ * @param periode Format "YYYY-MM-DD" (premier jour de la semaine/du mois/de
+ * l'année selon `typePeriode`).
+ * @param typePeriode Défaut `"mensuel"` : un appel `getSuiviCategories(periode)`
+ * sans ce paramètre continue de fonctionner exactement comme avant.
  */
-export async function getSuiviCategories(periode: string): Promise<SuiviCategorie[]> {
+export async function getSuiviCategories(
+  periode: string,
+  typePeriode: Enums<"type_periode_budget"> = "mensuel"
+): Promise<SuiviCategorie[]> {
   const supabase = await createClient();
+  const { debut, fin } = bornesPeriode(periode, typePeriode);
 
   const [
     { data: categories, error: categoriesError },
@@ -90,13 +131,13 @@ export async function getSuiviCategories(periode: string): Promise<SuiviCategori
     { data: transactions, error: transactionsError },
   ] = await Promise.all([
     supabase.from("categories_budget").select("*").eq("type", "depense").order("nom"),
-    supabase.from("budgets").select("*").eq("periode", periode),
+    supabase.from("budgets").select("*").eq("periode", periode).eq("type_periode", typePeriode),
     supabase
       .from("transactions")
       .select("categorie_id, montant")
       .eq("type", "depense")
-      .gte("date_operation", periode)
-      .lt("date_operation", finDuMois(periode)),
+      .gte("date_operation", debut)
+      .lt("date_operation", fin),
   ]);
 
   if (categoriesError) throw new Error(categoriesError.message);

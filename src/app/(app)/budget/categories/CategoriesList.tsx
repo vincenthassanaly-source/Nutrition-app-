@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { supprimerCategorie } from "@/app/actions/categories-budget";
 import type { SuiviCategorie } from "@/app/actions/budgets";
-import type { Tables } from "@/lib/supabase/types";
+import type { Enums, Tables } from "@/lib/supabase/types";
 import { regrouperParCategorieParente } from "@/lib/budget/compute";
 import { dangerButton, eyebrow, listCard, nameText, pillTag, sectionTitle } from "@/lib/ui";
 import { CategorieProgressCard } from "./CategorieProgressCard";
@@ -75,10 +75,12 @@ export function CategoriesList({
   suiviDepenses,
   categories,
   periode,
+  typePeriode,
 }: {
   suiviDepenses: SuiviCategorie[];
   categories: Tables<"categories_budget">[];
   periode: string;
+  typePeriode: Enums<"type_periode_budget">;
 }) {
   const categoriesRevenu = regrouperParCategorieParente(
     categories.filter((c) => c.type === "revenu")
@@ -94,9 +96,13 @@ export function CategoriesList({
           <ul className="flex flex-col gap-2.5">
             {suiviDepenses.map((suivi) => (
               <CategorieProgressCard
-                key={suivi.categorie.id}
+                // Le formulaire de budget utilise `defaultValue` (non
+                // contrôlé) : sans remount, changer d'onglet semaine/mois/
+                // année garderait affichée l'ancienne valeur du montant cible.
+                key={`${suivi.categorie.id}-${typePeriode}-${periode}`}
                 suivi={suivi}
                 periode={periode}
+                typePeriode={typePeriode}
                 sousCategories={categories.filter(
                   (c) => c.categorie_parent_id === suivi.categorie.id
                 )}

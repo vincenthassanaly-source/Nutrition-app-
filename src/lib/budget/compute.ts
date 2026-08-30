@@ -1,4 +1,4 @@
-import { addDays, addMonths, addWeeks, addYears } from "date-fns";
+import { addDays, addMonths, addWeeks, addYears, subMonths, subWeeks, subYears } from "date-fns";
 import type { Enums } from "@/lib/supabase/types";
 
 export type StatutBudget = "ok" | "proche" | "depasse";
@@ -48,7 +48,108 @@ export function finDuMois(periode: string): string {
   return new Date(Date.UTC(annee, mois, 1)).toISOString().slice(0, 10);
 }
 
-export function formatPeriode(periode: string): string {
+/** Premier jour de la semaine ISO (lundi — `date_trunc('week', ...)` de
+ * Postgres confirme cette convention, cf. migration-budget-periodes-hebdo-annuel). */
+export function premierJourDeLaSemaine(date: Date = new Date()): string {
+  const jour = date.getDay(); // 0 (dimanche) .. 6 (samedi)
+  const decalage = jour === 0 ? 6 : jour - 1;
+  const lundi = new Date(date.getFullYear(), date.getMonth(), date.getDate() - decalage);
+  return `${lundi.getFullYear()}-${String(lundi.getMonth() + 1).padStart(2, "0")}-${String(lundi.getDate()).padStart(2, "0")}`;
+}
+
+/** Borne exclusive haute pour une requête `gte(periode) / lt(finDeLaSemaine)`,
+ * à partir d'une période au format "YYYY-MM-DD" (un lundi). */
+export function finDeLaSemaine(periode: string): string {
+  const [annee, mois, jour] = periode.split("-").map(Number);
+  const fin = new Date(annee, mois - 1, jour + 7);
+  return `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, "0")}-${String(fin.getDate()).padStart(2, "0")}`;
+}
+
+export function premierJourDeLAnnee(date: Date = new Date()): string {
+  return `${date.getFullYear()}-01-01`;
+}
+
+/** Borne exclusive haute pour une requête `gte(periode) / lt(finDeLAnnee)`,
+ * à partir d'une période au format "YYYY-01-01". */
+export function finDeLAnnee(periode: string): string {
+  const annee = Number(periode.split("-")[0]);
+  return `${annee + 1}-01-01`;
+}
+
+/** Premier jour de la période par défaut ("aujourd'hui") selon son type —
+ * utilisé pour initialiser /budget/categories et au changement d'onglet
+ * semaine/mois/année. */
+export function periodeParDefaut(typePeriode: Enums<"type_periode_budget">): string {
+  switch (typePeriode) {
+    case "hebdomadaire":
+      return premierJourDeLaSemaine();
+    case "mensuel":
+      return premierJourDuMois();
+    case "annuel":
+      return premierJourDeLAnnee();
+  }
+}
+
+/** Bornes `{ debut, fin }` (fin exclusive) d'une période selon son type, pour
+ * les requêtes `gte(debut) / lt(fin)` sur `transactions.date_operation` —
+ * remplace `finDuMois` seul dans `getSuiviCategories` pour ne pas dupliquer
+ * le branchement par type à chaque appelant. */
+export function bornesPeriode(
+  periode: string,
+  typePeriode: Enums<"type_periode_budget">
+): { debut: string; fin: string } {
+  switch (typePeriode) {
+    case "hebdomadaire":
+      return { debut: periode, fin: finDeLaSemaine(periode) };
+    case "mensuel":
+      return { debut: periode, fin: finDuMois(periode) };
+    case "annuel":
+      return { debut: periode, fin: finDeLAnnee(periode) };
+  }
+}
+
+/** Période précédente/suivante (même type), pour la navigation à flèches de
+ * /budget/categories. La période d'entrée est toujours déjà calée (premier
+ * jour de semaine/mois/année) : ajouter/retrancher une unité la garde calée
+ * (pas de risque de calage fin de mois ici, contrairement aux récurrences). */
+export function periodeAdjacente(
+  periode: string,
+  typePeriode: Enums<"type_periode_budget">,
+  direction: 1 | -1
+): string {
+  const [annee, mois, jour] = periode.split("-").map(Number);
+  const date = new Date(annee, mois - 1, jour);
+
+  const resultat = (() => {
+    switch (typePeriode) {
+      case "hebdomadaire":
+        return direction === 1 ? addWeeks(date, 1) : subWeeks(date, 1);
+      case "mensuel":
+        return direction === 1 ? addMonths(date, 1) : subMonths(date, 1);
+      case "annuel":
+        return direction === 1 ? addYears(date, 1) : subYears(date, 1);
+    }
+  })();
+
+  return `${resultat.getFullYear()}-${String(resultat.getMonth() + 1).padStart(2, "0")}-${String(resultat.getDate()).padStart(2, "0")}`;
+}
+
+export function formatPeriode(
+  periode: string,
+  typePeriode: Enums<"type_periode_budget"> = "mensuel"
+): string {
+  if (typePeriode === "hebdomadaire") {
+    const jour = new Date(`${periode}T00:00:00Z`).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+    return `Semaine du ${jour}`;
+  }
+  if (typePeriode === "annuel") {
+    return `Année ${periode.slice(0, 4)}`;
+  }
   return new Date(`${periode}T00:00:00Z`).toLocaleDateString("fr-FR", {
     month: "long",
     year: "numeric",

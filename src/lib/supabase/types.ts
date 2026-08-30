@@ -75,6 +75,7 @@ export type Database = {
           id: string
           montant_cible: number
           periode: string
+          type_periode: Database["public"]["Enums"]["type_periode_budget"]
           updated_at: string
         }
         Insert: {
@@ -83,6 +84,7 @@ export type Database = {
           id?: string
           montant_cible: number
           periode: string
+          type_periode?: Database["public"]["Enums"]["type_periode_budget"]
           updated_at?: string
         }
         Update: {
@@ -91,6 +93,7 @@ export type Database = {
           id?: string
           montant_cible?: number
           periode?: string
+          type_periode?: Database["public"]["Enums"]["type_periode_budget"]
           updated_at?: string
         }
         Relationships: [
@@ -743,6 +746,7 @@ export type Database = {
       statut_objectif: "en_cours" | "atteint" | "abandonne"
       type_compte: "courant" | "epargne" | "autre"
       type_mouvement: "depense" | "revenu" | "virement"
+      type_periode_budget: "hebdomadaire" | "mensuel" | "annuel"
       type_suivi_objectif: "valeur" | "etapes" | "binaire"
       unite_mesure: "g" | "ml" | "piece"
     }
@@ -881,6 +885,7 @@ export const Constants = {
       statut_objectif: ["en_cours", "atteint", "abandonne"],
       type_compte: ["courant", "epargne", "autre"],
       type_mouvement: ["depense", "revenu", "virement"],
+      type_periode_budget: ["hebdomadaire", "mensuel", "annuel"],
       type_suivi_objectif: ["valeur", "etapes", "binaire"],
       unite_mesure: ["g", "ml", "piece"],
     },
