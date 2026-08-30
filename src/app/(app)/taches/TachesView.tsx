@@ -14,7 +14,7 @@ type VueKey = "aujourdhui" | "semaine" | "toutes";
 
 const VUES: { key: VueKey; label: string }[] = [
   { key: "aujourdhui", label: "Aujourd'hui" },
-  { key: "semaine", label: "7 prochains jours" },
+  { key: "semaine", label: "7 jours" },
   { key: "toutes", label: "Toutes" },
 ];
 

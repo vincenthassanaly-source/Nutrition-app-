@@ -9,8 +9,8 @@ import { TransactionsFilters } from "./TransactionsFilters";
 import { TransactionsList } from "./TransactionsList";
 
 const ICON_PROPS = {
-  width: 15,
-  height: 15,
+  width: 16,
+  height: 16,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -91,14 +91,20 @@ export default async function TransactionsPage({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className={screenTitle}>Transactions</h1>
-        <div className="flex gap-3">
-          <Link href="/budget/calendrier" className="inline-flex items-center gap-1.5 text-sm font-semibold text-budget">
+        <div className="flex gap-2">
+          <Link
+            href="/budget/calendrier"
+            aria-label="Calendrier"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-budget"
+          >
             <CalendrierIcon />
-            Calendrier
           </Link>
-          <Link href="/budget/recurrentes" className="inline-flex items-center gap-1.5 text-sm font-semibold text-budget">
+          <Link
+            href="/budget/recurrentes"
+            aria-label="Récurrentes"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-budget"
+          >
             <RecurrentesIcon />
-            Récurrentes
           </Link>
         </div>
       </div>
