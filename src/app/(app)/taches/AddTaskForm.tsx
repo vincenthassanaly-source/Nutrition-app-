@@ -9,9 +9,13 @@ const initialState: TacheFormState = { error: null };
 
 export function AddTaskForm({
   tache,
+  defaultEcheance,
+  defaultHeure,
   onDone,
 }: {
   tache?: Tables<"taches">;
+  defaultEcheance?: string;
+  defaultHeure?: string;
   onDone?: () => void;
 }) {
   const action = tache ? updateTache : createTache;
@@ -44,7 +48,20 @@ export function AddTaskForm({
           id="echeance"
           name="echeance"
           type="date"
-          defaultValue={tache?.echeance ?? ""}
+          defaultValue={tache?.echeance ?? defaultEcheance ?? ""}
+          className={input}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="heure" className={labelClass}>
+          Heure (optionnel)
+        </label>
+        <input
+          id="heure"
+          name="heure"
+          type="time"
+          defaultValue={tache?.heure?.slice(0, 5) ?? defaultHeure ?? ""}
           className={input}
         />
       </div>

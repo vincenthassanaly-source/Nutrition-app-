@@ -6,7 +6,7 @@ import { AddTaskForm } from "./AddTaskForm";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, nameText } from "@/lib/ui";
 
-function formatEcheance(iso: string) {
+export function formatEcheance(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -14,7 +14,7 @@ function formatEcheance(iso: string) {
   });
 }
 
-function TaskCard({ tache }: { tache: Tables<"taches"> }) {
+export function TaskCard({ tache }: { tache: Tables<"taches"> }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -50,7 +50,10 @@ function TaskCard({ tache }: { tache: Tables<"taches"> }) {
             </p>
           </div>
           {tache.echeance && (
-            <span className={metaText}>Échéance : {formatEcheance(tache.echeance)}</span>
+            <span className={metaText}>
+              Échéance : {formatEcheance(tache.echeance)}
+              {tache.heure && ` à ${tache.heure.slice(0, 5)}`}
+            </span>
           )}
         </div>
       </div>

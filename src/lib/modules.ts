@@ -48,4 +48,18 @@ export const MODULES: AppModule[] = [
         createElement("path", { d: "M7.5 12.5l2.5 2.5 6-6" })
       ),
   },
+  {
+    href: "/agenda",
+    label: "Agenda",
+    description: "Vues calendrier des tâches à échéance",
+    accentVar: "var(--accent-agenda)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("rect", { x: 3.5, y: 4.5, width: 17, height: 16, rx: 3 }),
+        createElement("path", { d: "M3.5 9.5h17" }),
+        createElement("path", { d: "M8 3v3M16 3v3" })
+      ),
+  },
 ];

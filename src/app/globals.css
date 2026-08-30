@@ -13,6 +13,7 @@
   --accent-carbs: oklch(0.68 0.13 85);
   --accent-fat: oklch(0.62 0.15 345);
   --accent-alert: oklch(0.55 0.19 25);
+  --accent-agenda: oklch(0.56 0.13 230);
   --shadow-card: 0 1px 2px oklch(0.2 0.02 255 / 0.05), 0 14px 30px oklch(0.2 0.03 255 / 0.07);
 }
 
@@ -30,6 +31,7 @@
   --color-carbs: var(--accent-carbs);
   --color-fat: var(--accent-fat);
   --color-alert: var(--accent-alert);
+  --color-agenda: var(--accent-agenda);
   --shadow-card: var(--shadow-card);
   --font-display: var(--font-space-grotesk);
   --font-sans: var(--font-inter);

@@ -8,19 +8,26 @@ export type TacheFormState = { error: string | null };
 type TacheInput = {
   titre: string;
   echeance: string | null;
+  heure: string | null;
 };
 
 type ParseResult =
   | { ok: true; value: TacheInput }
   | { ok: false; error: string };
 
+const HEURE_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 function parseTacheInput(formData: FormData): ParseResult {
   const titre = String(formData.get("titre") ?? "").trim();
   const echeance = String(formData.get("echeance") ?? "").trim();
+  const heure = String(formData.get("heure") ?? "").trim();
 
   if (!titre) return { ok: false, error: "Le titre est requis." };
+  if (heure && !HEURE_REGEX.test(heure)) {
+    return { ok: false, error: "Heure invalide (format HH:MM)." };
+  }
 
-  return { ok: true, value: { titre, echeance: echeance || null } };
+  return { ok: true, value: { titre, echeance: echeance || null, heure: heure || null } };
 }
 
 export async function createTache(
@@ -36,6 +43,7 @@ export async function createTache(
   if (error) return { error: error.message };
 
   revalidatePath("/taches");
+  revalidatePath("/agenda");
   return { error: null };
 }
 
@@ -55,6 +63,7 @@ export async function updateTache(
   if (error) return { error: error.message };
 
   revalidatePath("/taches");
+  revalidatePath("/agenda");
   return { error: null };
 }
 
@@ -77,6 +86,7 @@ export async function toggleTache(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/taches");
+  revalidatePath("/agenda");
 }
 
 export async function deleteTache(id: string) {
@@ -86,4 +96,5 @@ export async function deleteTache(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/taches");
+  revalidatePath("/agenda");
 }

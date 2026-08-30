@@ -247,6 +247,7 @@ export type Database = {
           created_at: string
           echeance: string | null
           fait: boolean
+          heure: string | null
           id: string
           titre: string
           updated_at: string
@@ -255,6 +256,7 @@ export type Database = {
           created_at?: string
           echeance?: string | null
           fait?: boolean
+          heure?: string | null
           id?: string
           titre: string
           updated_at?: string
@@ -263,6 +265,7 @@ export type Database = {
           created_at?: string
           echeance?: string | null
           fait?: boolean
+          heure?: string | null
           id?: string
           titre?: string
           updated_at?: string
