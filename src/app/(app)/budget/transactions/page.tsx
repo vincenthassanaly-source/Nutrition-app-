@@ -95,14 +95,14 @@ export default async function TransactionsPage({
           <Link
             href="/budget/calendrier"
             aria-label="Calendrier"
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-budget"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-ink-2"
           >
             <CalendrierIcon />
           </Link>
           <Link
             href="/budget/recurrentes"
             aria-label="Récurrentes"
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-budget"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-ink-2"
           >
             <RecurrentesIcon />
           </Link>
@@ -118,7 +118,7 @@ export default async function TransactionsPage({
               year: "numeric",
             })}
           </span>
-          <Link href={hrefSansDate} className="font-semibold text-budget">
+          <Link href={hrefSansDate} className="font-semibold text-ink-2">
             Effacer ✕
           </Link>
         </div>

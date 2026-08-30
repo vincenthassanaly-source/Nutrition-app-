@@ -36,7 +36,7 @@ export function RepartitionCategories({ suivi }: { suivi: SuiviCategorie[] }) {
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-surface-alt">
-              <div className="h-full rounded-full bg-budget" style={{ width: `${pct}%` }} />
+              <div className="h-full rounded-full bg-ink-2" style={{ width: `${pct}%` }} />
             </div>
           </li>
         );

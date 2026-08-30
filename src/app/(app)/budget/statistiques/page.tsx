@@ -13,6 +13,25 @@ import { TendanceChart } from "./TendanceChart";
 // peuvent générer de nouvelles transactions à chaque chargement.
 export const dynamic = "force-dynamic";
 
+function CalendrierIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3.5" y="4.5" width="17" height="16" rx="2.5" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 2.5v4M16 2.5v4" />
+    </svg>
+  );
+}
+
 // 6 mois plutôt que 12 : lisibilité sur la largeur d'écran mobile visée par
 // ce module (cf. viewBox 320 de `EvolutionChart`/`TendanceChart`) — 12
 // barres groupées serait trop serré pour rester lisible.
@@ -44,8 +63,12 @@ export default async function StatistiquesPage({
           <p className={eyebrow}>Budget</p>
           <h1 className={screenTitle}>Statistiques</h1>
         </div>
-        <Link href="/budget/calendrier" className="text-sm font-semibold text-budget">
-          📅 Calendrier →
+        <Link
+          href="/budget/calendrier"
+          aria-label="Calendrier"
+          className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-ink-2"
+        >
+          <CalendrierIcon />
         </Link>
       </div>
 

@@ -17,6 +17,24 @@ export const dynamic = "force-dynamic";
 
 const JOURS_SEMAINE = ["L", "M", "M", "J", "V", "S", "D"];
 
+function ListeIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 6.5h13M8 12h13M8 17.5h13" />
+      <path d="M3 6.5h.01M3 12h.01M3 17.5h.01" />
+    </svg>
+  );
+}
+
 export default async function CalendrierPage({
   searchParams,
 }: {
@@ -40,8 +58,12 @@ export default async function CalendrierPage({
           <p className={eyebrow}>Budget</p>
           <h1 className={screenTitle}>Calendrier</h1>
         </div>
-        <Link href="/budget/transactions" className="text-sm font-semibold text-budget">
-          Liste →
+        <Link
+          href="/budget/transactions"
+          aria-label="Liste"
+          className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line text-ink-2"
+        >
+          <ListeIcon />
         </Link>
       </div>
 

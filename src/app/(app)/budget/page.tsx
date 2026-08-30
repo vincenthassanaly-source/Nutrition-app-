@@ -85,7 +85,10 @@ export default async function BudgetPage() {
         >
           {formatMontant(totalSoldes)}
         </p>
-        <Link href="/budget/comptes" className="mt-1 text-sm font-semibold text-budget">
+        <Link
+          href="/budget/comptes"
+          className="mt-1 inline-flex w-fit items-center rounded-full border border-line px-3.5 py-2 text-[13.5px] font-semibold text-ink-2"
+        >
           {comptes.length === 0
             ? "Ajouter un compte"
             : `Voir ${comptes.length === 1 ? "le compte" : `les ${comptes.length} comptes`}`}
@@ -116,7 +119,10 @@ export default async function BudgetPage() {
             </span>
           </div>
         </div>
-        <Link href="/budget/transactions" className="text-sm font-semibold text-budget">
+        <Link
+          href="/budget/transactions"
+          className="inline-flex w-fit items-center rounded-full border border-line px-3.5 py-2 text-[13.5px] font-semibold text-ink-2"
+        >
           Voir les transactions
         </Link>
       </div>
@@ -156,7 +162,10 @@ export default async function BudgetPage() {
             })}
           </ul>
         )}
-        <Link href="/budget/categories" className="text-sm font-semibold text-budget">
+        <Link
+          href="/budget/categories"
+          className="inline-flex w-fit items-center rounded-full border border-line px-3.5 py-2 text-[13.5px] font-semibold text-ink-2"
+        >
           Voir toutes les catégories
         </Link>
       </div>
@@ -166,21 +175,21 @@ export default async function BudgetPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/budget/recurrentes"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-budget"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-ink-2"
           >
             <RecurrentesIcon />
             Transactions récurrentes
           </Link>
           <Link
             href="/budget/calendrier"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-budget"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-ink-2"
           >
             <CalendrierIcon />
             Calendrier
           </Link>
           <Link
             href="/budget/statistiques"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-budget"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-ink-2"
           >
             <StatistiquesIcon />
             Statistiques
