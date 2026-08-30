@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { startOfToday } from "date-fns";
+import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { DayView } from "./DayView";
 import { WeekView } from "./WeekView";
 import { MonthView } from "./MonthView";
 import { ListView } from "./ListView";
 
-type Tache = Tables<"taches">;
 type ViewKey = "jour" | "semaine" | "mois" | "liste";
 
 const VIEWS: { key: ViewKey; label: string }[] = [
@@ -18,7 +18,15 @@ const VIEWS: { key: ViewKey; label: string }[] = [
   { key: "liste", label: "Liste" },
 ];
 
-export function AgendaView({ taches }: { taches: Tache[] }) {
+export function AgendaView({
+  taches,
+  listes,
+  tags,
+}: {
+  taches: TacheAvecRelations[];
+  listes: Tables<"listes_taches">[];
+  tags: Tables<"tags">[];
+}) {
   const [view, setView] = useState<ViewKey>("jour");
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
 
@@ -45,7 +53,13 @@ export function AgendaView({ taches }: { taches: Tache[] }) {
       </div>
 
       {view === "jour" && (
-        <DayView taches={taches} selectedDate={selectedDate} onChangeDate={setSelectedDate} />
+        <DayView
+          taches={taches}
+          listes={listes}
+          tags={tags}
+          selectedDate={selectedDate}
+          onChangeDate={setSelectedDate}
+        />
       )}
       {view === "semaine" && (
         <WeekView
@@ -63,7 +77,7 @@ export function AgendaView({ taches }: { taches: Tache[] }) {
           onSelectDay={selectDay}
         />
       )}
-      {view === "liste" && <ListView taches={taches} />}
+      {view === "liste" && <ListView taches={taches} listes={listes} tags={tags} />}
     </div>
   );
 }

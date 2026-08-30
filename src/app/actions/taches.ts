@@ -2,32 +2,134 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { aujourdhuiISO, calculerProchaineOccurrence } from "@/lib/budget/compute";
+import type { Enums, Tables } from "@/lib/supabase/types";
 
 export type TacheFormState = { error: string | null };
+
+const PRIORITES: readonly Enums<"priorite_tache">[] = ["aucune", "basse", "moyenne", "haute"];
+const FREQUENCES: readonly Enums<"frequence_recurrence">[] = [
+  "quotidien",
+  "hebdomadaire",
+  "mensuel",
+  "annuel",
+];
+
+const HEURE_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function revalidateTachesPaths() {
+  revalidatePath("/taches");
+  revalidatePath("/agenda");
+}
 
 type TacheInput = {
   titre: string;
   echeance: string | null;
   heure: string | null;
+  liste_id: string;
+  notes: string | null;
+  priorite: Enums<"priorite_tache">;
+  recurrence_frequence: Enums<"frequence_recurrence"> | null;
+  recurrence_fin: string | null;
 };
 
-type ParseResult =
-  | { ok: true; value: TacheInput }
-  | { ok: false; error: string };
-
-const HEURE_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+type ParseResult = { ok: true; value: TacheInput } | { ok: false; error: string };
 
 function parseTacheInput(formData: FormData): ParseResult {
   const titre = String(formData.get("titre") ?? "").trim();
   const echeance = String(formData.get("echeance") ?? "").trim();
   const heure = String(formData.get("heure") ?? "").trim();
+  const liste_id = String(formData.get("liste_id") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim();
+  const priorite = String(formData.get("priorite") ?? "aucune");
+  const recurrence_frequence = String(formData.get("recurrence_frequence") ?? "").trim();
+  const recurrence_fin = String(formData.get("recurrence_fin") ?? "").trim();
 
   if (!titre) return { ok: false, error: "Le titre est requis." };
+  if (!liste_id) return { ok: false, error: "La liste est requise." };
   if (heure && !HEURE_REGEX.test(heure)) {
     return { ok: false, error: "Heure invalide (format HH:MM)." };
   }
+  if (!PRIORITES.includes(priorite as Enums<"priorite_tache">)) {
+    return { ok: false, error: "Priorité invalide." };
+  }
+  if (recurrence_frequence && !FREQUENCES.includes(recurrence_frequence as Enums<"frequence_recurrence">)) {
+    return { ok: false, error: "Fréquence de récurrence invalide." };
+  }
 
-  return { ok: true, value: { titre, echeance: echeance || null, heure: heure || null } };
+  const frequence = recurrence_frequence
+    ? (recurrence_frequence as Enums<"frequence_recurrence">)
+    : null;
+
+  return {
+    ok: true,
+    value: {
+      titre,
+      echeance: echeance || null,
+      heure: heure || null,
+      liste_id,
+      notes: notes || null,
+      priorite: priorite as Enums<"priorite_tache">,
+      recurrence_frequence: frequence,
+      // La date de fin de récurrence n'a de sens qu'accompagnée d'une
+      // fréquence : silencieusement ignorée sinon (même logique que
+      // unite/valeur_cible pour les objectifs de type "valeur").
+      recurrence_fin: frequence && recurrence_fin ? recurrence_fin : null,
+    },
+  };
+}
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+async function resolveTagIds(
+  supabase: SupabaseClient,
+  tagIds: string[],
+  nouveauxNoms: string[]
+): Promise<string[]> {
+  const ids = new Set(tagIds);
+
+  if (nouveauxNoms.length > 0) {
+    // upsert sur le nom (unique) : si le tag existe déjà, on récupère son id
+    // au lieu d'en recréer un, pour permettre la "création à la volée" sans
+    // dupliquer un tag déjà présent.
+    const { data, error } = await supabase
+      .from("tags")
+      .upsert(
+        nouveauxNoms.map((nom) => ({ nom })),
+        { onConflict: "nom" }
+      )
+      .select("id");
+
+    if (error) throw new Error(error.message);
+    for (const tag of data ?? []) ids.add(tag.id);
+  }
+
+  return [...ids];
+}
+
+function parseTagFields(formData: FormData): { tagIds: string[]; nouveauxNoms: string[] } {
+  const tagIds = formData.getAll("tag_ids").map(String).filter(Boolean);
+  const nouveauxNoms = [
+    ...new Set(
+      String(formData.get("nouveaux_tags") ?? "")
+        .split(",")
+        .map((n) => n.trim())
+        .filter(Boolean)
+    ),
+  ];
+  return { tagIds, nouveauxNoms };
+}
+
+async function syncTachesTags(supabase: SupabaseClient, tacheId: string, tagIds: string[]) {
+  const { error: deleteError } = await supabase.from("taches_tags").delete().eq("tache_id", tacheId);
+  if (deleteError) throw new Error(deleteError.message);
+
+  if (tagIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("taches_tags")
+      .insert(tagIds.map((tag_id) => ({ tache_id: tacheId, tag_id })));
+    if (insertError) throw new Error(insertError.message);
+  }
 }
 
 export async function createTache(
@@ -38,12 +140,32 @@ export async function createTache(
   if (!parsed.ok) return { error: parsed.error };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("taches").insert(parsed.value);
+
+  const { data: derniere } = await supabase
+    .from("taches")
+    .select("ordre")
+    .eq("liste_id", parsed.value.liste_id)
+    .order("ordre", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: tache, error } = await supabase
+    .from("taches")
+    .insert({ ...parsed.value, ordre: (derniere?.ordre ?? -1) + 1 })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
 
-  revalidatePath("/taches");
-  revalidatePath("/agenda");
+  try {
+    const { tagIds, nouveauxNoms } = parseTagFields(formData);
+    const resolvedTagIds = await resolveTagIds(supabase, tagIds, nouveauxNoms);
+    await syncTachesTags(supabase, tache.id, resolvedTagIds);
+  } catch (tagError) {
+    return { error: tagError instanceof Error ? tagError.message : "Erreur lors des tags." };
+  }
+
+  revalidateTachesPaths();
   return { error: null };
 }
 
@@ -62,31 +184,51 @@ export async function updateTache(
 
   if (error) return { error: error.message };
 
-  revalidatePath("/taches");
-  revalidatePath("/agenda");
+  try {
+    const { tagIds, nouveauxNoms } = parseTagFields(formData);
+    const resolvedTagIds = await resolveTagIds(supabase, tagIds, nouveauxNoms);
+    await syncTachesTags(supabase, id, resolvedTagIds);
+  } catch (tagError) {
+    return { error: tagError instanceof Error ? tagError.message : "Erreur lors des tags." };
+  }
+
+  revalidateTachesPaths();
   return { error: null };
 }
 
+// Option A (validée) : quand une tâche récurrente est cochée, elle repart
+// non cochée avec l'échéance suivante au lieu de rester "faite". Si la date
+// de fin de récurrence est dépassée par la nouvelle échéance, la récurrence
+// s'arrête et la tâche reste cochée.
 export async function toggleTache(id: string) {
   const supabase = await createClient();
 
   const { data, error: fetchError } = await supabase
     .from("taches")
-    .select("fait")
+    .select("fait, echeance, recurrence_frequence, recurrence_fin")
     .eq("id", id)
     .single();
 
   if (fetchError) throw new Error(fetchError.message);
 
-  const { error } = await supabase
-    .from("taches")
-    .update({ fait: !data.fait })
-    .eq("id", id);
+  const fait = !data.fait;
 
-  if (error) throw new Error(error.message);
+  if (fait && data.recurrence_frequence) {
+    const base = data.echeance ?? aujourdhuiISO();
+    const prochaine = calculerProchaineOccurrence(base, data.recurrence_frequence);
+    const recurrenceTerminee = data.recurrence_fin !== null && prochaine > data.recurrence_fin;
 
-  revalidatePath("/taches");
-  revalidatePath("/agenda");
+    const { error } = await supabase
+      .from("taches")
+      .update(recurrenceTerminee ? { fait: true } : { fait: false, echeance: prochaine })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("taches").update({ fait }).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
+  revalidateTachesPaths();
 }
 
 export async function deleteTache(id: string) {
@@ -95,6 +237,351 @@ export async function deleteTache(id: string) {
 
   if (error) throw new Error(error.message);
 
+  revalidateTachesPaths();
+}
+
+// Réordonnance simple par échange avec la tâche voisine, au sein de la même
+// liste (pas de drag & drop dans le codebase, cf. deplacerEtape dans
+// src/app/actions/objectifs.ts).
+export async function reordonnerTaches(id: string, direction: "haut" | "bas") {
+  const supabase = await createClient();
+
+  const { data: courante, error: fetchError } = await supabase
+    .from("taches")
+    .select("liste_id")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+
+  const { data: taches, error } = await supabase
+    .from("taches")
+    .select("id, ordre")
+    .eq("liste_id", courante.liste_id)
+    .order("ordre", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  if (!taches) return;
+
+  const index = taches.findIndex((t) => t.id === id);
+  if (index === -1) return;
+
+  const voisinIndex = direction === "haut" ? index - 1 : index + 1;
+  if (voisinIndex < 0 || voisinIndex >= taches.length) return;
+
+  const actuelle = taches[index];
+  const voisine = taches[voisinIndex];
+
+  const [{ error: err1 }, { error: err2 }] = await Promise.all([
+    supabase.from("taches").update({ ordre: voisine.ordre }).eq("id", actuelle.id),
+    supabase.from("taches").update({ ordre: actuelle.ordre }).eq("id", voisine.id),
+  ]);
+
+  if (err1) throw new Error(err1.message);
+  if (err2) throw new Error(err2.message);
+
+  revalidateTachesPaths();
+}
+
+export type TacheAvecRelations = Tables<"taches"> & {
+  liste: Pick<Tables<"listes_taches">, "id" | "nom" | "couleur"> | null;
+  sous_taches: Tables<"sous_taches">[];
+  tags: Tables<"tags">[];
+};
+
+export async function getTachesAvecRelations(): Promise<TacheAvecRelations[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("taches")
+    .select(
+      "*, liste:listes_taches(id, nom, couleur), sous_taches(id, tache_id, titre, fait, ordre, created_at), taches_tags(tag:tags(id, nom, couleur))"
+    )
+    .order("fait", { ascending: true })
+    .order("ordre", { ascending: true })
+    .order("echeance", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .order("ordre", { referencedTable: "sous_taches", ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map(({ taches_tags, ...tache }) => ({
+    ...tache,
+    tags: taches_tags.map((tt) => tt.tag).filter((tag): tag is Tables<"tags"> => tag !== null),
+  }));
+}
+
+// --- Listes ---
+
+export type ListeFormState = { error: string | null };
+
+export async function createListe(
+  _prevState: ListeFormState,
+  formData: FormData
+): Promise<ListeFormState> {
+  const nom = String(formData.get("nom") ?? "").trim();
+  const couleur = String(formData.get("couleur") ?? "").trim();
+  if (!nom) return { error: "Le nom est requis." };
+
+  const supabase = await createClient();
+
+  const { data: derniere } = await supabase
+    .from("listes_taches")
+    .select("ordre")
+    .order("ordre", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from("listes_taches").insert({
+    nom,
+    couleur: couleur || null,
+    ordre: (derniere?.ordre ?? -1) + 1,
+  });
+
+  if (error) return { error: error.message };
+
   revalidatePath("/taches");
-  revalidatePath("/agenda");
+  return { error: null };
+}
+
+export async function updateListe(
+  _prevState: ListeFormState,
+  formData: FormData
+): Promise<ListeFormState> {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Liste introuvable." };
+
+  const nom = String(formData.get("nom") ?? "").trim();
+  const couleur = String(formData.get("couleur") ?? "").trim();
+  if (!nom) return { error: "Le nom est requis." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("listes_taches")
+    .update({ nom, couleur: couleur || null })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/taches");
+  return { error: null };
+}
+
+// La liste "Général", créée par la migration, est la liste par défaut de
+// secours : comme taches.liste_id est not null, la supprimer casserait
+// toute tâche qui y est encore rattachée. Non supprimable, à l'image des
+// catégories prédéfinies du budget (cf. supprimerCategorie).
+export async function deleteListe(id: string) {
+  const supabase = await createClient();
+
+  const { data: liste, error: fetchError } = await supabase
+    .from("listes_taches")
+    .select("nom")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) throw new Error(fetchError.message);
+  if (!liste) return;
+  if (liste.nom === "Général") {
+    throw new Error('La liste "Général" ne peut pas être supprimée.');
+  }
+
+  const { error } = await supabase.from("listes_taches").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function reordonnerListes(id: string, direction: "haut" | "bas") {
+  const supabase = await createClient();
+
+  const { data: listes, error } = await supabase
+    .from("listes_taches")
+    .select("id, ordre")
+    .order("ordre", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  if (!listes) return;
+
+  const index = listes.findIndex((l) => l.id === id);
+  if (index === -1) return;
+
+  const voisinIndex = direction === "haut" ? index - 1 : index + 1;
+  if (voisinIndex < 0 || voisinIndex >= listes.length) return;
+
+  const actuelle = listes[index];
+  const voisine = listes[voisinIndex];
+
+  const [{ error: err1 }, { error: err2 }] = await Promise.all([
+    supabase.from("listes_taches").update({ ordre: voisine.ordre }).eq("id", actuelle.id),
+    supabase.from("listes_taches").update({ ordre: actuelle.ordre }).eq("id", voisine.id),
+  ]);
+
+  if (err1) throw new Error(err1.message);
+  if (err2) throw new Error(err2.message);
+
+  revalidatePath("/taches");
+}
+
+export async function getListes(): Promise<Tables<"listes_taches">[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("listes_taches")
+    .select("*")
+    .order("ordre", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+// --- Tags ---
+
+export type TagFormState = { error: string | null };
+
+export async function createTag(
+  _prevState: TagFormState,
+  formData: FormData
+): Promise<TagFormState> {
+  const nom = String(formData.get("nom") ?? "").trim();
+  const couleur = String(formData.get("couleur") ?? "").trim();
+  if (!nom) return { error: "Le nom est requis." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tags").insert({ nom, couleur: couleur || null });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/taches");
+  return { error: null };
+}
+
+export async function deleteTag(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tags").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function associerTag(tacheId: string, tagId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("taches_tags").insert({ tache_id: tacheId, tag_id: tagId });
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function dissocierTag(tacheId: string, tagId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("taches_tags")
+    .delete()
+    .eq("tache_id", tacheId)
+    .eq("tag_id", tagId);
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function getTags(): Promise<Tables<"tags">[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("tags").select("*").order("nom", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+// --- Sous-tâches ---
+
+export async function createSousTache(tacheId: string, titre: string) {
+  const trimmed = titre.trim();
+  if (!trimmed) throw new Error("Le titre de la sous-tâche est requis.");
+
+  const supabase = await createClient();
+
+  const { data: derniere } = await supabase
+    .from("sous_taches")
+    .select("ordre")
+    .eq("tache_id", tacheId)
+    .order("ordre", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from("sous_taches").insert({
+    tache_id: tacheId,
+    titre: trimmed,
+    ordre: (derniere?.ordre ?? -1) + 1,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function toggleSousTache(id: string, fait: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("sous_taches").update({ fait }).eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function updateSousTache(id: string, titre: string) {
+  const trimmed = titre.trim();
+  if (!trimmed) throw new Error("Le titre de la sous-tâche est requis.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("sous_taches").update({ titre: trimmed }).eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function deleteSousTache(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("sous_taches").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
+}
+
+export async function reordonnerSousTaches(
+  tacheId: string,
+  id: string,
+  direction: "haut" | "bas"
+) {
+  const supabase = await createClient();
+
+  const { data: sousTaches, error } = await supabase
+    .from("sous_taches")
+    .select("id, ordre")
+    .eq("tache_id", tacheId)
+    .order("ordre", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  if (!sousTaches) return;
+
+  const index = sousTaches.findIndex((s) => s.id === id);
+  if (index === -1) return;
+
+  const voisinIndex = direction === "haut" ? index - 1 : index + 1;
+  if (voisinIndex < 0 || voisinIndex >= sousTaches.length) return;
+
+  const actuelle = sousTaches[index];
+  const voisine = sousTaches[voisinIndex];
+
+  const [{ error: err1 }, { error: err2 }] = await Promise.all([
+    supabase.from("sous_taches").update({ ordre: voisine.ordre }).eq("id", actuelle.id),
+    supabase.from("sous_taches").update({ ordre: actuelle.ordre }).eq("id", voisine.id),
+  ]);
+
+  if (err1) throw new Error(err1.message);
+  if (err2) throw new Error(err2.message);
+
+  revalidateTachesPaths();
 }

@@ -2,18 +2,25 @@
 
 import { compareAsc, format } from "date-fns";
 import { fr } from "date-fns/locale";
+import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { TaskCard } from "../taches/TasksList";
 import { sectionTitle } from "@/lib/ui";
 import { parseISODate, sortByHeure } from "./date-utils";
 
-type Tache = Tables<"taches">;
-
-export function ListView({ taches }: { taches: Tache[] }) {
+export function ListView({
+  taches,
+  listes,
+  tags,
+}: {
+  taches: TacheAvecRelations[];
+  listes: Tables<"listes_taches">[];
+  tags: Tables<"tags">[];
+}) {
   const withDate = taches.filter((t) => t.echeance);
   const withoutDate = taches.filter((t) => !t.echeance);
 
-  const groups = new Map<string, Tache[]>();
+  const groups = new Map<string, TacheAvecRelations[]>();
   for (const t of withDate) {
     const list = groups.get(t.echeance!) ?? [];
     list.push(t);
@@ -39,7 +46,7 @@ export function ListView({ taches }: { taches: Tache[] }) {
             </h2>
             <ul className="flex flex-col gap-2.5">
               {dayTaches.map((tache) => (
-                <TaskCard key={tache.id} tache={tache} />
+                <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
               ))}
             </ul>
           </div>
@@ -51,7 +58,7 @@ export function ListView({ taches }: { taches: Tache[] }) {
           <h2 className={sectionTitle}>Sans date</h2>
           <ul className="flex flex-col gap-2.5">
             {withoutDate.map((tache) => (
-              <TaskCard key={tache.id} tache={tache} />
+              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
             ))}
           </ul>
         </div>

@@ -314,6 +314,33 @@ export type Database = {
           },
         ]
       }
+      listes_taches: {
+        Row: {
+          couleur: string | null
+          created_at: string
+          id: string
+          nom: string
+          ordre: number
+          updated_at: string
+        }
+        Insert: {
+          couleur?: string | null
+          created_at?: string
+          id?: string
+          nom: string
+          ordre?: number
+          updated_at?: string
+        }
+        Update: {
+          couleur?: string | null
+          created_at?: string
+          id?: string
+          nom?: string
+          ordre?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           contenu: string
@@ -555,6 +582,41 @@ export type Database = {
         }
         Relationships: []
       }
+      sous_taches: {
+        Row: {
+          created_at: string
+          fait: boolean
+          id: string
+          ordre: number
+          tache_id: string
+          titre: string
+        }
+        Insert: {
+          created_at?: string
+          fait?: boolean
+          id?: string
+          ordre?: number
+          tache_id: string
+          titre: string
+        }
+        Update: {
+          created_at?: string
+          fait?: boolean
+          id?: string
+          ordre?: number
+          tache_id?: string
+          titre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sous_taches_tache_id_fkey"
+            columns: ["tache_id"]
+            isOneToOne: false
+            referencedRelation: "taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       taches: {
         Row: {
           created_at: string
@@ -562,6 +624,14 @@ export type Database = {
           fait: boolean
           heure: string | null
           id: string
+          liste_id: string
+          notes: string | null
+          ordre: number
+          priorite: Database["public"]["Enums"]["priorite_tache"]
+          recurrence_fin: string | null
+          recurrence_frequence:
+            | Database["public"]["Enums"]["frequence_recurrence"]
+            | null
           titre: string
           updated_at: string
         }
@@ -571,6 +641,14 @@ export type Database = {
           fait?: boolean
           heure?: string | null
           id?: string
+          liste_id: string
+          notes?: string | null
+          ordre?: number
+          priorite?: Database["public"]["Enums"]["priorite_tache"]
+          recurrence_fin?: string | null
+          recurrence_frequence?:
+            | Database["public"]["Enums"]["frequence_recurrence"]
+            | null
           titre: string
           updated_at?: string
         }
@@ -580,8 +658,75 @@ export type Database = {
           fait?: boolean
           heure?: string | null
           id?: string
+          liste_id?: string
+          notes?: string | null
+          ordre?: number
+          priorite?: Database["public"]["Enums"]["priorite_tache"]
+          recurrence_fin?: string | null
+          recurrence_frequence?:
+            | Database["public"]["Enums"]["frequence_recurrence"]
+            | null
           titre?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taches_liste_id_fkey"
+            columns: ["liste_id"]
+            isOneToOne: false
+            referencedRelation: "listes_taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      taches_tags: {
+        Row: {
+          tache_id: string
+          tag_id: string
+        }
+        Insert: {
+          tache_id: string
+          tag_id: string
+        }
+        Update: {
+          tache_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taches_tags_tache_id_fkey"
+            columns: ["tache_id"]
+            isOneToOne: false
+            referencedRelation: "taches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taches_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          couleur: string | null
+          created_at: string
+          id: string
+          nom: string
+        }
+        Insert: {
+          couleur?: string | null
+          created_at?: string
+          id?: string
+          nom: string
+        }
+        Update: {
+          couleur?: string | null
+          created_at?: string
+          id?: string
+          nom?: string
         }
         Relationships: []
       }
@@ -742,6 +887,7 @@ export type Database = {
       habitude_type: "boolean" | "streak" | "quantifiee"
       jour_type_ppl: "entrainement" | "repos"
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
+      priorite_tache: "aucune" | "basse" | "moyenne" | "haute"
       recette_source: "manuel" | "hellofresh"
       statut_objectif: "en_cours" | "atteint" | "abandonne"
       type_compte: "courant" | "epargne" | "autre"
@@ -881,6 +1027,7 @@ export const Constants = {
       habitude_type: ["boolean", "streak", "quantifiee"],
       jour_type_ppl: ["entrainement", "repos"],
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],
+      priorite_tache: ["aucune", "basse", "moyenne", "haute"],
       recette_source: ["manuel", "hellofresh"],
       statut_objectif: ["en_cours", "atteint", "abandonne"],
       type_compte: ["courant", "epargne", "autre"],

@@ -2,20 +2,23 @@
 
 import { addDays, format, isSameDay, isToday, startOfToday, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
+import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { AddTaskToggle } from "../taches/AddTaskToggle";
 import { TaskCard } from "../taches/TasksList";
 import { ghostButton, sectionTitle } from "@/lib/ui";
 import { parseISODate, sortByHeure, toISODate } from "./date-utils";
 
-type Tache = Tables<"taches">;
-
 export function DayView({
   taches,
+  listes,
+  tags,
   selectedDate,
   onChangeDate,
 }: {
-  taches: Tache[];
+  taches: TacheAvecRelations[];
+  listes: Tables<"listes_taches">[];
+  tags: Tables<"tags">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
 }) {
@@ -62,6 +65,8 @@ export function DayView({
       </div>
 
       <AddTaskToggle
+        listes={listes}
+        tags={tags}
         defaultEcheance={toISODate(selectedDate)}
         label="+ Ajouter une tâche ce jour-là"
       />
@@ -71,7 +76,7 @@ export function DayView({
       ) : (
         <ul className="flex flex-col gap-2.5">
           {dayTaches.map((tache) => (
-            <TaskCard key={tache.id} tache={tache} />
+            <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
           ))}
         </ul>
       )}

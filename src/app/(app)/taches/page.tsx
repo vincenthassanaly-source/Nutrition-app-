@@ -1,27 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
-import { AddTaskToggle } from "./AddTaskToggle";
-import { TasksList } from "./TasksList";
-import { errorText, screenTitle } from "@/lib/ui";
+import { getListes, getTachesAvecRelations, getTags } from "@/app/actions/taches";
+import { TachesView } from "./TachesView";
+import { screenTitle } from "@/lib/ui";
 
 export default async function TachesPage() {
-  const supabase = await createClient();
-
-  const { data: taches, error } = await supabase
-    .from("taches")
-    .select("*")
-    .order("fait", { ascending: true })
-    .order("echeance", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return <p className={errorText}>Erreur de chargement : {error.message}</p>;
-  }
+  const [taches, listes, tags] = await Promise.all([
+    getTachesAvecRelations(),
+    getListes(),
+    getTags(),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className={screenTitle}>Tâches</h1>
-      <AddTaskToggle />
-      <TasksList taches={taches ?? []} />
+      <TachesView taches={taches} listes={listes} tags={tags} />
     </div>
   );
 }
