@@ -232,6 +232,118 @@ export type Database = {
         }
         Relationships: []
       }
+      objectif_entries: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          objectif_id: string
+          valeur: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          objectif_id: string
+          valeur: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          objectif_id?: string
+          valeur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objectif_entries_objectif_id_fkey"
+            columns: ["objectif_id"]
+            isOneToOne: false
+            referencedRelation: "objectifs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      objectif_etapes: {
+        Row: {
+          created_at: string
+          fait: boolean
+          id: string
+          objectif_id: string
+          ordre: number
+          titre: string
+        }
+        Insert: {
+          created_at?: string
+          fait?: boolean
+          id?: string
+          objectif_id: string
+          ordre?: number
+          titre: string
+        }
+        Update: {
+          created_at?: string
+          fait?: boolean
+          id?: string
+          objectif_id?: string
+          ordre?: number
+          titre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objectif_etapes_objectif_id_fkey"
+            columns: ["objectif_id"]
+            isOneToOne: false
+            referencedRelation: "objectifs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      objectifs: {
+        Row: {
+          categorie: Database["public"]["Enums"]["categorie_objectif"]
+          created_at: string
+          date_echeance: string | null
+          description: string | null
+          id: string
+          ordre: number
+          statut: Database["public"]["Enums"]["statut_objectif"]
+          titre: string
+          type_suivi: Database["public"]["Enums"]["type_suivi_objectif"]
+          unite: string | null
+          updated_at: string
+          valeur_cible: number | null
+        }
+        Insert: {
+          categorie?: Database["public"]["Enums"]["categorie_objectif"]
+          created_at?: string
+          date_echeance?: string | null
+          description?: string | null
+          id?: string
+          ordre?: number
+          statut?: Database["public"]["Enums"]["statut_objectif"]
+          titre: string
+          type_suivi?: Database["public"]["Enums"]["type_suivi_objectif"]
+          unite?: string | null
+          updated_at?: string
+          valeur_cible?: number | null
+        }
+        Update: {
+          categorie?: Database["public"]["Enums"]["categorie_objectif"]
+          created_at?: string
+          date_echeance?: string | null
+          description?: string | null
+          id?: string
+          ordre?: number
+          statut?: Database["public"]["Enums"]["statut_objectif"]
+          titre?: string
+          type_suivi?: Database["public"]["Enums"]["type_suivi_objectif"]
+          unite?: string | null
+          updated_at?: string
+          valeur_cible?: number | null
+        }
+        Relationships: []
+      }
       objectifs_nutritionnels: {
         Row: {
           created_at: string
@@ -375,10 +487,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      categorie_objectif: "perso" | "pro"
       habitude_type: "boolean" | "streak" | "quantifiee"
       jour_type_ppl: "entrainement" | "repos"
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
       recette_source: "manuel" | "hellofresh"
+      statut_objectif: "en_cours" | "atteint" | "abandonne"
+      type_suivi_objectif: "valeur" | "etapes" | "binaire"
       unite_mesure: "g" | "ml" | "piece"
     }
     CompositeTypes: {
@@ -507,10 +622,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      categorie_objectif: ["perso", "pro"],
       habitude_type: ["boolean", "streak", "quantifiee"],
       jour_type_ppl: ["entrainement", "repos"],
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],
       recette_source: ["manuel", "hellofresh"],
+      statut_objectif: ["en_cours", "atteint", "abandonne"],
+      type_suivi_objectif: ["valeur", "etapes", "binaire"],
       unite_mesure: ["g", "ml", "piece"],
     },
   },

@@ -76,6 +76,20 @@ export const MODULES: AppModule[] = [
       ),
   },
   {
+    href: "/objectifs",
+    label: "Objectifs",
+    description: "Objectifs perso et pro, avec échéance",
+    accentVar: "var(--accent-objectifs)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("circle", { cx: 12, cy: 12, r: 8.5 }),
+        createElement("circle", { cx: 12, cy: 12, r: 4.5 }),
+        createElement("circle", { cx: 12, cy: 12, r: 0.8, fill: c })
+      ),
+  },
+  {
     href: "/habitudes",
     label: "Habitudes",
     description: "Suivi quotidien et streaks",

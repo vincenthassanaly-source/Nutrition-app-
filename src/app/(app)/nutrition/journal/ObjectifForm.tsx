@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { upsertObjectif, type ObjectifFormState } from "@/app/actions/objectifs";
+import { upsertObjectif, type ObjectifFormState } from "@/app/actions/objectifs-nutritionnels";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, errorText, input, label as labelClass, linkButton, primaryButton, secondaryButton } from "@/lib/ui";
 
