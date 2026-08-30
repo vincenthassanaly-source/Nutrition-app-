@@ -8,6 +8,38 @@ import { AddTransactionToggle } from "./AddTransactionToggle";
 import { TransactionsFilters } from "./TransactionsFilters";
 import { TransactionsList } from "./TransactionsList";
 
+const ICON_PROPS = {
+  width: 15,
+  height: 15,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+function CalendrierIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <rect x="3.5" y="4.5" width="17" height="16" rx="2.5" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 2.5v4M16 2.5v4" />
+    </svg>
+  );
+}
+
+function RecurrentesIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M17 2.5 20.5 6 17 9.5" />
+      <path d="M20.5 6H8a5 5 0 0 0-5 5v1" />
+      <path d="M7 21.5 3.5 18 7 14.5" />
+      <path d="M3.5 18H16a5 5 0 0 0 5-5v-1" />
+    </svg>
+  );
+}
+
 // Les transactions sont ajoutées quasi exclusivement en écriture directe en
 // base (hors Server Action) par Claude Code en session, donc rien ne doit
 // jamais mettre cette route en cache (cf. /nutrition/journal, même pattern).
@@ -60,11 +92,13 @@ export default async function TransactionsPage({
       <div className="flex items-center justify-between gap-2">
         <h1 className={screenTitle}>Transactions</h1>
         <div className="flex gap-3">
-          <Link href="/budget/calendrier" className="text-sm font-semibold text-ink-2">
-            📅 Calendrier →
+          <Link href="/budget/calendrier" className="inline-flex items-center gap-1.5 text-sm font-semibold text-budget">
+            <CalendrierIcon />
+            Calendrier
           </Link>
-          <Link href="/budget/recurrentes" className="text-sm font-semibold text-ink-2">
-            🔁 Récurrentes →
+          <Link href="/budget/recurrentes" className="inline-flex items-center gap-1.5 text-sm font-semibold text-budget">
+            <RecurrentesIcon />
+            Récurrentes
           </Link>
         </div>
       </div>
@@ -78,7 +112,7 @@ export default async function TransactionsPage({
               year: "numeric",
             })}
           </span>
-          <Link href={hrefSansDate} className="font-semibold text-ink-2">
+          <Link href={hrefSansDate} className="font-semibold text-budget">
             Effacer ✕
           </Link>
         </div>

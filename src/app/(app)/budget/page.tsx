@@ -4,7 +4,49 @@ import { getResumeMois } from "@/app/actions/transactions";
 import { getSuiviCategories } from "@/app/actions/budgets";
 import { genererOccurrencesDues } from "@/app/actions/transactions-recurrentes";
 import { formatMontant, formatPeriode, premierJourDuMois } from "@/lib/budget/compute";
-import { card, eyebrow, pillLinkButton, screenTitle, sectionTitle } from "@/lib/ui";
+import { card, eyebrow, screenTitle, sectionTitle } from "@/lib/ui";
+
+const ICON_PROPS = {
+  width: 15,
+  height: 15,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+function RecurrentesIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M17 2.5 20.5 6 17 9.5" />
+      <path d="M20.5 6H8a5 5 0 0 0-5 5v1" />
+      <path d="M7 21.5 3.5 18 7 14.5" />
+      <path d="M3.5 18H16a5 5 0 0 0 5-5v-1" />
+    </svg>
+  );
+}
+
+function CalendrierIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <rect x="3.5" y="4.5" width="17" height="16" rx="2.5" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 2.5v4M16 2.5v4" />
+    </svg>
+  );
+}
+
+function StatistiquesIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M4 20.5V10" />
+      <path d="M12 20.5V4" />
+      <path d="M20 20.5v-7" />
+    </svg>
+  );
+}
 
 // Les transactions sont ajoutées quasi exclusivement en écriture directe en
 // base par Claude Code en session : cette route ne doit jamais rester en
@@ -43,10 +85,10 @@ export default async function BudgetPage() {
         >
           {formatMontant(totalSoldes)}
         </p>
-        <Link href="/budget/comptes" className={`mt-1 ${pillLinkButton}`}>
+        <Link href="/budget/comptes" className="mt-1 text-sm font-semibold text-budget">
           {comptes.length === 0
-            ? "Ajouter un compte →"
-            : `Voir ${comptes.length === 1 ? "le compte" : `les ${comptes.length} comptes`} →`}
+            ? "Ajouter un compte"
+            : `Voir ${comptes.length === 1 ? "le compte" : `les ${comptes.length} comptes`}`}
         </Link>
       </div>
 
@@ -74,8 +116,8 @@ export default async function BudgetPage() {
             </span>
           </div>
         </div>
-        <Link href="/budget/transactions" className={pillLinkButton}>
-          Voir les transactions →
+        <Link href="/budget/transactions" className="text-sm font-semibold text-budget">
+          Voir les transactions
         </Link>
       </div>
 
@@ -114,22 +156,36 @@ export default async function BudgetPage() {
             })}
           </ul>
         )}
-        <Link href="/budget/categories" className={pillLinkButton}>
-          Voir toutes les catégories →
+        <Link href="/budget/categories" className="text-sm font-semibold text-budget">
+          Voir toutes les catégories
         </Link>
       </div>
 
       <div className={`${card} flex flex-col gap-2`}>
         <p className={sectionTitle}>Autres vues</p>
-        <Link href="/budget/recurrentes" className="text-sm font-semibold text-ink-2">
-          🔁 Transactions récurrentes →
-        </Link>
-        <Link href="/budget/calendrier" className="text-sm font-semibold text-ink-2">
-          📅 Calendrier →
-        </Link>
-        <Link href="/budget/statistiques" className="text-sm font-semibold text-ink-2">
-          📊 Statistiques →
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/budget/recurrentes"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-budget"
+          >
+            <RecurrentesIcon />
+            Transactions récurrentes
+          </Link>
+          <Link
+            href="/budget/calendrier"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-budget"
+          >
+            <CalendrierIcon />
+            Calendrier
+          </Link>
+          <Link
+            href="/budget/statistiques"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13.5px] font-semibold text-budget"
+          >
+            <StatistiquesIcon />
+            Statistiques
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ export default async function CalendrierPage({
           <p className={eyebrow}>Budget</p>
           <h1 className={screenTitle}>Calendrier</h1>
         </div>
-        <Link href="/budget/transactions" className="text-sm font-semibold text-ink-2">
+        <Link href="/budget/transactions" className="text-sm font-semibold text-budget">
           Liste →
         </Link>
       </div>

@@ -30,9 +30,6 @@ export const linkButton = "text-sm font-semibold text-kcal";
 export const iconButton =
   "flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface text-ink";
 
-export const pillLinkButton =
-  "inline-flex w-fit items-center gap-1 rounded-full border border-line bg-surface-alt px-3.5 py-2 text-[13px] font-semibold text-ink";
-
 export const pillTag =
   "shrink-0 rounded-full bg-surface-alt px-2.5 py-1 text-[11px] font-semibold text-ink-2";
 export const kcalPillTag =
