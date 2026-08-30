@@ -33,7 +33,10 @@ export default async function DashboardPage() {
   const today = todayISO();
   const supabase = await createClient();
 
-  const [{ data: objectif }, { data: entries }, taches, habitudes] = await Promise.all([
+  // Chaque source alimente une carte indépendante : une source en erreur
+  // (table manquante, requête qui échoue) dégrade sa carte au lieu de faire
+  // planter tout l'accueil.
+  const [objectifResult, entriesResult, tachesResult, habitudesResult] = await Promise.allSettled([
     supabase.from("objectifs_nutritionnels").select("*").eq("jour_type", "repos").maybeSingle(),
     supabase
       .from("journal_repas")
@@ -44,6 +47,11 @@ export default async function DashboardPage() {
     getTachesAvecRelations(),
     getHabitudesDuJour(today),
   ]);
+
+  const objectif = objectifResult.status === "fulfilled" ? objectifResult.value.data : null;
+  const entries = entriesResult.status === "fulfilled" ? entriesResult.value.data : null;
+  const taches = tachesResult.status === "fulfilled" ? tachesResult.value : [];
+  const habitudes = habitudesResult.status === "fulfilled" ? habitudesResult.value : [];
 
   const consomme = (entries ?? []).reduce((acc, entry) => {
     if (entry.aliment) return addNutrition(acc, nutritionAliment(entry.aliment, entry.quantite));
