@@ -44,7 +44,7 @@ export default async function StatistiquesPage({
           <p className={eyebrow}>Budget</p>
           <h1 className={screenTitle}>Statistiques</h1>
         </div>
-        <Link href="/budget/calendrier" className="text-sm font-semibold text-budget">
+        <Link href="/budget/calendrier" className="text-sm font-semibold text-ink-2">
           📅 Calendrier →
         </Link>
       </div>

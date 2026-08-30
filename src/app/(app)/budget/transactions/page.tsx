@@ -60,10 +60,10 @@ export default async function TransactionsPage({
       <div className="flex items-center justify-between gap-2">
         <h1 className={screenTitle}>Transactions</h1>
         <div className="flex gap-3">
-          <Link href="/budget/calendrier" className="text-sm font-semibold text-budget">
+          <Link href="/budget/calendrier" className="text-sm font-semibold text-ink-2">
             📅 Calendrier →
           </Link>
-          <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
+          <Link href="/budget/recurrentes" className="text-sm font-semibold text-ink-2">
             🔁 Récurrentes →
           </Link>
         </div>
@@ -78,7 +78,7 @@ export default async function TransactionsPage({
               year: "numeric",
             })}
           </span>
-          <Link href={hrefSansDate} className="font-semibold text-budget">
+          <Link href={hrefSansDate} className="font-semibold text-ink-2">
             Effacer ✕
           </Link>
         </div>

@@ -95,7 +95,7 @@ export function CategorieProgressCard({
           }
           className={`${input} flex-1 py-1.5 text-[13px]`}
         />
-        <button type="submit" disabled={pending} className="shrink-0 text-sm font-semibold text-budget">
+        <button type="submit" disabled={pending} className="shrink-0 text-sm font-semibold text-kcal">
           {pending ? "..." : "Définir"}
         </button>
       </form>

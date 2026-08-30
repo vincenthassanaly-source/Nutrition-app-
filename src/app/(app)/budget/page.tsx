@@ -4,7 +4,7 @@ import { getResumeMois } from "@/app/actions/transactions";
 import { getSuiviCategories } from "@/app/actions/budgets";
 import { genererOccurrencesDues } from "@/app/actions/transactions-recurrentes";
 import { formatMontant, formatPeriode, premierJourDuMois } from "@/lib/budget/compute";
-import { card, eyebrow, screenTitle, sectionTitle } from "@/lib/ui";
+import { card, eyebrow, pillLinkButton, screenTitle, sectionTitle } from "@/lib/ui";
 
 // Les transactions sont ajoutées quasi exclusivement en écriture directe en
 // base par Claude Code en session : cette route ne doit jamais rester en
@@ -43,7 +43,7 @@ export default async function BudgetPage() {
         >
           {formatMontant(totalSoldes)}
         </p>
-        <Link href="/budget/comptes" className="mt-1 text-sm font-semibold text-budget">
+        <Link href="/budget/comptes" className={`mt-1 ${pillLinkButton}`}>
           {comptes.length === 0
             ? "Ajouter un compte →"
             : `Voir ${comptes.length === 1 ? "le compte" : `les ${comptes.length} comptes`} →`}
@@ -74,7 +74,7 @@ export default async function BudgetPage() {
             </span>
           </div>
         </div>
-        <Link href="/budget/transactions" className="text-sm font-semibold text-budget">
+        <Link href="/budget/transactions" className={pillLinkButton}>
           Voir les transactions →
         </Link>
       </div>
@@ -114,20 +114,20 @@ export default async function BudgetPage() {
             })}
           </ul>
         )}
-        <Link href="/budget/categories" className="text-sm font-semibold text-budget">
+        <Link href="/budget/categories" className={pillLinkButton}>
           Voir toutes les catégories →
         </Link>
       </div>
 
       <div className={`${card} flex flex-col gap-2`}>
         <p className={sectionTitle}>Autres vues</p>
-        <Link href="/budget/recurrentes" className="text-sm font-semibold text-budget">
+        <Link href="/budget/recurrentes" className="text-sm font-semibold text-ink-2">
           🔁 Transactions récurrentes →
         </Link>
-        <Link href="/budget/calendrier" className="text-sm font-semibold text-budget">
+        <Link href="/budget/calendrier" className="text-sm font-semibold text-ink-2">
           📅 Calendrier →
         </Link>
-        <Link href="/budget/statistiques" className="text-sm font-semibold text-budget">
+        <Link href="/budget/statistiques" className="text-sm font-semibold text-ink-2">
           📊 Statistiques →
         </Link>
       </div>
