@@ -48,3 +48,19 @@ Aucun. La recherche de la Phase 1 n'a révélé aucune autre occurrence des vale
 ## Avant de pousser
 
 ⚠️ Conformément à la consigne, ces changements **n'ont pas été poussés** sur la branche `kilio`. Confirmation explicite de Vincent requise avant tout `git push`.
+
+## Addendum — icône de l'app toujours verte après réinstallation
+
+Après confirmation et push initial sur `kilio`, Vincent a signalé que l'icône affichée sur son téléphone après désinstallation/réinstallation de la PWA restait dans l'ancien vert clair/forêt.
+
+**Cause identifiée :** `public/manifest.json` (utilisé par le navigateur pour l'icône "Ajouter à l'écran d'accueil") et l'icône Apple Touch ne référencent **pas** les SVG modifiés, mais des PNG statiques pré-rendus qui n'avaient jamais été régénérés :
+- `public/icons/icon-192.png`
+- `public/icons/icon-512.png`
+- `src/app/apple-icon.png`
+- `src/app/favicon.ico` (favicon d'onglet navigateur)
+
+Ces 4 fichiers binaires ont été régénérés à partir de `public/icons/kilio-logo.svg` (même source qu'à l'origine, tailles identiques : 192×192, 512×512, 180×180, et 16×16/32×32 pour l'ICO), avec `sharp`. Un contrôle pixel a confirmé la nouvelle teinte olive (`RGBA 80,111,68` ≈ `#506F44`, dans la plage du nouveau dégradé). Build relancé avec succès après régénération.
+
+**Non modifié, à noter pour information** : `theme_color` dans `public/manifest.json` est fixé à `#166534` (vert Tailwind, teinte de la barre de statut Android en PWA installée). Cette valeur ne fait pas partie des hex du dégradé du logo et n'a donc pas été touchée — mais elle jure maintenant avec le nouveau vert olive. À ajuster séparément si souhaité.
+
+**Point d'attention (préexistant, non corrigé)** : `manifest.json` déclare `"purpose": "any maskable"` pour `icon-192.png`/`icon-512.png`, mais ces PNG sont rendus depuis `kilio-logo.svg` (coins transparents, squircle déjà arrondi) plutôt que depuis `kilio-icon-maskable.svg` (plein cadre, prévu pour le masquage adaptatif Android). C'était déjà le cas avant cette intervention — non corrigé ici pour rester dans le périmètre demandé (changement de couleur uniquement).
