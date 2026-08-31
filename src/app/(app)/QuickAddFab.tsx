@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AddTaskForm } from "./taches/AddTaskForm";
 import { NoteForm } from "./notes/NoteForm";
 import { Modal } from "@/components/Modal";
+import { goBackSteps, useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 
 type Mode = null | "menu" | "tache" | "note";
@@ -17,53 +18,100 @@ export function QuickAddFab({
 }) {
   const [mode, setMode] = useState<Mode>(null);
 
+  // The dial's history entry stays pushed for as long as *anything* is
+  // open (menu or form) so a single back press from a form lands on the
+  // menu, not straight back home.
+  useBackClose(mode !== null, () => setMode(null));
+  // The form's own entry sits on top of the dial's. Guarded with a
+  // functional update so it's a no-op if the dial-level handler above
+  // already closed everything (e.g. goBackSteps(2) from onDone).
+  useBackClose(mode === "tache" || mode === "note", () =>
+    setMode((m) => (m === "tache" || m === "note" ? "menu" : m))
+  );
+
+  const dialOpen = mode !== null;
+  const dialInteractive = mode === "menu";
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMode("menu")}
-        aria-label="Ajouter"
-        className="fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-card"
-        style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 90px)",
-          background: "var(--accent-kcal)",
-        }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
+      <div
+        className="fixed inset-0 z-40"
+        style={{ pointerEvents: dialInteractive ? "auto" : "none" }}
+        onClick={() => history.back()}
+      />
 
-      {mode === "menu" && (
-        <Modal title="Ajouter" onClose={() => setMode(null)}>
-          <div className="flex flex-col gap-2 pb-1">
-            <button
-              type="button"
-              onClick={() => setMode("tache")}
-              className="rounded-2xl border border-line bg-surface-alt px-4 py-3.5 text-left text-[14.5px] font-semibold text-ink transition-colors hover:bg-surface"
-            >
-              Nouvelle tâche
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("note")}
-              className="rounded-2xl border border-line bg-surface-alt px-4 py-3.5 text-left text-[14.5px] font-semibold text-ink transition-colors hover:bg-surface"
-            >
-              Nouvelle note
-            </button>
-          </div>
-        </Modal>
-      )}
+      <div
+        className="fixed right-4 z-40 flex flex-col-reverse items-center gap-3"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 90px)" }}
+      >
+        <button
+          type="button"
+          onClick={() => (mode === null ? setMode("menu") : history.back())}
+          aria-label={mode === null ? "Ajouter" : "Fermer"}
+          aria-expanded={mode !== null}
+          className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-card"
+          style={{ background: "var(--accent-kcal)" }}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            className="transition-transform duration-200 ease-out"
+            style={{ transform: dialOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode("tache")}
+          aria-label="Nouvelle tâche"
+          tabIndex={dialInteractive ? 0 : -1}
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card transition-all duration-200 ease-out"
+          style={{
+            opacity: dialOpen ? 1 : 0,
+            transform: dialOpen ? "translateY(0)" : "translateY(12px)",
+            pointerEvents: dialInteractive ? "auto" : "none",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode("note")}
+          aria-label="Nouvelle note"
+          tabIndex={dialInteractive ? 0 : -1}
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card transition-all duration-200 ease-out"
+          style={{
+            opacity: dialOpen ? 1 : 0,
+            transform: dialOpen ? "translateY(0)" : "translateY(12px)",
+            pointerEvents: dialInteractive ? "auto" : "none",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+        </button>
+      </div>
 
       {mode === "tache" && (
-        <Modal title="Nouvelle tâche" onClose={() => setMode(null)}>
-          <AddTaskForm listes={listes} tags={tags} onDone={() => setMode(null)} />
+        <Modal title="Nouvelle tâche" onClose={() => history.back()}>
+          <AddTaskForm listes={listes} tags={tags} onDone={() => goBackSteps(2)} />
         </Modal>
       )}
 
       {mode === "note" && (
-        <Modal title="Nouvelle note" onClose={() => setMode(null)}>
-          <NoteForm onDone={() => setMode(null)} />
+        <Modal title="Nouvelle note" onClose={() => history.back()}>
+          <NoteForm onDone={() => goBackSteps(2)} />
         </Modal>
       )}
     </>
