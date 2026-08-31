@@ -8,7 +8,15 @@ import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { AddTaskToggle } from "./AddTaskToggle";
 import { TasksList } from "./TasksList";
-import { linkButton, pillTag } from "@/lib/ui";
+import { pillTag } from "@/lib/ui";
+
+const LISTE_ICON = (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 6h16" />
+    <path d="M4 12h16" />
+    <path d="M4 18h16" />
+  </svg>
+);
 
 type VueKey = "aujourdhui" | "semaine" | "toutes";
 
@@ -62,6 +70,14 @@ export function TachesView({
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Link
+          href="/taches/listes"
+          aria-label="Gérer les listes"
+          title="Gérer les listes"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-2 transition-colors hover:bg-surface-alt"
+        >
+          {LISTE_ICON}
+        </Link>
         <button
           type="button"
           onClick={() => setListeId("toutes")}
@@ -79,9 +95,6 @@ export function TachesView({
             {liste.nom}
           </button>
         ))}
-        <Link href="/taches/listes" className={`${linkButton} shrink-0 whitespace-nowrap`}>
-          Gérer les listes
-        </Link>
       </div>
 
       <AddTaskToggle

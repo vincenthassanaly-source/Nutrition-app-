@@ -176,7 +176,7 @@ export function TaskCard({
         />
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between gap-2">
-            <p className={`${nameText} ${tache.fait ? "text-ink-2 line-through" : ""}`}>
+            <p className={`${nameText} min-w-0 flex-1 ${tache.fait ? "text-ink-2 line-through" : ""}`}>
               {tache.titre}
             </p>
             {tache.recurrence_frequence && (
