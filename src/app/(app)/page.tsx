@@ -13,6 +13,7 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { DashboardTaskItem } from "./DashboardTaskItem";
 import { DashboardHabitItem } from "./DashboardHabitItem";
 import { QuickAddFab } from "./QuickAddFab";
+import { GlobalSearchBar } from "./GlobalSearchBar";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,8 @@ export default async function DashboardPage() {
         <p className={`${eyebrow} capitalize`}>{dateLabel}</p>
         <h1 className="font-display text-[25px] font-bold tracking-tight text-ink">{greeting()}</h1>
       </header>
+
+      <GlobalSearchBar />
 
       <Link href="/nutrition/journal" className={`${card} flex items-center gap-3.5`}>
         <ProgressRing size={60} strokeWidth={6.5} pct={kcalPct} color="var(--accent-kcal)">
