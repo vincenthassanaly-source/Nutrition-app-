@@ -27,7 +27,7 @@ export function TachesView({
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
 }) {
-  const [vue, setVue] = useState<VueKey>("aujourdhui");
+  const [vue, setVue] = useState<VueKey>("toutes");
   const [listeId, setListeId] = useState<string>("toutes");
 
   const filtered = useMemo(() => {
