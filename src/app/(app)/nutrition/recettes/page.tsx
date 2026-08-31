@@ -15,7 +15,7 @@ export default async function RecettesPage() {
   const { data: recettes, error } = await supabase
     .from("recettes")
     .select(
-      "*, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g))"
+      "*, recette_ingredients(quantite, aliment:aliments(nom, kcal_100g, proteines_100g, glucides_100g, lipides_100g)), recette_ingredients_libres(nom)"
     )
     .order("nom", { ascending: true });
 
@@ -24,13 +24,22 @@ export default async function RecettesPage() {
   }
 
   const views = (recettes ?? []).map((recette) => {
-    const { recette_ingredients, ...rest } = recette;
+    const { recette_ingredients, recette_ingredients_libres, ...rest } = recette;
     const kcalParPortion = hasNutritionOverride(recette)
       ? nutritionFromOverride(recette, 1).kcal
       : nutritionRecette(recette_ingredients, recette.portions, 1).kcal;
+
+    const ingredientsText = [
+      ...recette_ingredients.map((ri) => ri.aliment?.nom ?? ""),
+      ...(recette_ingredients_libres ?? []).map((ril) => ril.nom),
+    ]
+      .join(" ")
+      .toLowerCase();
+
     return {
       ...rest,
       kcalParPortion: Math.round(kcalParPortion),
+      ingredientsText,
     };
   });
 
