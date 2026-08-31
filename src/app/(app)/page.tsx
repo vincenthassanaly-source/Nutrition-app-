@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getTachesAvecRelations } from "@/app/actions/taches";
+import { getListes, getTachesAvecRelations, getTags } from "@/app/actions/taches";
 import { getHabitudesDuJour } from "@/app/actions/habitudes";
 import {
   addNutrition,
@@ -12,6 +12,7 @@ import { eyebrow, card } from "@/lib/ui";
 import { ProgressRing } from "@/components/ProgressRing";
 import { DashboardTaskItem } from "./DashboardTaskItem";
 import { DashboardHabitItem } from "./DashboardHabitItem";
+import { QuickAddFab } from "./QuickAddFab";
 
 export const dynamic = "force-dynamic";
 
@@ -36,22 +37,27 @@ export default async function DashboardPage() {
   // Chaque source alimente une carte indépendante : une source en erreur
   // (table manquante, requête qui échoue) dégrade sa carte au lieu de faire
   // planter tout l'accueil.
-  const [objectifResult, entriesResult, tachesResult, habitudesResult] = await Promise.allSettled([
-    supabase.from("objectifs_nutritionnels").select("*").eq("jour_type", "repos").maybeSingle(),
-    supabase
-      .from("journal_repas")
-      .select(
-        "*, aliment:aliments(*), recette:recettes(id, nom, portions, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
-      )
-      .eq("date", today),
-    getTachesAvecRelations(),
-    getHabitudesDuJour(today),
-  ]);
+  const [objectifResult, entriesResult, tachesResult, habitudesResult, listesResult, tagsResult] =
+    await Promise.allSettled([
+      supabase.from("objectifs_nutritionnels").select("*").eq("jour_type", "repos").maybeSingle(),
+      supabase
+        .from("journal_repas")
+        .select(
+          "*, aliment:aliments(*), recette:recettes(id, nom, portions, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
+        )
+        .eq("date", today),
+      getTachesAvecRelations(),
+      getHabitudesDuJour(today),
+      getListes(),
+      getTags(),
+    ]);
 
   const objectif = objectifResult.status === "fulfilled" ? objectifResult.value.data : null;
   const entries = entriesResult.status === "fulfilled" ? entriesResult.value.data : null;
   const taches = tachesResult.status === "fulfilled" ? tachesResult.value : [];
   const habitudes = habitudesResult.status === "fulfilled" ? habitudesResult.value : [];
+  const listes = listesResult.status === "fulfilled" ? listesResult.value : [];
+  const tags = tagsResult.status === "fulfilled" ? tagsResult.value : [];
 
   const consomme = (entries ?? []).reduce((acc, entry) => {
     if (entry.aliment) return addNutrition(acc, nutritionAliment(entry.aliment, entry.quantite));
@@ -178,6 +184,8 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+
+      <QuickAddFab listes={listes} tags={tags} />
     </div>
   );
 }
