@@ -5,9 +5,10 @@ import { enregistrerEntreeHabitude, supprimerHabitude, type HabitudeDuJour } fro
 import { HabitudeForm } from "./HabitudeForm";
 import { ProgressRing } from "@/components/ProgressRing";
 import { card, dangerButton, ghostButton, input, listCard, metaText, nameText, pillTag } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; date: string }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
   const [valeurInput, setValeurInput] = useState(
     habitude.entreeDuJour ? String(habitude.entreeDuJour.valeur) : ""
@@ -16,10 +17,10 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
   if (editing) {
     return (
       <li className={card}>
-        <HabitudeForm habitude={habitude} onDone={() => setEditing(false)} />
+        <HabitudeForm habitude={habitude} onDone={() => history.back()} />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -98,7 +99,7 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         <button

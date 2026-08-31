@@ -6,6 +6,7 @@ import { changerStatutObjectif, supprimerObjectif } from "@/app/actions/objectif
 import { ObjectifForm } from "../ObjectifForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, errorText, ghostButton, input, linkButton } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 const STATUT_LABELS: Record<Enums<"statut_objectif">, string> = {
   en_cours: "En cours",
@@ -27,15 +28,15 @@ function formatEcheance(iso: string) {
 }
 
 export function ObjectifHeader({ objectif }: { objectif: Tables<"objectifs"> }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   if (editing) {
     return (
       <div className={card}>
-        <ObjectifForm objectif={objectif} onDone={() => setEditing(false)} />
-        <button type="button" onClick={() => setEditing(false)} className="mt-2 text-sm text-ink-2 underline">
+        <ObjectifForm objectif={objectif} onDone={() => history.back()} />
+        <button type="button" onClick={() => history.back()} className="mt-2 text-sm text-ink-2 underline">
           Annuler
         </button>
       </div>
@@ -58,7 +59,7 @@ export function ObjectifHeader({ objectif }: { objectif: Tables<"objectifs"> }) 
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+          <button type="button" onClick={edit} className={ghostButton}>
             Éditer
           </button>
           <button

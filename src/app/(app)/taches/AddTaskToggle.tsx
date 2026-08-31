@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { AddTaskForm } from "./AddTaskForm";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 export function AddTaskToggle({
   listes,
@@ -20,11 +20,11 @@ export function AddTaskToggle({
   defaultHeure?: string;
   label?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, show] = useBackCloseToggle();
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={dashedAddButton}>
+      <button type="button" onClick={show} className={dashedAddButton}>
         {label}
       </button>
     );
@@ -38,11 +38,11 @@ export function AddTaskToggle({
         defaultListeId={defaultListeId}
         defaultEcheance={defaultEcheance}
         defaultHeure={defaultHeure}
-        onDone={() => setOpen(false)}
+        onDone={() => history.back()}
       />
       <button
         type="button"
-        onClick={() => setOpen(false)}
+        onClick={() => history.back()}
         className="mt-2 text-sm text-ink-2 underline"
       >
         Annuler

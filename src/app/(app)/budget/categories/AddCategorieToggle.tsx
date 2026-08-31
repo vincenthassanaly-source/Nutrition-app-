@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { AddCategorieForm } from "./AddCategorieForm";
 import { card, dashedAddButton } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 export function AddCategorieToggle() {
-  const [open, setOpen] = useState(false);
+  const [open, show] = useBackCloseToggle();
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={dashedAddButton}>
+      <button type="button" onClick={show} className={dashedAddButton}>
         + Ajouter une catégorie
       </button>
     );
@@ -17,10 +17,10 @@ export function AddCategorieToggle() {
 
   return (
     <div className={card}>
-      <AddCategorieForm onDone={() => setOpen(false)} />
+      <AddCategorieForm onDone={() => history.back()} />
       <button
         type="button"
-        onClick={() => setOpen(false)}
+        onClick={() => history.back()}
         className="mt-2 text-sm text-ink-2 underline"
       >
         Annuler

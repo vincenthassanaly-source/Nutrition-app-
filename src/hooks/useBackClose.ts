@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 /**
  * Keeps a UI layer (a sheet, a speed dial, ...) in sync with the browser
@@ -73,4 +73,19 @@ export function goBackSteps(steps: number) {
   };
   window.addEventListener("popstate", handlePopState);
   history.back();
+}
+
+/**
+ * Wraps the common single-level show/hide toggle (an "+ Ajouter" or
+ * "Modifier"/"Éditer" button that swaps in a form, closed via a "Annuler"
+ * button or the form's `onDone`) in `useBackClose`, so the hardware/OS
+ * back button closes the panel instead of leaving the page. Closing
+ * always goes through `history.back()` (in the caller's Annuler/onDone
+ * handlers) rather than the setter this returns, so the popstate handler
+ * and a direct close stay in sync.
+ */
+export function useBackCloseToggle(): [boolean, () => void] {
+  const [open, setOpen] = useState(false);
+  useBackClose(open, () => setOpen(false));
+  return [open, () => setOpen(true)];
 }

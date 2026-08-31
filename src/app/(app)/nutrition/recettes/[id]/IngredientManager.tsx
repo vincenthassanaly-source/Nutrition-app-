@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/recette-ingredients";
 import type { Tables } from "@/lib/supabase/types";
 import { cardTight, dangerButton, errorText, ghostButton, input, nameText, primaryButton } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 const UNITE_LABEL: Record<string, string> = { g: "g", ml: "ml", piece: "pièce" };
 
@@ -23,7 +24,7 @@ function IngredientLine({
   ingredient: IngredientRow;
   recetteId: string;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [quantite, setQuantite] = useState(String(ingredient.quantite));
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +64,7 @@ function IngredientLine({
                 startTransition(async () => {
                   try {
                     await updateIngredient(ingredient.id, recetteId, n);
-                    setEditing(false);
+                    history.back();
                   } catch (e) {
                     setError(e instanceof Error ? e.message : "Erreur inconnue.");
                   }
@@ -77,7 +78,7 @@ function IngredientLine({
               type="button"
               onClick={() => {
                 setQuantite(String(ingredient.quantite));
-                setEditing(false);
+                history.back();
               }}
               className={ghostButton}
             >
@@ -86,7 +87,7 @@ function IngredientLine({
           </>
         ) : (
           <>
-            <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+            <button type="button" onClick={edit} className={ghostButton}>
               Éditer
             </button>
             <button

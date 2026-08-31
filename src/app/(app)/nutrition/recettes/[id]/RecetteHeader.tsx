@@ -6,6 +6,7 @@ import { RecetteForm } from "../RecetteForm";
 import { deleteRecette } from "@/app/actions/recettes";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, errorText, ghostButton, linkButton } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 const SOURCE_LABEL: Record<string, string> = {
   manuel: "Manuel",
@@ -17,15 +18,15 @@ export function RecetteHeader({
 }: {
   recette: Tables<"recettes">;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   if (editing) {
     return (
       <div className={card}>
-        <RecetteForm recette={recette} onDone={() => setEditing(false)} />
-        <button type="button" onClick={() => setEditing(false)} className="mt-2 text-sm text-ink-2 underline">
+        <RecetteForm recette={recette} onDone={() => history.back()} />
+        <button type="button" onClick={() => history.back()} className="mt-2 text-sm text-ink-2 underline">
           Annuler
         </button>
       </div>
@@ -50,7 +51,7 @@ export function RecetteHeader({
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+          <button type="button" onClick={edit} className={ghostButton}>
             Éditer
           </button>
           <button

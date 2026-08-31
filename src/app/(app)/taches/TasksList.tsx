@@ -15,6 +15,7 @@ import { AddTaskForm } from "./AddTaskForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, nameText, pillTag } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 export function formatEcheance(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
@@ -143,17 +144,17 @@ export function TaskCard({
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [expanded, setExpanded] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   if (editing) {
     return (
       <li className={card}>
-        <AddTaskForm tache={tache} listes={listes} tags={tags} onDone={() => setEditing(false)} />
+        <AddTaskForm tache={tache} listes={listes} tags={tags} onDone={() => history.back()} />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -247,7 +248,7 @@ export function TaskCard({
           </button>
         </div>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+          <button type="button" onClick={edit} className={ghostButton}>
             Modifier
           </button>
           <button

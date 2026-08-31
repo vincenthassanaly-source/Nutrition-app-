@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { supprimerObjectif } from "@/app/actions/objectifs";
 import { ObjectifForm } from "./ObjectifForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, nameText, pillTag } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 const TYPE_SUIVI_LABELS: Record<Enums<"type_suivi_objectif">, string> = {
   valeur: "Valeur",
@@ -22,16 +23,16 @@ function formatEcheance(iso: string) {
 }
 
 export function ObjectifCard({ objectif }: { objectif: Tables<"objectifs"> }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
 
   if (editing) {
     return (
       <li className={card}>
-        <ObjectifForm objectif={objectif} onDone={() => setEditing(false)} />
+        <ObjectifForm objectif={objectif} onDone={() => history.back()} />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -55,7 +56,7 @@ export function ObjectifCard({ objectif }: { objectif: Tables<"objectifs"> }) {
         )}
       </Link>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         <button

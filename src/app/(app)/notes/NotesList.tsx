@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { deleteNote } from "@/app/actions/notes";
 import { NoteForm } from "./NoteForm";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, nameText } from "@/lib/ui";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -15,16 +16,16 @@ function formatDate(iso: string) {
 }
 
 function NoteCard({ note }: { note: Tables<"notes"> }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
 
   if (editing) {
     return (
       <li className={card}>
-        <NoteForm note={note} onDone={() => setEditing(false)} />
+        <NoteForm note={note} onDone={() => history.back()} />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -41,7 +42,7 @@ function NoteCard({ note }: { note: Tables<"notes"> }) {
       </div>
       <p className="line-clamp-2 text-sm text-ink-2">{note.contenu}</p>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         <button

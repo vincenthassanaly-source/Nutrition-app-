@@ -5,6 +5,7 @@ import { deleteListe, reordonnerListes } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { dangerButton, ghostButton, listCard, nameText } from "@/lib/ui";
 import { AddListeForm } from "./AddListeForm";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 function ListeRow({
   liste,
@@ -15,17 +16,17 @@ function ListeRow({
   index: number;
   total: number;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   if (editing) {
     return (
       <li className={listCard}>
-        <AddListeForm liste={liste} onDone={() => setEditing(false)} />
+        <AddListeForm liste={liste} onDone={() => history.back()} />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -79,7 +80,7 @@ function ListeRow({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         {liste.nom !== "Général" && (

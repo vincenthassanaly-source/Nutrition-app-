@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { supprimerCompte, type CompteAvecSolde } from "@/app/actions/comptes";
 import { formatMontant } from "@/lib/budget/compute";
 import { AddCompteForm } from "./AddCompteForm";
 import { card, dangerButton, ghostButton, listCard, metaText, nameText, pillTag } from "@/lib/ui";
 import type { Enums } from "@/lib/supabase/types";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 const TYPE_LABELS: Record<Enums<"type_compte">, string> = {
   courant: "Courant",
@@ -14,16 +15,16 @@ const TYPE_LABELS: Record<Enums<"type_compte">, string> = {
 };
 
 function CompteCard({ compte }: { compte: CompteAvecSolde }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
 
   if (editing) {
     return (
       <li className={card}>
-        <AddCompteForm compte={compte} onDone={() => setEditing(false)} />
+        <AddCompteForm compte={compte} onDone={() => history.back()} />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -47,7 +48,7 @@ function CompteCard({ compte }: { compte: CompteAvecSolde }) {
       </div>
       <span className={metaText}>Solde initial : {formatMontant(compte.solde_initial)}</span>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         <button

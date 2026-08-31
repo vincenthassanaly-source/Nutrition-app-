@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import {
   basculerActive,
   supprimerRecurrence,
@@ -11,6 +11,7 @@ import type { Tables } from "@/lib/supabase/types";
 import { FREQUENCE_LABELS, formatMontant } from "@/lib/budget/compute";
 import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { RecurrenceModeForm } from "./RecurrenceModeForm";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 function formatDate(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
@@ -29,7 +30,7 @@ function RecurrenceRow({
   comptes: CompteAvecSolde[];
   categories: Tables<"categories_budget">[];
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
 
   if (editing) {
@@ -39,11 +40,11 @@ function RecurrenceRow({
           recurrence={recurrence}
           comptes={comptes}
           categories={categories}
-          onDone={() => setEditing(false)}
+          onDone={() => history.back()}
         />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -97,7 +98,7 @@ function RecurrenceRow({
         >
           {recurrence.active ? "Mettre en pause" : "Reprendre"}
         </button>
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         <button

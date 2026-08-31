@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { supprimerTransaction, type TransactionAvecRelations } from "@/app/actions/transactions";
 import type { CompteAvecSolde } from "@/app/actions/comptes";
 import type { Tables } from "@/lib/supabase/types";
 import { formatMontant } from "@/lib/budget/compute";
 import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { TransactionModeForm } from "./TransactionModeForm";
+import { useBackCloseToggle } from "@/hooks/useBackClose";
 
 function formatDateOperation(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
@@ -41,7 +42,7 @@ function TransactionRow({
   categories: Tables<"categories_budget">[];
   compteFiltre?: string;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, edit] = useBackCloseToggle();
   const [isPending, startTransition] = useTransition();
 
   if (editing) {
@@ -51,11 +52,11 @@ function TransactionRow({
           transaction={transaction}
           comptes={comptes}
           categories={categories}
-          onDone={() => setEditing(false)}
+          onDone={() => history.back()}
         />
         <button
           type="button"
-          onClick={() => setEditing(false)}
+          onClick={() => history.back()}
           className="mt-2 text-sm text-ink-2 underline"
         >
           Annuler
@@ -100,7 +101,7 @@ function TransactionRow({
         </p>
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+        <button type="button" onClick={edit} className={ghostButton}>
           Modifier
         </button>
         <button
