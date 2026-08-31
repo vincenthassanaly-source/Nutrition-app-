@@ -174,8 +174,8 @@ export function TaskCard({
           className="mt-0.5"
           label={tache.fait ? "Marquer non fait" : "Marquer fait"}
         />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex min-w-0 items-center justify-between gap-2">
             <p className={`${nameText} min-w-0 flex-1 ${tache.fait ? "text-ink-2 line-through" : ""}`}>
               {tache.titre}
             </p>
