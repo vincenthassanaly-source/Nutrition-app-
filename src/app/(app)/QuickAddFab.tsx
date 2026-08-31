@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { AddTaskForm } from "./taches/AddTaskForm";
 import { NoteForm } from "./notes/NoteForm";
+import { AddCourseForm } from "./courses/AddCourseForm";
 import { Modal } from "@/components/Modal";
 import { goBackSteps, useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 
-type Mode = null | "menu" | "tache" | "note";
+type Mode = null | "menu" | "tache" | "note" | "course";
 
 export function QuickAddFab({
   listes,
@@ -25,8 +26,8 @@ export function QuickAddFab({
   // The form's own entry sits on top of the dial's. Guarded with a
   // functional update so it's a no-op if the dial-level handler above
   // already closed everything (e.g. goBackSteps(2) from onDone).
-  useBackClose(mode === "tache" || mode === "note", () =>
-    setMode((m) => (m === "tache" || m === "note" ? "menu" : m))
+  useBackClose(mode === "tache" || mode === "note" || mode === "course", () =>
+    setMode((m) => (m === "tache" || m === "note" || m === "course" ? "menu" : m))
   );
 
   const dialOpen = mode !== null;
@@ -69,19 +70,47 @@ export function QuickAddFab({
 
         <button
           type="button"
-          onClick={() => setMode("tache")}
-          aria-label="Nouvelle tâche"
+          onClick={() => setMode("course")}
+          aria-label="Courses"
           tabIndex={dialInteractive ? 0 : -1}
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card transition-all duration-200 ease-out"
+          className="flex items-center gap-2 transition-all duration-200 ease-out"
           style={{
             opacity: dialOpen ? 1 : 0,
             transform: dialOpen ? "translateY(0)" : "translateY(12px)",
             pointerEvents: dialInteractive ? "auto" : "none",
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 13l4 4L19 7" />
-          </svg>
+          <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink shadow-card">
+            Courses
+          </span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8z" />
+              <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+            </svg>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode("tache")}
+          aria-label="Nouvelle tâche"
+          tabIndex={dialInteractive ? 0 : -1}
+          className="flex items-center gap-2 transition-all duration-200 ease-out"
+          style={{
+            opacity: dialOpen ? 1 : 0,
+            transform: dialOpen ? "translateY(0)" : "translateY(12px)",
+            pointerEvents: dialInteractive ? "auto" : "none",
+          }}
+        >
+          <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink shadow-card">
+            Tâches
+          </span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </span>
         </button>
 
         <button
@@ -89,17 +118,22 @@ export function QuickAddFab({
           onClick={() => setMode("note")}
           aria-label="Nouvelle note"
           tabIndex={dialInteractive ? 0 : -1}
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card transition-all duration-200 ease-out"
+          className="flex items-center gap-2 transition-all duration-200 ease-out"
           style={{
             opacity: dialOpen ? 1 : 0,
             transform: dialOpen ? "translateY(0)" : "translateY(12px)",
             pointerEvents: dialInteractive ? "auto" : "none",
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
+          <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink shadow-card">
+            Notes
+          </span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink shadow-card">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+          </span>
         </button>
       </div>
 
@@ -112,6 +146,12 @@ export function QuickAddFab({
       {mode === "note" && (
         <Modal title="Nouvelle note" onClose={() => history.back()}>
           <NoteForm onDone={() => goBackSteps(2)} />
+        </Modal>
+      )}
+
+      {mode === "course" && (
+        <Modal title="Ajouter à la liste de courses" onClose={() => history.back()}>
+          <AddCourseForm onDone={() => goBackSteps(2)} />
         </Modal>
       )}
     </>
