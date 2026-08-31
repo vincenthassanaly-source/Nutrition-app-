@@ -9,13 +9,35 @@ export type RecetteFormState = { error: string | null };
 
 const SOURCES: readonly Enums<"recette_source">[] = ["manuel", "hellofresh"];
 
+const NUTRITION_FIELDS = [
+  "kcal_portion",
+  "proteines_portion",
+  "glucides_portion",
+  "sucres_portion",
+  "lipides_portion",
+  "satures_portion",
+  "fibres_portion",
+  "sel_portion",
+  "kcal_100g",
+  "proteines_100g",
+  "glucides_100g",
+  "sucres_100g",
+  "lipides_100g",
+  "satures_100g",
+  "fibres_100g",
+  "sel_100g",
+] as const;
+
+type NutritionField = (typeof NUTRITION_FIELDS)[number];
+
 type RecetteInput = {
   nom: string;
   description: string | null;
   temps_prepa_min: number | null;
   portions: number;
   source: Enums<"recette_source">;
-};
+  ustensiles: string[] | null;
+} & Record<NutritionField, number | null>;
 
 type ParseResult =
   | { ok: true; value: RecetteInput }
@@ -27,6 +49,7 @@ function parseRecetteInput(formData: FormData): ParseResult {
   const tempsRaw = String(formData.get("temps_prepa_min") ?? "").trim();
   const portions = Number(formData.get("portions") ?? 1);
   const source = String(formData.get("source") ?? "manuel");
+  const ustensilesRaw = String(formData.get("ustensiles") ?? "");
 
   if (!nom) return { ok: false, error: "Le nom est requis." };
   if (!SOURCES.includes(source as Enums<"recette_source">)) {
@@ -44,6 +67,25 @@ function parseRecetteInput(formData: FormData): ParseResult {
     }
   }
 
+  const nutrition = {} as Record<NutritionField, number | null>;
+  for (const field of NUTRITION_FIELDS) {
+    const raw = String(formData.get(field) ?? "").trim();
+    if (!raw) {
+      nutrition[field] = null;
+      continue;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) {
+      return { ok: false, error: "Les valeurs nutritionnelles doivent être des nombres positifs." };
+    }
+    nutrition[field] = value;
+  }
+
+  const ustensiles = ustensilesRaw
+    .split("\n")
+    .map((u) => u.trim())
+    .filter(Boolean);
+
   return {
     ok: true,
     value: {
@@ -52,6 +94,8 @@ function parseRecetteInput(formData: FormData): ParseResult {
       temps_prepa_min,
       portions,
       source: source as Enums<"recette_source">,
+      ustensiles: ustensiles.length > 0 ? ustensiles : null,
+      ...nutrition,
     },
   };
 }

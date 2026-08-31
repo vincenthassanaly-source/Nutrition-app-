@@ -3,8 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { RecetteHeader } from "./RecetteHeader";
 import { RecetteMacros } from "./RecetteMacros";
 import { IngredientManager } from "./IngredientManager";
-import { nutritionRecette } from "@/lib/nutrition/compute";
-import { sectionTitle } from "@/lib/ui";
+import { IngredientsLibresManager } from "./IngredientsLibresManager";
+import { EtapesManager } from "./EtapesManager";
+import { hasNutritionOverride, nutritionFromOverride, nutritionRecette } from "@/lib/nutrition/compute";
+import { pillTag, sectionTitle } from "@/lib/ui";
 
 export default async function RecetteDetailPage({
   params,
@@ -14,34 +16,67 @@ export default async function RecetteDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: recette }, { data: ingredients }, { data: aliments }] = await Promise.all([
-    supabase.from("recettes").select("*").eq("id", id).maybeSingle(),
-    supabase
-      .from("recette_ingredients")
-      .select("*, aliment:aliments(*)")
-      .eq("recette_id", id)
-      .order("id"),
-    supabase.from("aliments").select("*").order("nom", { ascending: true }),
-  ]);
+  const [{ data: recette }, { data: ingredients }, { data: aliments }, { data: ingredientsLibres }, { data: etapes }] =
+    await Promise.all([
+      supabase.from("recettes").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("recette_ingredients")
+        .select("*, aliment:aliments(*)")
+        .eq("recette_id", id)
+        .order("id"),
+      supabase.from("aliments").select("*").order("nom", { ascending: true }),
+      supabase
+        .from("recette_ingredients_libres")
+        .select("*")
+        .eq("recette_id", id)
+        .order("ordre"),
+      supabase.from("recette_etapes").select("*").eq("recette_id", id).order("ordre"),
+    ]);
 
   if (!recette) {
     notFound();
   }
 
-  const perPortion = nutritionRecette(ingredients ?? [], recette.portions, 1);
+  const isHelloFresh = recette.source === "hellofresh";
+  const overridden = hasNutritionOverride(recette);
+  const perPortion = overridden
+    ? nutritionFromOverride(recette, 1)
+    : nutritionRecette(ingredients ?? [], recette.portions, 1);
+  const showMacros = overridden || (ingredients ?? []).length > 0;
 
   return (
     <div className="flex flex-col gap-6">
       <RecetteHeader recette={recette} />
-      {(ingredients ?? []).length > 0 && <RecetteMacros perPortion={perPortion} />}
+      {showMacros && <RecetteMacros perPortion={perPortion} detail={overridden ? recette : undefined} />}
+
+      {isHelloFresh && recette.ustensiles && recette.ustensiles.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className={sectionTitle}>Ustensiles</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {recette.ustensiles.map((u) => (
+              <span key={u} className={pillTag}>
+                {u}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
         <h2 className={sectionTitle}>Ingrédients</h2>
-        <IngredientManager
-          recetteId={id}
-          ingredients={ingredients ?? []}
-          aliments={aliments ?? []}
-        />
+        {isHelloFresh ? (
+          <IngredientsLibresManager recetteId={id} ingredients={ingredientsLibres ?? []} />
+        ) : (
+          <IngredientManager recetteId={id} ingredients={ingredients ?? []} aliments={aliments ?? []} />
+        )}
       </div>
+
+      {isHelloFresh && (
+        <div className="flex flex-col gap-3">
+          <h2 className={sectionTitle}>Étapes</h2>
+          <EtapesManager recetteId={id} etapes={etapes ?? []} />
+        </div>
+      )}
     </div>
   );
 }

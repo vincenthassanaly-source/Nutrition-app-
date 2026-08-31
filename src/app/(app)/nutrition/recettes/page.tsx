@@ -1,7 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { AddRecetteToggle } from "./AddRecetteToggle";
 import { RecettesList } from "./RecettesList";
-import { nutritionRecette } from "@/lib/nutrition/compute";
+import {
+  hasNutritionOverride,
+  nutritionFromOverride,
+  nutritionRecette,
+} from "@/lib/nutrition/compute";
 import { errorText, screenTitle } from "@/lib/ui";
 import { NutritionSubNav } from "@/components/NutritionSubNav";
 
@@ -21,11 +25,12 @@ export default async function RecettesPage() {
 
   const views = (recettes ?? []).map((recette) => {
     const { recette_ingredients, ...rest } = recette;
+    const kcalParPortion = hasNutritionOverride(recette)
+      ? nutritionFromOverride(recette, 1).kcal
+      : nutritionRecette(recette_ingredients, recette.portions, 1).kcal;
     return {
       ...rest,
-      kcalParPortion: Math.round(
-        nutritionRecette(recette_ingredients, recette.portions, 1).kcal
-      ),
+      kcalParPortion: Math.round(kcalParPortion),
     };
   });
 

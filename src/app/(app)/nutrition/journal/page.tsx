@@ -5,7 +5,9 @@ import { ResumeJour } from "./ResumeJour";
 import { JournalEntriesList, type JournalEntryView } from "./JournalEntriesList";
 import {
   addNutrition,
+  hasNutritionOverride,
   nutritionAliment,
+  nutritionFromOverride,
   nutritionRecette,
   zeroNutrition,
 } from "@/lib/nutrition/compute";
@@ -49,7 +51,7 @@ export default async function JournalPage({
     supabase
       .from("journal_repas")
       .select(
-        "*, aliment:aliments(*), recette:recettes(id, nom, portions, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
+        "*, aliment:aliments(*), recette:recettes(id, nom, portions, kcal_portion, proteines_portion, glucides_portion, lipides_portion, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
       )
       .eq("date", date),
   ]);
@@ -88,11 +90,9 @@ export default async function JournalPage({
       moment: entry.moment,
       label: recette.nom,
       detail: `${entry.quantite} portion${entry.quantite > 1 ? "s" : ""}`,
-      nutrition: nutritionRecette(
-        recette.recette_ingredients,
-        recette.portions,
-        entry.quantite
-      ),
+      nutrition: hasNutritionOverride(recette)
+        ? nutritionFromOverride(recette, entry.quantite)
+        : nutritionRecette(recette.recette_ingredients, recette.portions, entry.quantite),
     };
   });
 

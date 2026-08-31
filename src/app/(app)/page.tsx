@@ -4,7 +4,9 @@ import { getListes, getTachesAvecRelations, getTags } from "@/app/actions/taches
 import { getHabitudesDuJour } from "@/app/actions/habitudes";
 import {
   addNutrition,
+  hasNutritionOverride,
   nutritionAliment,
+  nutritionFromOverride,
   nutritionRecette,
   zeroNutrition,
 } from "@/lib/nutrition/compute";
@@ -44,7 +46,7 @@ export default async function DashboardPage() {
       supabase
         .from("journal_repas")
         .select(
-          "*, aliment:aliments(*), recette:recettes(id, nom, portions, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
+          "*, aliment:aliments(*), recette:recettes(id, nom, portions, kcal_portion, proteines_portion, glucides_portion, lipides_portion, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
         )
         .eq("date", today),
       getTachesAvecRelations(),
@@ -65,7 +67,9 @@ export default async function DashboardPage() {
     const recette = entry.recette!;
     return addNutrition(
       acc,
-      nutritionRecette(recette.recette_ingredients, recette.portions, entry.quantite)
+      hasNutritionOverride(recette)
+        ? nutritionFromOverride(recette, entry.quantite)
+        : nutritionRecette(recette.recette_ingredients, recette.portions, entry.quantite)
     );
   }, zeroNutrition());
 

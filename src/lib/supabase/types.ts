@@ -510,6 +510,47 @@ export type Database = {
         }
         Relationships: []
       }
+      recette_etapes: {
+        Row: {
+          astuce: string | null
+          consigne: string
+          created_at: string
+          id: string
+          ordre: number
+          recette_id: string
+          titre: string | null
+          updated_at: string
+        }
+        Insert: {
+          astuce?: string | null
+          consigne: string
+          created_at?: string
+          id?: string
+          ordre: number
+          recette_id: string
+          titre?: string | null
+          updated_at?: string
+        }
+        Update: {
+          astuce?: string | null
+          consigne?: string
+          created_at?: string
+          id?: string
+          ordre?: number
+          recette_id?: string
+          titre?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recette_etapes_recette_id_fkey"
+            columns: ["recette_id"]
+            isOneToOne: false
+            referencedRelation: "recettes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recette_ingredients: {
         Row: {
           aliment_id: string
@@ -549,36 +590,122 @@ export type Database = {
           },
         ]
       }
+      recette_ingredients_libres: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          ordre: number
+          quantite: string | null
+          recette_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          ordre?: number
+          quantite?: string | null
+          recette_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          ordre?: number
+          quantite?: string | null
+          recette_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recette_ingredients_libres_recette_id_fkey"
+            columns: ["recette_id"]
+            isOneToOne: false
+            referencedRelation: "recettes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recettes: {
         Row: {
           created_at: string
           description: string | null
+          fibres_100g: number | null
+          fibres_portion: number | null
+          glucides_100g: number | null
+          glucides_portion: number | null
           id: string
+          kcal_100g: number | null
+          kcal_portion: number | null
+          lipides_100g: number | null
+          lipides_portion: number | null
           nom: string
           portions: number
+          proteines_100g: number | null
+          proteines_portion: number | null
+          satures_100g: number | null
+          satures_portion: number | null
+          sel_100g: number | null
+          sel_portion: number | null
           source: Database["public"]["Enums"]["recette_source"]
+          sucres_100g: number | null
+          sucres_portion: number | null
           temps_prepa_min: number | null
           updated_at: string
+          ustensiles: string[] | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          fibres_100g?: number | null
+          fibres_portion?: number | null
+          glucides_100g?: number | null
+          glucides_portion?: number | null
           id?: string
+          kcal_100g?: number | null
+          kcal_portion?: number | null
+          lipides_100g?: number | null
+          lipides_portion?: number | null
           nom: string
           portions?: number
+          proteines_100g?: number | null
+          proteines_portion?: number | null
+          satures_100g?: number | null
+          satures_portion?: number | null
+          sel_100g?: number | null
+          sel_portion?: number | null
           source?: Database["public"]["Enums"]["recette_source"]
+          sucres_100g?: number | null
+          sucres_portion?: number | null
           temps_prepa_min?: number | null
           updated_at?: string
+          ustensiles?: string[] | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          fibres_100g?: number | null
+          fibres_portion?: number | null
+          glucides_100g?: number | null
+          glucides_portion?: number | null
           id?: string
+          kcal_100g?: number | null
+          kcal_portion?: number | null
+          lipides_100g?: number | null
+          lipides_portion?: number | null
           nom?: string
           portions?: number
+          proteines_100g?: number | null
+          proteines_portion?: number | null
+          satures_100g?: number | null
+          satures_portion?: number | null
+          sel_100g?: number | null
+          sel_portion?: number | null
           source?: Database["public"]["Enums"]["recette_source"]
+          sucres_100g?: number | null
+          sucres_portion?: number | null
           temps_prepa_min?: number | null
           updated_at?: string
+          ustensiles?: string[] | null
         }
         Relationships: []
       }

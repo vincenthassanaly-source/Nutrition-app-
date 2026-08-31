@@ -61,3 +61,28 @@ export function nutritionRecette(
   const parPortion = scaleNutrition(total, 1 / portionsTotal);
   return scaleNutrition(parPortion, portionsConsommees);
 }
+
+/** Override nutritionnel imprimé sur une fiche recette (ex. HelloFresh), saisi
+ * directement par portion plutôt que recalculé depuis des ingrédients. */
+export type RecetteNutritionOverride = {
+  kcal_portion: number | null;
+  proteines_portion: number | null;
+  glucides_portion: number | null;
+  lipides_portion: number | null;
+};
+
+export function hasNutritionOverride(r: RecetteNutritionOverride): boolean {
+  return r.kcal_portion != null;
+}
+
+export function nutritionFromOverride(
+  r: RecetteNutritionOverride,
+  portionsConsommees: number
+): Nutrition {
+  return {
+    kcal: (r.kcal_portion ?? 0) * portionsConsommees,
+    proteines: (r.proteines_portion ?? 0) * portionsConsommees,
+    glucides: (r.glucides_portion ?? 0) * portionsConsommees,
+    lipides: (r.lipides_portion ?? 0) * portionsConsommees,
+  };
+}
