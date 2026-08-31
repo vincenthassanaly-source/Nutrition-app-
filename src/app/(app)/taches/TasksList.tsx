@@ -277,11 +277,35 @@ export function TasksList({
     return <p className="text-ink-2">Aucune tâche pour l&apos;instant.</p>;
   }
 
+  const actives = taches.filter((tache) => !tache.fait);
+  // Trié par updated_at décroissant : proxy imparfait de la date de cochage
+  // (updated_at change aussi si la tâche est éditée après coup), faute de
+  // colonne dédiée type `fait_le`.
+  const archivees = taches
+    .filter((tache) => tache.fait)
+    .sort((a, b) => (a.updated_at < b.updated_at ? 1 : a.updated_at > b.updated_at ? -1 : 0));
+
   return (
-    <ul className="flex flex-col gap-2.5">
-      {taches.map((tache) => (
-        <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
-      ))}
-    </ul>
+    <>
+      {actives.length > 0 && (
+        <ul className="flex flex-col gap-2.5">
+          {actives.map((tache) => (
+            <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+          ))}
+        </ul>
+      )}
+      {archivees.length > 0 && (
+        <details className={`${card} mt-2.5`}>
+          <summary className="cursor-pointer text-[14.5px] font-semibold text-ink-2">
+            Tâches archivées ({archivees.length})
+          </summary>
+          <ul className="mt-2.5 flex flex-col gap-2.5">
+            {archivees.map((tache) => (
+              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
   );
 }
