@@ -12,8 +12,11 @@ export default function AppLayout({
         <ThemeToggle />
       </div>
       <main
-        className="flex-1 overflow-x-hidden overflow-y-auto px-4 pb-28"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 64px)" }}
+        className="flex-1 overflow-x-hidden overflow-y-auto px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 64px)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 112px)",
+        }}
       >
         {children}
       </main>
