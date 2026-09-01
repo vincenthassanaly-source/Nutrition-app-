@@ -85,6 +85,15 @@ Marge constante de 32px quel que soit l'appareil — le chevauchement est élimi
 - `src/app/(app)/taches/AddTaskForm.tsx` : barre collante (erreur + bouton submit).
 - `src/app/(app)/layout.tsx` : `pb-28` fixe → `paddingBottom: calc(env(safe-area-inset-bottom) + 112px)` sur `<main>`.
 
+## Ajustement demandé après relecture
+
+Retour de Vincent : le bouton stické prenait toute la largeur de l'écran une fois la barre affichée (comportement par défaut d'un `<button>` bloc dans un conteneur `flex flex-col`, qui s'étire sur `align-items: stretch`). Corrigé dans `AddTaskForm.tsx` :
+
+- `items-center` ajouté sur la barre sticky (`flex flex-col items-center gap-2 ...`) pour que le bouton ne s'étire plus et se centre horizontalement, en gardant sa largeur naturelle (`px-4` de `primaryButton`, inchangé pour ne pas modifier ce style partagé avec d'autres écrans).
+- Libellé du bouton de création raccourci : `"Créer la tâche"` → `"Créer"`. Le libellé d'édition (`"Enregistrer"`) et l'état pending (`"Enregistrement..."`) restent inchangés.
+
+Revérifié avec le même test DOM headless (capture d'écran à l'appui) : bouton "Créer" désormais en pilule centrée d'une largeur naturelle, pas de chevauchement avec `BottomNav` (toujours 32px de marge constante). `tsc --noEmit`, `eslint` et `next build` repassés au vert après ce changement.
+
 ## Fin
 
 Conformément à la consigne, la branche n'a **pas** été poussée automatiquement. À confirmer avec Vincent avant `git push -u origin claude/sticky-add-task-button-72co8d`.

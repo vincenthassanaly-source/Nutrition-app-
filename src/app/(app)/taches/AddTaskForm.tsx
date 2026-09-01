@@ -210,7 +210,7 @@ export function AddTaskForm({
       )}
 
       <div
-        className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-line bg-surface pt-3"
+        className="sticky bottom-0 z-10 flex flex-col items-center gap-2 border-t border-line bg-surface pt-3"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
       >
         {state.error && (
@@ -220,7 +220,7 @@ export function AddTaskForm({
         )}
 
         <button type="submit" disabled={pending} className={primaryButton}>
-          {pending ? "Enregistrement..." : tache ? "Enregistrer" : "Créer la tâche"}
+          {pending ? "Enregistrement..." : tache ? "Enregistrer" : "Créer"}
         </button>
       </div>
     </form>
