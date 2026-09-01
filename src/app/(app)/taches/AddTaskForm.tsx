@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   createTache,
+  deleteTacheImage,
   updateTache,
   type TacheAvecRelations,
   type TacheFormState,
@@ -10,6 +11,44 @@ import {
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { FREQUENCE_LABELS } from "@/lib/budget/compute";
 import { errorText, input, label as labelClass, primaryButton } from "@/lib/ui";
+
+function ImageIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="M3.8 16.5l5-5a1.8 1.8 0 0 1 2.5 0l3.4 3.4M14.5 12.7l1.4-1.4a1.8 1.8 0 0 1 2.5 0l2.4 2.4" />
+    </svg>
+  );
+}
+
+function ImageThumb({
+  src,
+  onRemove,
+  removeLabel,
+  disabled,
+}: {
+  src: string;
+  onRemove: () => void;
+  removeLabel: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="relative h-14 w-14 shrink-0">
+      {/* eslint-disable-next-line @next/next/no-img-element -- vignettes issues d'URLs blob locales ou du bucket Storage, pas d'un domaine unique configurable dans next/image */}
+      <img src={src} alt="" className="h-14 w-14 rounded-2xl border border-line object-cover" />
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onRemove}
+        aria-label={removeLabel}
+        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-alert text-[11px] font-bold text-white disabled:opacity-60"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
 
 const initialState: TacheFormState = { error: null };
 const FREQUENCES = Object.keys(FREQUENCE_LABELS) as Enums<"frequence_recurrence">[];
@@ -46,6 +85,12 @@ export function AddTaskForm({
   const [frequence, setFrequence] = useState<string>(tache?.recurrence_frequence ?? "");
   const [tagIds, setTagIds] = useState<string[]>(tache?.tags.map((t) => t.id) ?? []);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const previews = useMemo(() => selectedFiles.map((file) => URL.createObjectURL(file)), [selectedFiles]);
+  const [existingImages, setExistingImages] = useState<Tables<"tache_images">[]>(tache?.images ?? []);
+  const [isDeletingImage, startImageTransition] = useTransition();
+
   useEffect(() => {
     if (prevPending.current && !pending && !state.error) {
       onDone?.();
@@ -53,8 +98,34 @@ export function AddTaskForm({
     prevPending.current = pending;
   }, [pending, state.error, onDone]);
 
+  useEffect(() => {
+    return () => previews.forEach((url) => URL.revokeObjectURL(url));
+  }, [previews]);
+
   function toggleTag(id: string) {
     setTagIds((ids) => (ids.includes(id) ? ids.filter((t) => t !== id) : [...ids, id]));
+  }
+
+  function handleFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSelectedFiles(Array.from(e.target.files ?? []));
+  }
+
+  function removeSelectedFile(index: number) {
+    const next = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(next);
+    // Reconstruit le FileList de l'input à partir du tableau filtré : un
+    // FileList n'est pas modifiable directement, DataTransfer est le
+    // mécanisme standard pour repasser une sélection modifiée à l'input.
+    const dataTransfer = new DataTransfer();
+    next.forEach((file) => dataTransfer.items.add(file));
+    if (fileInputRef.current) fileInputRef.current.files = dataTransfer.files;
+  }
+
+  function removeExistingImage(imageId: string) {
+    startImageTransition(async () => {
+      await deleteTacheImage(imageId);
+      setExistingImages((imgs) => imgs.filter((img) => img.id !== imageId));
+    });
   }
 
   return (
@@ -145,6 +216,51 @@ export function AddTaskForm({
           defaultValue={tache?.notes ?? ""}
           className={input}
         />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className={labelClass}>Images (optionnel)</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <label
+            htmlFor="tache-images"
+            className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-2xl border-[1.5px] border-dashed border-line text-ink-2 transition-colors hover:bg-surface-alt"
+            aria-label="Ajouter des images"
+          >
+            <ImageIcon />
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            id="tache-images"
+            name="images"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleFilesChange}
+          />
+
+          {existingImages.map((image) => (
+            <ImageThumb
+              key={image.id}
+              src={image.url}
+              onRemove={() => removeExistingImage(image.id)}
+              removeLabel="Supprimer cette image"
+              disabled={isDeletingImage}
+            />
+          ))}
+
+          {selectedFiles.map(
+            (file, index) =>
+              previews[index] && (
+                <ImageThumb
+                  key={`${file.name}-${index}`}
+                  src={previews[index]}
+                  onRemove={() => removeSelectedFile(index)}
+                  removeLabel="Retirer cette image de la sélection"
+                />
+              )
+          )}
+        </div>
       </div>
 
       {tags.length > 0 && (

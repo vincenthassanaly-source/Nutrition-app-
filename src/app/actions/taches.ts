@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
 import { aujourdhuiISO, calculerProchaineOccurrence } from "@/lib/budget/compute";
 import type { Enums, Tables } from "@/lib/supabase/types";
@@ -166,6 +167,14 @@ export async function createTache(
     return { error: tagError instanceof Error ? tagError.message : "Erreur lors des tags." };
   }
 
+  try {
+    await uploadTacheImages(tache.id, formData);
+  } catch (imageError) {
+    return {
+      error: imageError instanceof Error ? imageError.message : "Erreur lors de l'envoi des images.",
+    };
+  }
+
   revalidateTachesPaths();
   return { error: null };
 }
@@ -193,8 +202,108 @@ export async function updateTache(
     return { error: tagError instanceof Error ? tagError.message : "Erreur lors des tags." };
   }
 
+  try {
+    await uploadTacheImages(id, formData);
+  } catch (imageError) {
+    return {
+      error: imageError instanceof Error ? imageError.message : "Erreur lors de l'envoi des images.",
+    };
+  }
+
   revalidateTachesPaths();
   return { error: null };
+}
+
+// --- Images ---
+
+const TACHE_IMAGES_BUCKET = "tache-images";
+const TACHE_IMAGE_MAX_DIMENSION = 1600;
+const TACHE_IMAGE_JPEG_QUALITY = 75;
+
+// Chemin de stockage attendu : `${tacheId}/${uuid}.jpg`, sous
+// `/storage/v1/object/public/tache-images/`. On extrait ce chemin depuis
+// l'URL publique stockée en base pour pouvoir supprimer l'objet Storage
+// correspondant (le chemin lui-même n'est pas persisté séparément).
+function extraireCheminStorage(url: string): string | null {
+  const marqueur = `/${TACHE_IMAGES_BUCKET}/`;
+  const index = url.indexOf(marqueur);
+  if (index === -1) return null;
+  return url.slice(index + marqueur.length);
+}
+
+// Compresse et upload chaque fichier envoyé sous la clé "images" du
+// formData, puis insère une ligne tache_images par fichier. Ne fait rien si
+// aucun fichier n'est fourni (cas normal : la plupart des soumissions du
+// formulaire n'ajoutent pas d'image).
+export async function uploadTacheImages(tacheId: string, formData: FormData) {
+  const fichiers = formData.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
+  if (fichiers.length === 0) return;
+
+  const supabase = await createClient();
+
+  const { data: derniere } = await supabase
+    .from("tache_images")
+    .select("ordre")
+    .eq("tache_id", tacheId)
+    .order("ordre", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let ordre = (derniere?.ordre ?? -1) + 1;
+
+  for (const fichier of fichiers) {
+    const buffer = Buffer.from(await fichier.arrayBuffer());
+    const compresse = await sharp(buffer)
+      .rotate()
+      .resize(TACHE_IMAGE_MAX_DIMENSION, TACHE_IMAGE_MAX_DIMENSION, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: TACHE_IMAGE_JPEG_QUALITY })
+      .toBuffer();
+
+    const chemin = `${tacheId}/${crypto.randomUUID()}.jpg`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(TACHE_IMAGES_BUCKET)
+      .upload(chemin, compresse, { contentType: "image/jpeg" });
+    if (uploadError) throw new Error(uploadError.message);
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(TACHE_IMAGES_BUCKET).getPublicUrl(chemin);
+
+    const { error: insertError } = await supabase
+      .from("tache_images")
+      .insert({ tache_id: tacheId, url: publicUrl, ordre });
+    if (insertError) throw new Error(insertError.message);
+
+    ordre++;
+  }
+
+  revalidateTachesPaths();
+}
+
+export async function deleteTacheImage(imageId: string) {
+  const supabase = await createClient();
+
+  const { data: image, error: fetchError } = await supabase
+    .from("tache_images")
+    .select("url")
+    .eq("id", imageId)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+
+  const chemin = extraireCheminStorage(image.url);
+  if (chemin) {
+    const { error: removeError } = await supabase.storage.from(TACHE_IMAGES_BUCKET).remove([chemin]);
+    if (removeError) throw new Error(removeError.message);
+  }
+
+  const { error } = await supabase.from("tache_images").delete().eq("id", imageId);
+  if (error) throw new Error(error.message);
+
+  revalidateTachesPaths();
 }
 
 // Option A (validée) : quand une tâche récurrente est cochée, elle repart
@@ -287,6 +396,7 @@ export type TacheAvecRelations = Tables<"taches"> & {
   liste: Pick<Tables<"listes_taches">, "id" | "nom" | "couleur"> | null;
   sous_taches: Tables<"sous_taches">[];
   tags: Tables<"tags">[];
+  images: Tables<"tache_images">[];
 };
 
 export async function getTachesAvecRelations(): Promise<TacheAvecRelations[]> {
@@ -295,19 +405,21 @@ export async function getTachesAvecRelations(): Promise<TacheAvecRelations[]> {
   const { data, error } = await supabase
     .from("taches")
     .select(
-      "*, liste:listes_taches(id, nom, couleur), sous_taches(id, tache_id, titre, fait, ordre, created_at), taches_tags(tag:tags(id, nom, couleur))"
+      "*, liste:listes_taches(id, nom, couleur), sous_taches(id, tache_id, titre, fait, ordre, created_at), taches_tags(tag:tags(id, nom, couleur)), tache_images(id, tache_id, url, ordre, created_at)"
     )
     .order("fait", { ascending: true })
     .order("ordre", { ascending: true })
     .order("echeance", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false })
-    .order("ordre", { referencedTable: "sous_taches", ascending: true });
+    .order("ordre", { referencedTable: "sous_taches", ascending: true })
+    .order("ordre", { referencedTable: "tache_images", ascending: true });
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map(({ taches_tags, ...tache }) => ({
+  return (data ?? []).map(({ taches_tags, tache_images, ...tache }) => ({
     ...tache,
     tags: taches_tags.map((tt) => tt.tag).filter((tag): tag is Tables<"tags"> => tag !== null),
+    images: tache_images,
   }));
 }
 

@@ -13,8 +13,9 @@ import {
 } from "@/app/actions/taches";
 import { AddTaskForm } from "./AddTaskForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
-import { card, dangerButton, ghostButton, listCard, metaText, nameText, pillTag } from "@/lib/ui";
+import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 export function formatEcheance(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {
@@ -134,6 +135,32 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
   );
 }
 
+function TacheImagesRow({ tache }: { tache: TacheAvecRelations }) {
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  if (tache.images.length === 0) return null;
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 pt-0.5">
+        {tache.images.map((image) => (
+          <button
+            key={image.id}
+            type="button"
+            onClick={() => setLightboxSrc(image.url)}
+            className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-line"
+            aria-label="Agrandir l'image"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- image issue du bucket Storage public, pas d'un domaine unique configurable dans next/image */}
+            <img src={image.url} alt="" className="h-full w-full object-cover" />
+          </button>
+        ))}
+      </div>
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+    </>
+  );
+}
+
 export function TaskCard({
   tache,
   listes,
@@ -175,8 +202,10 @@ export function TaskCard({
           label={tache.fait ? "Marquer non fait" : "Marquer fait"}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <p className={`${nameText} min-w-0 flex-1 ${tache.fait ? "text-ink-2 line-through" : ""}`}>
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <p
+              className={`min-w-0 flex-1 whitespace-normal break-words text-[14.5px] font-semibold text-ink ${tache.fait ? "text-ink-2 line-through" : ""}`}
+            >
               {tache.titre}
             </p>
             {tache.recurrence_frequence && (
@@ -221,6 +250,8 @@ export function TaskCard({
               {tache.heure && ` à ${tache.heure.slice(0, 5)}`}
             </span>
           )}
+
+          <TacheImagesRow tache={tache} />
 
           {expanded && <SousTachesList tache={tache} />}
         </div>

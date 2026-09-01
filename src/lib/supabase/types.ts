@@ -744,6 +744,38 @@ export type Database = {
           },
         ]
       }
+      tache_images: {
+        Row: {
+          created_at: string
+          id: string
+          ordre: number
+          tache_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordre?: number
+          tache_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordre?: number
+          tache_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tache_images_tache_id_fkey"
+            columns: ["tache_id"]
+            isOneToOne: false
+            referencedRelation: "taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       taches: {
         Row: {
           created_at: string
