@@ -247,7 +247,10 @@ export function TaskCard({
           {tache.echeance && (
             <span className={metaText}>
               Échéance : {formatEcheance(tache.echeance)}
-              {tache.heure && ` à ${tache.heure.slice(0, 5)}`}
+              {tache.heure &&
+                (tache.heure_fin
+                  ? ` de ${tache.heure.slice(0, 5)} – ${tache.heure_fin.slice(0, 5)}`
+                  : ` à ${tache.heure.slice(0, 5)}`)}
             </span>
           )}
 

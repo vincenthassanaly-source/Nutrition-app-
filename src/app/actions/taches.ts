@@ -29,6 +29,7 @@ type TacheInput = {
   titre: string;
   echeance: string | null;
   heure: string | null;
+  heure_fin: string | null;
   liste_id: string;
   notes: string | null;
   priorite: Enums<"priorite_tache">;
@@ -44,6 +45,7 @@ function parseTacheInput(formData: FormData): ParseResult {
   const titre = String(formData.get("titre") ?? "").trim();
   const echeance = String(formData.get("echeance") ?? "").trim();
   const heure = String(formData.get("heure") ?? "").trim();
+  const heure_fin = String(formData.get("heure_fin") ?? "").trim();
   const liste_id = String(formData.get("liste_id") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
   const priorite = String(formData.get("priorite") ?? "aucune");
@@ -56,6 +58,12 @@ function parseTacheInput(formData: FormData): ParseResult {
   if (!liste_id) return { ok: false, error: "La liste est requise." };
   if (heure && !HEURE_REGEX.test(heure)) {
     return { ok: false, error: "Heure invalide (format HH:MM)." };
+  }
+  if (heure_fin && !HEURE_REGEX.test(heure_fin)) {
+    return { ok: false, error: "Heure de fin invalide (format HH:MM)." };
+  }
+  if (heure && heure_fin && heure_fin <= heure) {
+    return { ok: false, error: "L'heure de fin doit être après l'heure de début." };
   }
   if (!PRIORITES.includes(priorite as Enums<"priorite_tache">)) {
     return { ok: false, error: "Priorité invalide." };
@@ -86,6 +94,7 @@ function parseTacheInput(formData: FormData): ParseResult {
       // de faire confiance au client, qui masque déjà ces champs.
       echeance: echeance || null,
       heure: toute_la_journee ? null : heure || null,
+      heure_fin: toute_la_journee ? null : heure_fin || null,
       liste_id,
       notes: notes || null,
       priorite: priorite as Enums<"priorite_tache">,

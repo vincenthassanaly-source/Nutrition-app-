@@ -269,6 +269,27 @@ export type Database = {
         }
         Relationships: []
       }
+      horaires_travail: {
+        Row: {
+          heure_debut: string | null
+          heure_fin: string | null
+          jour_semaine: number
+          updated_at: string
+        }
+        Insert: {
+          heure_debut?: string | null
+          heure_fin?: string | null
+          jour_semaine: number
+          updated_at?: string
+        }
+        Update: {
+          heure_debut?: string | null
+          heure_fin?: string | null
+          jour_semaine?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       journal_repas: {
         Row: {
           aliment_id: string | null
@@ -806,6 +827,7 @@ export type Database = {
           echeance: string | null
           fait: boolean
           heure: string | null
+          heure_fin: string | null
           id: string
           liste_id: string
           notes: string | null
@@ -826,6 +848,7 @@ export type Database = {
           echeance?: string | null
           fait?: boolean
           heure?: string | null
+          heure_fin?: string | null
           id?: string
           liste_id: string
           notes?: string | null
@@ -846,6 +869,7 @@ export type Database = {
           echeance?: string | null
           fait?: boolean
           heure?: string | null
+          heure_fin?: string | null
           id?: string
           liste_id?: string
           notes?: string | null

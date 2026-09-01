@@ -86,6 +86,7 @@ export function AddTaskForm({
   const [tagIds, setTagIds] = useState<string[]>(tache?.tags.map((t) => t.id) ?? []);
   const [touteLaJournee, setTouteLaJournee] = useState(tache?.toute_la_journee ?? false);
   const [heure, setHeure] = useState(tache?.heure?.slice(0, 5) ?? defaultHeure ?? "");
+  const [heureFin, setHeureFin] = useState(tache?.heure_fin?.slice(0, 5) ?? "");
   const [rappelMinutes, setRappelMinutes] = useState(
     tache?.rappel_minutes != null ? String(tache.rappel_minutes) : ""
   );
@@ -219,6 +220,22 @@ export function AddTaskForm({
             type="time"
             value={heure}
             onChange={(e) => setHeure(e.target.value)}
+            className={input}
+          />
+        </div>
+      )}
+
+      {!touteLaJournee && heure && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="heure_fin" className={labelClass}>
+            Heure de fin (optionnel)
+          </label>
+          <input
+            id="heure_fin"
+            name="heure_fin"
+            type="time"
+            value={heureFin}
+            onChange={(e) => setHeureFin(e.target.value)}
             className={input}
           />
         </div>

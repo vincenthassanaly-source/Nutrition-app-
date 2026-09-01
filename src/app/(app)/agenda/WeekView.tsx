@@ -1,10 +1,12 @@
 "use client";
 
+import { useRef } from "react";
 import {
   addWeeks,
   eachDayOfInterval,
   endOfWeek,
   format,
+  getDay,
   isSameDay,
   isToday,
   startOfWeek,
@@ -13,17 +15,54 @@ import {
 import { fr } from "date-fns/locale";
 import type { Tables } from "@/lib/supabase/types";
 import { ghostButton } from "@/lib/ui";
-import { parseISODate, sortByHeure } from "./date-utils";
+import { parseISODate } from "./date-utils";
+import {
+  computeInitialScrollMinutes,
+  getTacheBlockStyle,
+  GRID_HEIGHT,
+  HourLines,
+  TimeGutter,
+  useInitialScroll,
+  WorkHoursBand,
+} from "./TimeGrid";
 
 type Tache = Tables<"taches">;
 
+// Largeur minimale par colonne pour rester lisible (titre + heure) plutôt
+// que de comprimer 7 colonnes dans les ~380px d'un écran mobile : la grille
+// défile horizontalement (overflow-x-auto) au lieu de tout tasser.
+const DAY_COLUMN_WIDTH = 96;
+
+const PRIORITE_BLOCK_CLASS: Record<Tache["priorite"], string> = {
+  aucune: "bg-surface-alt text-ink",
+  basse: "bg-agenda/15 text-agenda",
+  moyenne: "bg-carbs/15 text-carbs",
+  haute: "bg-alert/15 text-alert",
+};
+
+function TacheBlock({ tache }: { tache: Tache }) {
+  const style = getTacheBlockStyle(tache);
+  if (!style) return null;
+
+  return (
+    <div
+      className={`absolute inset-x-0.5 overflow-hidden rounded-md px-1 py-0.5 text-[10px] leading-tight font-semibold ${PRIORITE_BLOCK_CLASS[tache.priorite]} ${tache.fait ? "opacity-50 line-through" : ""}`}
+      style={{ top: style.top, height: style.height }}
+    >
+      <span className="block truncate">{tache.heure?.slice(0, 5)} {tache.titre}</span>
+    </div>
+  );
+}
+
 export function WeekView({
   taches,
+  horaires,
   selectedDate,
   onChangeDate,
   onSelectDay,
 }: {
   taches: Tache[];
+  horaires: Tables<"horaires_travail">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
   onSelectDay: (date: Date) => void;
@@ -31,6 +70,15 @@ export function WeekView({
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const today = new Date();
+  const weekContainsToday = days.some((d) => isSameDay(d, today));
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const horaireSelectedJour = horaires.find((h) => h.jour_semaine === getDay(selectedDate));
+  useInitialScroll(
+    scrollRef,
+    computeInitialScrollMinutes({ showCurrentTime: weekContainsToday, horaire: horaireSelectedJour })
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -56,38 +104,78 @@ export function WeekView({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5">
-        {days.map((day) => {
-          const dayTaches = taches
-            .filter((t) => t.echeance && isSameDay(parseISODate(t.echeance), day))
-            .sort(sortByHeure);
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <div ref={scrollRef} className="max-h-[65vh] overflow-auto">
+          <div className="flex" style={{ width: 34 + days.length * DAY_COLUMN_WIDTH }}>
+            <div className="sticky left-0 z-20 bg-surface">
+              <div className="h-11 border-b border-line" />
+              <TimeGutter />
+            </div>
 
-          return (
-            <button
-              key={day.toISOString()}
-              type="button"
-              onClick={() => onSelectDay(day)}
-              className={`flex min-h-24 flex-col gap-1 rounded-xl border p-1.5 text-left ${
-                isToday(day) ? "border-agenda" : "border-line"
-              } bg-surface`}
-            >
-              <span className="text-[11px] font-semibold text-ink-2">
-                {format(day, "EEE d", { locale: fr })}
-              </span>
-              <div className="flex flex-col gap-0.5">
-                {dayTaches.slice(0, 3).map((t) => (
-                  <span key={t.id} className="truncate text-[10.5px] text-ink">
-                    {t.heure ? `${t.heure.slice(0, 5)} ` : ""}
-                    {t.titre}
-                  </span>
-                ))}
-                {dayTaches.length > 3 && (
-                  <span className="text-[10.5px] text-ink-2">+{dayTaches.length - 3}</span>
-                )}
-              </div>
-            </button>
-          );
-        })}
+            {days.map((day) => {
+              const horaireJour = horaires.find((h) => h.jour_semaine === getDay(day));
+              const dayTachesAvecHeure = taches.filter(
+                (t) => t.echeance && isSameDay(parseISODate(t.echeance), day) && t.heure
+              );
+              const dayTachesSansHeure = taches.filter(
+                (t) => t.echeance && isSameDay(parseISODate(t.echeance), day) && !t.heure
+              );
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="flex shrink-0 flex-col border-l border-line"
+                  style={{ width: DAY_COLUMN_WIDTH }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onSelectDay(day)}
+                    className={`sticky top-0 z-10 flex h-11 flex-col items-center justify-center gap-0 border-b border-line bg-surface text-center ${
+                      isToday(day) ? "text-agenda" : "text-ink"
+                    }`}
+                  >
+                    <span className="text-[11px] font-semibold">{format(day, "EEE", { locale: fr })}</span>
+                    <span className="text-[10px] text-ink-2">{format(day, "d MMM", { locale: fr })}</span>
+                  </button>
+
+                  {dayTachesSansHeure.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectDay(day)}
+                      className="flex flex-wrap gap-0.5 border-b border-line/60 px-0.5 py-0.5"
+                    >
+                      {dayTachesSansHeure.slice(0, 2).map((t) => (
+                        <span
+                          key={t.id}
+                          className="truncate rounded bg-surface-alt px-1 py-0.5 text-[9.5px] font-medium text-ink-2"
+                        >
+                          {t.titre}
+                        </span>
+                      ))}
+                      {dayTachesSansHeure.length > 2 && (
+                        <span className="text-[9.5px] text-ink-2">+{dayTachesSansHeure.length - 2}</span>
+                      )}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectDay(day)}
+                    className="relative block w-full text-left"
+                    style={{ height: GRID_HEIGHT }}
+                    aria-label={`Voir le ${format(day, "EEEE d MMMM", { locale: fr })}`}
+                  >
+                    <HourLines />
+                    <WorkHoursBand horaire={horaireJour} />
+                    {dayTachesAvecHeure.map((t) => (
+                      <TacheBlock key={t.id} tache={t} />
+                    ))}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

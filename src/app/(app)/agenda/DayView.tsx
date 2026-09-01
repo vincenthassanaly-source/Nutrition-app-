@@ -1,6 +1,7 @@
 "use client";
 
-import { addDays, format, isSameDay, isToday, startOfToday, subDays } from "date-fns";
+import { useRef } from "react";
+import { addDays, format, getDay, isSameDay, isToday, startOfToday, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
@@ -8,17 +9,53 @@ import { AddTaskToggle } from "../taches/AddTaskToggle";
 import { TaskCard } from "../taches/TasksList";
 import { ghostButton, sectionTitle } from "@/lib/ui";
 import { parseISODate, sortByHeure, toISODate } from "./date-utils";
+import {
+  computeInitialScrollMinutes,
+  getTacheBlockStyle,
+  GRID_HEIGHT,
+  HourLines,
+  TimeGutter,
+  useInitialScroll,
+  WorkHoursBand,
+} from "./TimeGrid";
+
+const PRIORITE_BLOCK_CLASS: Record<TacheAvecRelations["priorite"], string> = {
+  aucune: "bg-surface-alt text-ink",
+  basse: "bg-agenda/15 text-agenda",
+  moyenne: "bg-carbs/15 text-carbs",
+  haute: "bg-alert/15 text-alert",
+};
+
+function TacheBlock({ tache }: { tache: TacheAvecRelations }) {
+  const style = getTacheBlockStyle(tache);
+  if (!style) return null;
+
+  const plage = tache.heure_fin
+    ? `${tache.heure?.slice(0, 5)} – ${tache.heure_fin.slice(0, 5)}`
+    : tache.heure?.slice(0, 5);
+
+  return (
+    <div
+      className={`absolute inset-x-1 overflow-hidden rounded-lg px-2 py-1 text-[12px] leading-tight font-semibold shadow-sm ${PRIORITE_BLOCK_CLASS[tache.priorite]} ${tache.fait ? "opacity-50 line-through" : ""}`}
+      style={{ top: style.top, height: style.height }}
+    >
+      <span className="block truncate">{plage} {tache.titre}</span>
+    </div>
+  );
+}
 
 export function DayView({
   taches,
   listes,
   tags,
+  horaires,
   selectedDate,
   onChangeDate,
 }: {
   taches: TacheAvecRelations[];
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
+  horaires: Tables<"horaires_travail">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
 }) {
@@ -28,6 +65,15 @@ export function DayView({
   const dayTaches = taches
     .filter((t) => t.echeance && isSameDay(parseISODate(t.echeance), selectedDate))
     .sort(sortByHeure);
+
+  const dayTachesAvecHeure = dayTaches.filter((t) => t.heure);
+
+  const horaireJour = horaires.find((h) => h.jour_semaine === getDay(selectedDate));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useInitialScroll(
+    scrollRef,
+    computeInitialScrollMinutes({ showCurrentTime: isToday(selectedDate), horaire: horaireJour })
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -62,6 +108,21 @@ export function DayView({
         >
           →
         </button>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <div ref={scrollRef} className="max-h-[55vh] overflow-auto">
+          <div className="flex">
+            <TimeGutter />
+            <div className="relative flex-1" style={{ height: GRID_HEIGHT }}>
+              <HourLines />
+              <WorkHoursBand horaire={horaireJour} />
+              {dayTachesAvecHeure.map((t) => (
+                <TacheBlock key={t.id} tache={t} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <AddTaskToggle
