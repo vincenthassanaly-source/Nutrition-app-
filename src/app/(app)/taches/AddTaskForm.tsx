@@ -84,6 +84,11 @@ export function AddTaskForm({
   const [priorite, setPriorite] = useState<Enums<"priorite_tache">>(tache?.priorite ?? "aucune");
   const [frequence, setFrequence] = useState<string>(tache?.recurrence_frequence ?? "");
   const [tagIds, setTagIds] = useState<string[]>(tache?.tags.map((t) => t.id) ?? []);
+  const [touteLaJournee, setTouteLaJournee] = useState(tache?.toute_la_journee ?? false);
+  const [heure, setHeure] = useState(tache?.heure?.slice(0, 5) ?? defaultHeure ?? "");
+  const [rappelMinutes, setRappelMinutes] = useState(
+    tache?.rappel_minutes != null ? String(tache.rappel_minutes) : ""
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -192,18 +197,52 @@ export function AddTaskForm({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="heure" className={labelClass}>
-          Heure (optionnel)
-        </label>
+      <label className="flex items-center gap-2 text-sm font-medium text-ink">
         <input
-          id="heure"
-          name="heure"
-          type="time"
-          defaultValue={tache?.heure?.slice(0, 5) ?? defaultHeure ?? ""}
-          className={input}
+          type="checkbox"
+          name="toute_la_journee"
+          checked={touteLaJournee}
+          onChange={(e) => setTouteLaJournee(e.target.checked)}
+          className="h-4 w-4 rounded border-line"
         />
-      </div>
+        Toute la journée
+      </label>
+
+      {!touteLaJournee && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="heure" className={labelClass}>
+            Heure (optionnel)
+          </label>
+          <input
+            id="heure"
+            name="heure"
+            type="time"
+            value={heure}
+            onChange={(e) => setHeure(e.target.value)}
+            className={input}
+          />
+        </div>
+      )}
+
+      {!touteLaJournee && heure && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="rappel_minutes" className={labelClass}>
+            Rappel
+          </label>
+          <select
+            id="rappel_minutes"
+            name="rappel_minutes"
+            value={rappelMinutes}
+            onChange={(e) => setRappelMinutes(e.target.value)}
+            className={input}
+          >
+            <option value="">Aucun</option>
+            <option value="5">5 min avant</option>
+            <option value="15">15 min avant</option>
+            <option value="30">30 min avant</option>
+          </select>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="notes" className={labelClass}>

@@ -17,6 +17,7 @@ const FREQUENCES: readonly Enums<"frequence_recurrence">[] = [
 ];
 
 const HEURE_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const RAPPEL_MINUTES_VALEURS = [5, 15, 30] as const;
 
 function revalidateTachesPaths() {
   revalidatePath("/taches");
@@ -33,6 +34,8 @@ type TacheInput = {
   priorite: Enums<"priorite_tache">;
   recurrence_frequence: Enums<"frequence_recurrence"> | null;
   recurrence_fin: string | null;
+  toute_la_journee: boolean;
+  rappel_minutes: number | null;
 };
 
 type ParseResult = { ok: true; value: TacheInput } | { ok: false; error: string };
@@ -46,6 +49,8 @@ function parseTacheInput(formData: FormData): ParseResult {
   const priorite = String(formData.get("priorite") ?? "aucune");
   const recurrence_frequence = String(formData.get("recurrence_frequence") ?? "").trim();
   const recurrence_fin = String(formData.get("recurrence_fin") ?? "").trim();
+  const toute_la_journee = formData.get("toute_la_journee") === "on";
+  const rappel_minutes_brut = String(formData.get("rappel_minutes") ?? "").trim();
 
   if (!titre) return { ok: false, error: "Le titre est requis." };
   if (!liste_id) return { ok: false, error: "La liste est requise." };
@@ -63,12 +68,24 @@ function parseTacheInput(formData: FormData): ParseResult {
     ? (recurrence_frequence as Enums<"frequence_recurrence">)
     : null;
 
+  // Un rappel n'a de sens qu'avec une heure précise : toute valeur hors
+  // 5/15/30 (y compris vide) est silencieusement ramenée à null, plutôt que
+  // rejetée comme une erreur de formulaire.
+  const rappel_minutes_parse = Number(rappel_minutes_brut);
+  const rappel_minutes =
+    rappel_minutes_brut && RAPPEL_MINUTES_VALEURS.includes(rappel_minutes_parse as 5 | 15 | 30)
+      ? rappel_minutes_parse
+      : null;
+
   return {
     ok: true,
     value: {
       titre,
+      // "Toute la journée" et une heure précise sont mutuellement
+      // exclusives : le serveur force heure/rappel_minutes à null plutôt que
+      // de faire confiance au client, qui masque déjà ces champs.
       echeance: echeance || null,
-      heure: heure || null,
+      heure: toute_la_journee ? null : heure || null,
       liste_id,
       notes: notes || null,
       priorite: priorite as Enums<"priorite_tache">,
@@ -77,6 +94,8 @@ function parseTacheInput(formData: FormData): ParseResult {
       // fréquence : silencieusement ignorée sinon (même logique que
       // unite/valeur_cible pour les objectifs de type "valeur").
       recurrence_fin: frequence && recurrence_fin ? recurrence_fin : null,
+      toute_la_journee,
+      rappel_minutes: toute_la_journee ? null : rappel_minutes,
     },
   };
 }
@@ -190,7 +209,26 @@ export async function updateTache(
   if (!parsed.ok) return { error: parsed.error };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("taches").update(parsed.value).eq("id", id);
+
+  const { data: existante, error: fetchError } = await supabase
+    .from("taches")
+    .select("echeance, heure, rappel_minutes")
+    .eq("id", id)
+    .single();
+  if (fetchError) return { error: fetchError.message };
+
+  // Un rappel déjà envoyé ne doit pas rester "acquis" si la tâche est
+  // déplacée à une nouvelle heure : sans ça, une tâche repoussée ne
+  // renverrait plus jamais de rappel.
+  const rappelObsolete =
+    existante.echeance !== parsed.value.echeance ||
+    existante.heure !== parsed.value.heure ||
+    existante.rappel_minutes !== parsed.value.rappel_minutes;
+
+  const { error } = await supabase
+    .from("taches")
+    .update(rappelObsolete ? { ...parsed.value, rappel_envoye_le: null } : parsed.value)
+    .eq("id", id);
 
   if (error) return { error: error.message };
 

@@ -510,6 +510,30 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+        }
+        Relationships: []
+      }
       recette_etapes: {
         Row: {
           astuce: string | null
@@ -787,11 +811,14 @@ export type Database = {
           notes: string | null
           ordre: number
           priorite: Database["public"]["Enums"]["priorite_tache"]
+          rappel_envoye_le: string | null
+          rappel_minutes: number | null
           recurrence_fin: string | null
           recurrence_frequence:
             | Database["public"]["Enums"]["frequence_recurrence"]
             | null
           titre: string
+          toute_la_journee: boolean
           updated_at: string
         }
         Insert: {
@@ -804,11 +831,14 @@ export type Database = {
           notes?: string | null
           ordre?: number
           priorite?: Database["public"]["Enums"]["priorite_tache"]
+          rappel_envoye_le?: string | null
+          rappel_minutes?: number | null
           recurrence_fin?: string | null
           recurrence_frequence?:
             | Database["public"]["Enums"]["frequence_recurrence"]
             | null
           titre: string
+          toute_la_journee?: boolean
           updated_at?: string
         }
         Update: {
@@ -821,11 +851,14 @@ export type Database = {
           notes?: string | null
           ordre?: number
           priorite?: Database["public"]["Enums"]["priorite_tache"]
+          rappel_envoye_le?: string | null
+          rappel_minutes?: number | null
           recurrence_fin?: string | null
           recurrence_frequence?:
             | Database["public"]["Enums"]["frequence_recurrence"]
             | null
           titre?: string
+          toute_la_journee?: boolean
           updated_at?: string
         }
         Relationships: [

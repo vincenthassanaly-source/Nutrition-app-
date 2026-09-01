@@ -4,10 +4,13 @@ import { useState } from "react";
 import { startOfToday } from "date-fns";
 import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
+import { AddTaskForm } from "../taches/AddTaskForm";
+import { Modal } from "@/components/Modal";
 import { DayView } from "./DayView";
 import { WeekView } from "./WeekView";
 import { MonthView } from "./MonthView";
 import { ListView } from "./ListView";
+import { toISODate } from "./date-utils";
 
 type ViewKey = "jour" | "semaine" | "mois" | "liste";
 
@@ -29,6 +32,7 @@ export function AgendaView({
 }) {
   const [view, setView] = useState<ViewKey>("jour");
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
+  const [fabOpen, setFabOpen] = useState(false);
 
   function selectDay(date: Date) {
     setSelectedDate(date);
@@ -37,6 +41,29 @@ export function AgendaView({
 
   return (
     <div className="flex flex-col gap-4">
+      <button
+        type="button"
+        onClick={() => setFabOpen(true)}
+        aria-label="Ajouter un événement"
+        className="fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-card"
+        style={{ background: "var(--accent-agenda)", bottom: "calc(env(safe-area-inset-bottom) + 90px)" }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+
+      {fabOpen && (
+        <Modal title="Nouvel événement" onClose={() => setFabOpen(false)}>
+          <AddTaskForm
+            listes={listes}
+            tags={tags}
+            defaultEcheance={toISODate(selectedDate)}
+            onDone={() => setFabOpen(false)}
+          />
+        </Modal>
+      )}
+
       <div className="flex rounded-2xl border border-line bg-surface p-1">
         {VIEWS.map((v) => (
           <button
