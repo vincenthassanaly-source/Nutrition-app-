@@ -17,6 +17,7 @@
   --accent-fat: oklch(0.56 0.15 340);
   --accent-alert: oklch(0.55 0.19 25);
   --accent-agenda: oklch(0.55 0.14 230);
+  --accent-planning-travail: oklch(0.38 0.09 150);
   --accent-habitudes: oklch(0.55 0.14 45);
   --accent-courses: oklch(0.55 0.14 305);
   --accent-objectifs: oklch(0.55 0.14 200);
@@ -41,6 +42,7 @@
   --accent-fat: oklch(0.72 0.14 340);
   --accent-alert: oklch(0.7 0.17 25);
   --accent-agenda: oklch(0.72 0.13 230);
+  --accent-planning-travail: oklch(0.5 0.1 150);
   --accent-habitudes: oklch(0.72 0.13 45);
   --accent-courses: oklch(0.72 0.13 305);
   --accent-objectifs: oklch(0.72 0.13 200);
@@ -66,6 +68,7 @@
   --color-fat: var(--accent-fat);
   --color-alert: var(--accent-alert);
   --color-agenda: var(--accent-agenda);
+  --color-planning-travail: var(--accent-planning-travail);
   --color-habitudes: var(--accent-habitudes);
   --color-courses: var(--accent-courses);
   --color-objectifs: var(--accent-objectifs);

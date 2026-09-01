@@ -37,21 +37,25 @@ export function getTacheBlockStyle(tache: {
 }
 
 // Position du scroll initial : l'heure actuelle si le jour affiché (ou l'un
-// des jours de la semaine affichée) est aujourd'hui, sinon le début des
-// heures de travail du jour de référence — pour éviter d'atterrir sur une
-// grille vide à minuit. Repli sur 8h si aucun horaire n'est configuré.
+// des jours de la semaine affichée) est aujourd'hui, sinon le début du
+// créneau de travail le plus tôt du jour de référence — pour éviter
+// d'atterrir sur une grille vide à minuit. Repli sur 8h si aucun créneau
+// n'est configuré ce jour-là.
 export function computeInitialScrollMinutes({
   showCurrentTime,
-  horaire,
+  creneaux,
 }: {
   showCurrentTime: boolean;
-  horaire: Tables<"horaires_travail"> | undefined;
+  creneaux: Tables<"horaires_travail_creneaux">[];
 }): number {
   if (showCurrentTime) {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
   }
-  return heureToMinutes(horaire?.heure_debut ?? null) ?? 8 * 60;
+  const debuts = creneaux
+    .map((c) => heureToMinutes(c.heure_debut))
+    .filter((m): m is number => m !== null);
+  return debuts.length > 0 ? Math.min(...debuts) : 8 * 60;
 }
 
 export function useInitialScroll(
@@ -98,24 +102,34 @@ export function HourLines() {
   );
 }
 
-// Bande "heures de travail" : variante plus claire de --accent-agenda (pas
-// une nouvelle teinte). Un jour non travaillé (les deux heures à null) ne
-// dessine aucune bande — option la plus simple, à défaut de retour de
-// Vincent sur un repère "fermé" dédié.
-export function WorkHoursBand({ horaire }: { horaire: Tables<"horaires_travail"> | undefined }) {
-  const start = heureToMinutes(horaire?.heure_debut ?? null);
-  const end = heureToMinutes(horaire?.heure_fin ?? null);
-  if (start === null || end === null || end <= start) return null;
-
+// Bande "heures de travail" : un <div> par créneau du jour (pause déjeuner
+// = deux créneaux disjoints), couleur dédiée --accent-planning-travail bien
+// visible à ~30% d'opacité. Un jour sans créneau ne dessine aucune bande.
+export function WorkHoursBand({
+  creneaux,
+}: {
+  creneaux: Tables<"horaires_travail_creneaux">[];
+}) {
   return (
-    <div
-      className="pointer-events-none absolute inset-x-0 rounded-md"
-      style={{
-        top: minutesToPx(start),
-        height: minutesToPx(end - start),
-        backgroundColor: "var(--accent-agenda)",
-        opacity: 0.1,
-      }}
-    />
+    <>
+      {creneaux.map((creneau) => {
+        const start = heureToMinutes(creneau.heure_debut);
+        const end = heureToMinutes(creneau.heure_fin);
+        if (start === null || end === null || end <= start) return null;
+
+        return (
+          <div
+            key={creneau.id}
+            className="pointer-events-none absolute inset-x-0 rounded-md"
+            style={{
+              top: minutesToPx(start),
+              height: minutesToPx(end - start),
+              backgroundColor: "var(--accent-planning-travail)",
+              opacity: 0.3,
+            }}
+          />
+        );
+      })}
+    </>
   );
 }

@@ -269,23 +269,32 @@ export type Database = {
         }
         Relationships: []
       }
-      horaires_travail: {
+      horaires_travail_creneaux: {
         Row: {
-          heure_debut: string | null
-          heure_fin: string | null
+          frequence: string
+          heure_debut: string
+          heure_fin: string
+          id: number
           jour_semaine: number
+          semaine_reference: string | null
           updated_at: string
         }
         Insert: {
-          heure_debut?: string | null
-          heure_fin?: string | null
+          frequence?: string
+          heure_debut: string
+          heure_fin: string
+          id?: never
           jour_semaine: number
+          semaine_reference?: string | null
           updated_at?: string
         }
         Update: {
-          heure_debut?: string | null
-          heure_fin?: string | null
+          frequence?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: never
           jour_semaine?: number
+          semaine_reference?: string | null
           updated_at?: string
         }
         Relationships: []

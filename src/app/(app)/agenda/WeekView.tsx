@@ -6,7 +6,6 @@ import {
   eachDayOfInterval,
   endOfWeek,
   format,
-  getDay,
   isSameDay,
   isToday,
   startOfWeek,
@@ -14,6 +13,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Tables } from "@/lib/supabase/types";
+import { getCreneauxDuJour } from "@/lib/agenda/planning-travail";
 import { ghostButton } from "@/lib/ui";
 import { parseISODate } from "./date-utils";
 import {
@@ -56,13 +56,13 @@ function TacheBlock({ tache }: { tache: Tache }) {
 
 export function WeekView({
   taches,
-  horaires,
+  creneaux,
   selectedDate,
   onChangeDate,
   onSelectDay,
 }: {
   taches: Tache[];
-  horaires: Tables<"horaires_travail">[];
+  creneaux: Tables<"horaires_travail_creneaux">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
   onSelectDay: (date: Date) => void;
@@ -74,10 +74,10 @@ export function WeekView({
   const weekContainsToday = days.some((d) => isSameDay(d, today));
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const horaireSelectedJour = horaires.find((h) => h.jour_semaine === getDay(selectedDate));
+  const creneauxSelectedJour = getCreneauxDuJour(creneaux, selectedDate);
   useInitialScroll(
     scrollRef,
-    computeInitialScrollMinutes({ showCurrentTime: weekContainsToday, horaire: horaireSelectedJour })
+    computeInitialScrollMinutes({ showCurrentTime: weekContainsToday, creneaux: creneauxSelectedJour })
   );
 
   return (
@@ -113,7 +113,7 @@ export function WeekView({
             </div>
 
             {days.map((day) => {
-              const horaireJour = horaires.find((h) => h.jour_semaine === getDay(day));
+              const creneauxJour = getCreneauxDuJour(creneaux, day);
               const dayTachesAvecHeure = taches.filter(
                 (t) => t.echeance && isSameDay(parseISODate(t.echeance), day) && t.heure
               );
@@ -166,7 +166,7 @@ export function WeekView({
                     aria-label={`Voir le ${format(day, "EEEE d MMMM", { locale: fr })}`}
                   >
                     <HourLines />
-                    <WorkHoursBand horaire={horaireJour} />
+                    <WorkHoursBand creneaux={creneauxJour} />
                     {dayTachesAvecHeure.map((t) => (
                       <TacheBlock key={t.id} tache={t} />
                     ))}

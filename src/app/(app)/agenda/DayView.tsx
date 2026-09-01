@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { addDays, format, getDay, isSameDay, isToday, startOfToday, subDays } from "date-fns";
+import { addDays, format, isSameDay, isToday, startOfToday, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
+import { getCreneauxDuJour } from "@/lib/agenda/planning-travail";
 import { AddTaskToggle } from "../taches/AddTaskToggle";
 import { TaskCard } from "../taches/TasksList";
 import { ghostButton, sectionTitle } from "@/lib/ui";
@@ -48,14 +49,14 @@ export function DayView({
   taches,
   listes,
   tags,
-  horaires,
+  creneaux,
   selectedDate,
   onChangeDate,
 }: {
   taches: TacheAvecRelations[];
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
-  horaires: Tables<"horaires_travail">[];
+  creneaux: Tables<"horaires_travail_creneaux">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
 }) {
@@ -68,11 +69,11 @@ export function DayView({
 
   const dayTachesAvecHeure = dayTaches.filter((t) => t.heure);
 
-  const horaireJour = horaires.find((h) => h.jour_semaine === getDay(selectedDate));
+  const creneauxJour = getCreneauxDuJour(creneaux, selectedDate);
   const scrollRef = useRef<HTMLDivElement>(null);
   useInitialScroll(
     scrollRef,
-    computeInitialScrollMinutes({ showCurrentTime: isToday(selectedDate), horaire: horaireJour })
+    computeInitialScrollMinutes({ showCurrentTime: isToday(selectedDate), creneaux: creneauxJour })
   );
 
   return (
@@ -116,7 +117,7 @@ export function DayView({
             <TimeGutter />
             <div className="relative flex-1" style={{ height: GRID_HEIGHT }}>
               <HourLines />
-              <WorkHoursBand horaire={horaireJour} />
+              <WorkHoursBand creneaux={creneauxJour} />
               {dayTachesAvecHeure.map((t) => (
                 <TacheBlock key={t.id} tache={t} />
               ))}
