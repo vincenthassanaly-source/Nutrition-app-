@@ -126,6 +126,14 @@ Cette correction n'est pas spécifique au module Tâches : elle s'applique à to
 
 Revérifié après ce correctif : `tsc --noEmit`, `eslint`, `next build` tous au vert.
 
+## Ajustement final — retrait de la barre pleine largeur, seul le bouton flotte
+
+Retour de Vincent après test réel (sticky désormais fonctionnel) : une bande colorée pleine largeur (fond `bg-surface` + `border-t`) restait visible de part et d'autre du bouton pendant le scroll, alors que seul le bouton lui-même devait rester visible/mobile, sans encadrement.
+
+Corrigé dans `AddTaskForm.tsx` : la `div` sticky perd son `bg-surface`/`border-t` (elle reste `sticky bottom-0`, transparente, pour porter uniquement le centrage et le padding de zone de sécurité). Le bouton récupère une petite ombre (`shadow-card`, déjà utilisée ailleurs dans le design system pour les cards) pour se détacher visuellement du contenu qui défile juste en dessous, sans bloc de fond. Le message d'erreur (`state.error`), quand présent, est désormais entouré d'une petite bulle (`rounded-xl bg-surface px-3 py-1.5 shadow-card`) pour rester lisible au-dessus du contenu qui scrolle, plutôt que du texte nu.
+
+Revérifié avec le même test DOM headless (capture d'écran à l'appui, y compris en dark mode comme sur l'appareil de Vincent) : seul le bouton "Créer" est visible flottant au-dessus du contenu, plus aucune bande de fond. `tsc --noEmit`, `eslint`, `next build` repassés au vert.
+
 ## Fin
 
-Conformément à la consigne, la branche n'a **pas** été poussée automatiquement après ce dernier correctif (portée plus large qu'un simple composant). À confirmer avec Vincent avant `git push`.
+Conformément à la consigne, la branche n'a **pas** été poussée automatiquement après ce dernier ajustement. À confirmer avec Vincent avant `git push`.
