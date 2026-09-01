@@ -14,6 +14,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Tables } from "@/lib/supabase/types";
+import { getCreneauxDuJour } from "@/lib/agenda/planning-travail";
 import { ghostButton } from "@/lib/ui";
 import { toISODate } from "./date-utils";
 
@@ -23,11 +24,13 @@ const WEEKDAY_LABELS = ["L", "M", "M", "J", "V", "S", "D"];
 
 export function MonthView({
   taches,
+  creneaux,
   selectedDate,
   onChangeDate,
   onSelectDay,
 }: {
   taches: Tache[];
+  creneaux: Tables<"horaires_travail_creneaux">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
   onSelectDay: (date: Date) => void;
@@ -79,15 +82,17 @@ export function MonthView({
           const iso = toISODate(day);
           const count = countByDay.get(iso) ?? 0;
           const inMonth = isSameMonth(day, selectedDate);
+          const jourTravaille = getCreneauxDuJour(creneaux, day).length > 0;
 
           return (
             <button
               key={day.toISOString()}
               type="button"
               onClick={() => onSelectDay(day)}
-              className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl border bg-surface text-[13px] ${
+              className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl border text-[13px] ${
                 isToday(day) ? "border-agenda" : "border-line"
-              } ${inMonth ? "text-ink" : "text-ink-3"}`}
+              } ${inMonth ? "text-ink" : "text-ink-3"} ${jourTravaille ? "" : "bg-surface"}`}
+              style={jourTravaille ? { backgroundColor: "var(--accent-planning-travail-soft)" } : undefined}
             >
               <span>{format(day, "d")}</span>
               {count > 0 && <span className="h-1.5 w-1.5 rounded-full bg-agenda" />}

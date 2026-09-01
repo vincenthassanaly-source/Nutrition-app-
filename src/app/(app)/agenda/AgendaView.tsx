@@ -105,6 +105,7 @@ export function AgendaView({
       {view === "mois" && (
         <MonthView
           taches={taches}
+          creneaux={creneaux}
           selectedDate={selectedDate}
           onChangeDate={setSelectedDate}
           onSelectDay={selectDay}
