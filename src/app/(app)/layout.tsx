@@ -7,7 +7,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-full flex-1 flex-col bg-background">
+    <div className="relative flex h-full flex-1 flex-col bg-background">
       <div className="fixed right-4 z-40" style={{ top: "calc(env(safe-area-inset-top) + 14px)" }}>
         <ThemeToggle />
       </div>

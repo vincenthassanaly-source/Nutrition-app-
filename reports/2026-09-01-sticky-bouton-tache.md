@@ -94,6 +94,38 @@ Retour de Vincent : le bouton stické prenait toute la largeur de l'écran une f
 
 Revérifié avec le même test DOM headless (capture d'écran à l'appui) : bouton "Créer" désormais en pilule centrée d'une largeur naturelle, pas de chevauchement avec `BottomNav` (toujours 32px de marge constante). `tsc --noEmit`, `eslint` et `next build` repassés au vert après ce changement.
 
+## Correction critique — `<main>` ne scrollait pas réellement (bug préexistant, masqué jusqu'ici)
+
+Retour de Vincent après test réel : le bouton ne restait **pas** collé en bas de l'écran pendant le scroll — il fallait scroller tout le formulaire pour l'atteindre, comme avant. Le test DOM headless précédent (Phase 3) utilisait un mock avec un wrapper artificiellement capé à `height:100dvh`, qui ne reproduisait pas fidèlement `src/app/layout.tsx`. En reproduisant exactement la vraie chaîne `html`/`body`/wrapper `(app)/layout.tsx`/`<main>`, le bug est apparu clairement.
+
+**Cause racine** : `body` (`src/app/layout.tsx`) utilisait `min-h-full` (min-height, pas de plafond) au lieu de `h-full`, et le wrapper de `(app)/layout.tsx` faisait de même. Résultat : rien au-dessus de `<main>` ne le contraint à une hauteur fixe — `<main>` grandit simplement pour contenir tout son contenu (son `scrollHeight` reste toujours égal à son `clientHeight`), donc son `overflow-y-auto` ne s'active jamais réellement. C'est le **document entier** qui scrolle nativement, pas `<main>`. Une barre `sticky` à l'intérieur de `<main>` n'a alors aucune ancre de scroll fonctionnelle pour se coller : elle suit le défilement de la page au même rythme, comme un élément `position: static` — exactement le symptôme décrit.
+
+Ce défaut est **préexistant** au sticky : `<main>` n'a jamais réellement scrollé indépendamment de la page depuis la mise en place du layout. Il était invisible jusqu'ici car aucun contenu ne dépendait d'un scroll interne à `<main>` — visuellement, scroller la page entière ou scroller `<main>` seul donne un rendu identique pour du contenu statique. Le bouton sticky est le premier élément à en dépendre réellement, ce qui a révélé le bug.
+
+**Vérification empirique** (headless Chromium + reproduction exacte du DOM/CSS réel, avant/après) :
+- Avant correction : `main.scrollTop` reste à `0` après un scroll de la page (`document.scrollingElement.scrollTop` passe à 400) — confirmé que c'est bien le document qui scrolle, pas `<main>` ; la barre sticky se déplace de la même distance que le scroll (aucun effet de collage).
+- Après correction : `main.scrollHeight` (1111) > `main.clientHeight` (480) — `<main>` a désormais un vrai contenu débordant. Un scroll (molette simulée sur la zone `<main>`) déplace bien `main.scrollTop`, le document reste à `0`, et la barre sticky reste à une position fixe à l'écran (marge constante de 32px avec `BottomNav`) pendant tout le scroll.
+
+**Correctif** (2 fichiers, portée globale car ces layouts sont partagés par toutes les pages) :
+
+```diff
+- <body className="min-h-full flex flex-col overflow-x-hidden bg-background text-ink font-sans">
++ <body className="h-full flex flex-col overflow-hidden bg-background text-ink font-sans">
+```
+*(`src/app/layout.tsx`)*
+
+```diff
+- <div className="relative flex min-h-full flex-1 flex-col bg-background">
++ <div className="relative flex h-full flex-1 flex-col bg-background">
+```
+*(`src/app/(app)/layout.tsx`)*
+
+`html` avait déjà `h-full` (inchangé). En capant aussi `body` et le wrapper interne à `h-full` (au lieu de `min-h-full`), toute la chaîne au-dessus de `<main>` est désormais plafonnée exactement à une hauteur d'écran ; `<main>` (en `flex-1`) se voit donc réellement contraint à l'espace restant et devient le véritable conteneur de scroll, comme le suggérait déjà son `overflow-y-auto` et ses calculs de padding liés à la zone de sécurité. `overflow-x-hidden` sur `body` est passé à `overflow-hidden` (les deux axes) pour éviter tout scroll fantôme résiduel au niveau du document.
+
+Cette correction n'est pas spécifique au module Tâches : elle s'applique à tout l'app shell (tous les écrans passent par `(app)/layout.tsx`). Pour du contenu qui tenait déjà dans un écran, aucun changement visuel. Pour du contenu plus long, seul `<main>` scrolle désormais en interne (le document/la fenêtre du navigateur ne scrolle plus) — comportement standard d'un "app shell" pour une PWA en mode standalone (le mode d'installation prévu pour Kilio), qui garde `ThemeToggle` et `BottomNav` (tous deux `fixed`, ancrés à la fenêtre, non affectés par ce changement) visuellement stables pendant le scroll du contenu.
+
+Revérifié après ce correctif : `tsc --noEmit`, `eslint`, `next build` tous au vert.
+
 ## Fin
 
-Conformément à la consigne, la branche n'a **pas** été poussée automatiquement. À confirmer avec Vincent avant `git push -u origin claude/sticky-add-task-button-72co8d`.
+Conformément à la consigne, la branche n'a **pas** été poussée automatiquement après ce dernier correctif (portée plus large qu'un simple composant). À confirmer avec Vincent avant `git push`.
