@@ -18,6 +18,10 @@ export const MIN_BLOCK_HEIGHT = 18;
 export const GRID_START_HOUR = 6;
 const GRID_START_MINUTES = GRID_START_HOUR * 60;
 const GRID_HOURS_COUNT = 24 - GRID_START_HOUR;
+// Espace "d'amorce" au-dessus de la première heure affichée (06h), pour que
+// l'écart entre le haut de la grille et la ligne 06h soit visuellement
+// identique à l'écart entre deux lignes d'heure consécutives.
+const GRID_LEAD_HOURS = 1;
 
 const HOURS = Array.from({ length: GRID_HOURS_COUNT }, (_, i) => i + GRID_START_HOUR);
 
@@ -26,15 +30,24 @@ export function hourHeight(zoom: number): number {
 }
 
 export function gridHeight(zoom: number): number {
-  return hourHeight(zoom) * GRID_HOURS_COUNT;
+  return hourHeight(zoom) * (GRID_HOURS_COUNT + GRID_LEAD_HOURS);
+}
+
+// Convertit une DURÉE (pas un instant) en hauteur px : à ne jamais utiliser
+// pour un instant absolu (heure de la journée), voir minutesToPx ci-dessous.
+export function durationToPx(durationMinutes: number, zoom: number): number {
+  return (durationMinutes / 60) * hourHeight(zoom);
 }
 
 // `minutes` reste exprimé en minutes depuis minuit (échéances/créneaux non
 // modifiés) ; la conversion en px est relative au début affiché de la
-// grille (06h). Une valeur avant 06h donne un top négatif (hors-écran, ne
-// s'affiche pas) — accepté, cette plage n'est jamais utilisée en pratique.
+// grille (06h), décalée de l'espace d'amorce ci-dessus. Une valeur avant
+// 06h donne un top négatif (hors-écran, ne s'affiche pas) — accepté, cette
+// plage n'est jamais utilisée en pratique. Pour une DURÉE (pas un instant),
+// utiliser durationToPx — soustraire GRID_START_MINUTES n'aurait aucun sens
+// sur un écart entre deux heures.
 export function minutesToPx(minutes: number, zoom: number): number {
-  return ((minutes - GRID_START_MINUTES) / 60) * hourHeight(zoom);
+  return durationToPx(minutes - GRID_START_MINUTES, zoom) + hourHeight(zoom) * GRID_LEAD_HOURS;
 }
 
 export function getTacheBlockStyle(
@@ -52,7 +65,7 @@ export function getTacheBlockStyle(
 
   return {
     top: minutesToPx(start, zoom),
-    height: Math.max(minutesToPx(end - start, zoom), MIN_BLOCK_HEIGHT),
+    height: Math.max(durationToPx(end - start, zoom), MIN_BLOCK_HEIGHT),
   };
 }
 
@@ -149,7 +162,7 @@ export function WorkHoursBand({
             className="pointer-events-none absolute inset-x-0 rounded-md"
             style={{
               top: minutesToPx(start, zoom),
-              height: minutesToPx(end - start, zoom),
+              height: durationToPx(end - start, zoom),
               backgroundColor: "var(--accent-planning-travail)",
               opacity: 0.3,
             }}

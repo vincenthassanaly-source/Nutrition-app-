@@ -120,9 +120,9 @@ Trois correctifs demandés après un premier essai réel :
    trait (`-translate-y-1/2`), donc la toute première heure affichée déborde d'environ 6px
    au-dessus du bord haut de la zone de scroll — bord qui coïncide exactement avec `top: 0` en
    l'absence d'espace au-dessus (contrairement à la vue Semaine, qui a déjà un en-tête de 44px
-   au-dessus de la grille). Corrigé en ajoutant `pt-2` (8px) au conteneur flex qui enveloppe
-   `TimeGutter` + la grille dans `DayView.tsx`, ce qui laisse la place nécessaire à l'étiquette de
-   la première heure. Générique : reste valable quelle que soit l'heure de début affichée.
+   au-dessus de la grille). Corrigé dans un premier temps par un `pt-2` (8px) fixe sur `DayView`,
+   puis remplacé (voir "Suite 2" ci-dessous) par un espace d'amorce intégré à `TimeGrid.tsx` qui
+   scale avec le zoom.
 2. **Vue Semaine : zoom minimal fixé dynamiquement à "les 7 jours remplissent exactement
    l'écran"**. Le plancher fixe (`MIN_ZOOM = 0.35`) laissait un vide à droite sur l'écran de
    Vincent (visible sur sa capture). Remplacé par un calcul dynamique
@@ -154,6 +154,48 @@ Trois correctifs demandés après un premier essai réel :
 `npx next build` : ✅ tous passés sans erreur après ces changements. Pas de nouvelle vérification
 visuelle sur appareil réel dans ce sandbox (même limitation qu'en première partie) — Vincent
 devra retester sur son téléphone.
+
+## Suite 2 (retours après deuxième test sur téléphone)
+
+Deux problèmes remontés après le round précédent :
+
+1. **Bug critique découvert : les bandes "heures de travail" et les blocs de tâches avaient une
+   hauteur fausse (souvent invisible)**. Cause : `minutesToPx(minutes, zoom)` a été modifiée au
+   round précédent pour soustraire `GRID_START_MINUTES` (le décalage 06h) — correct pour un
+   **instant absolu** (`heure_debut`, `heure`...), mais `getTacheBlockStyle` et `WorkHoursBand`
+   l'utilisaient aussi pour convertir une **durée** (`end - start`) en hauteur. Soustraire le
+   décalage d'une durée n'a aucun sens : un créneau de 3h (180 min) donnait
+   `(180 - 360) / 60 × hourHeight` = une hauteur **négative**, invisible ou quasi invisible selon
+   le navigateur — exactement le symptôme observé (bande absente le mercredi en vue Jour, bandes
+   visiblement décalées/mal dimensionnées en vue Semaine). Corrigé en séparant les deux usages :
+   nouvelle fonction `durationToPx(durationMinutes, zoom)` (pas de soustraction, uniquement
+   `(minutes/60) × hourHeight`) utilisée pour toutes les hauteurs (bloc de tâche, bande heures de
+   travail) ; `minutesToPx` reste réservé aux positions absolues (`top`). Ce bug ne touchait pas
+   les dates/heures elles-mêmes en base, uniquement le rendu — aucune donnée à corriger.
+2. **Espace au-dessus de la ligne 06h trop faible par rapport à l'espacement entre heures**.
+   Demande de Vincent : l'écart entre le haut de la grille et la ligne "06h" doit être identique à
+   l'écart entre deux lignes d'heure consécutives (actuellement un `pt-2` fixe de 8px, bien plus
+   petit que `hourHeight(zoom)` — et pas proportionnel au zoom). Remplacé par un espace d'amorce
+   intégré directement dans `TimeGrid.tsx` (`GRID_LEAD_HOURS = 1`) : `gridHeight` ajoute une
+   hauteur d'heure supplémentaire, et `minutesToPx` décale toutes les positions d'autant — la
+   ligne "06h" se retrouve donc exactement à `hourHeight(zoom)` du haut de la grille, comme
+   n'importe quelle autre ligne. Le `pt-2` ad hoc de `DayView.tsx` a été retiré (devenu inutile,
+   et de toute façon pas scalé par le zoom). S'applique aux deux vues (Semaine avait le même écart
+   trop faible, moins visible sur la capture mais bien présent).
+
+### Fichiers modifiés (suite 2)
+
+- `src/app/(app)/agenda/TimeGrid.tsx` — nouvelle fonction `durationToPx`, correction des hauteurs
+  de bloc de tâche et de bande heures de travail, ajout de `GRID_LEAD_HOURS`
+- `src/app/(app)/agenda/DayView.tsx` — retrait du `pt-2` ad hoc (remplacé par l'amorce intégrée)
+
+### Vérifications (suite 2)
+
+`npx tsc --noEmit`, `npx eslint "src/app/(app)/agenda/**/*.tsx" "src/app/(app)/agenda/**/*.ts"` et
+`npx next build` : ✅ tous passés sans erreur. Vérification manuelle du calcul (à la main, avec
+zoom=1) pour confirmer que la hauteur d'un créneau 9h-12h donne bien 168px (3h × 56px) et non une
+valeur négative, et que la ligne "12h" s'aligne bien avec le bas de la bande dans ce cas — pas de
+vérification visuelle sur appareil réel dans ce sandbox, Vincent devra retester.
 
 ## Fin
 

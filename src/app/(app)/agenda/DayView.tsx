@@ -121,7 +121,7 @@ export function DayView({
           style={{ touchAction: "pan-x pan-y" }}
           {...touchHandlers}
         >
-          <div className="flex pt-2">
+          <div className="flex">
             <TimeGutter zoom={zoom} />
             <div className="relative flex-1" style={{ height: gridHeight(zoom) }}>
               <HourLines zoom={zoom} />
