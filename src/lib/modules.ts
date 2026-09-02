@@ -70,7 +70,7 @@ export const MODULES: AppModule[] = [
   {
     href: "/collection",
     label: "Collection",
-    description: "Collections de photos façon Raindrop",
+    description: "Photos organisées par collection",
     accentVar: "var(--accent-collection)",
     icon: (c) =>
       createElement(
