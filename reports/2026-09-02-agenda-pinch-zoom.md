@@ -111,6 +111,51 @@ partagé entre les deux vues.
   dehors de `TimeGrid.tsx`/`WeekView.tsx`/`DayView.tsx` ne dépendait de ces exports avant le
   changement de signature.
 
+## Suite (retours après premier test sur téléphone)
+
+Trois correctifs demandés après un premier essai réel :
+
+1. **Vue Jour : la ligne de minuit était coupée en haut de la grille** (bug indépendant du
+   zoom). Cause : `TimeGutter`/`HourLines` positionnent le libellé de chaque heure centré sur le
+   trait (`-translate-y-1/2`), donc la toute première heure affichée déborde d'environ 6px
+   au-dessus du bord haut de la zone de scroll — bord qui coïncide exactement avec `top: 0` en
+   l'absence d'espace au-dessus (contrairement à la vue Semaine, qui a déjà un en-tête de 44px
+   au-dessus de la grille). Corrigé en ajoutant `pt-2` (8px) au conteneur flex qui enveloppe
+   `TimeGutter` + la grille dans `DayView.tsx`, ce qui laisse la place nécessaire à l'étiquette de
+   la première heure. Générique : reste valable quelle que soit l'heure de début affichée.
+2. **Vue Semaine : zoom minimal fixé dynamiquement à "les 7 jours remplissent exactement
+   l'écran"**. Le plancher fixe (`MIN_ZOOM = 0.35`) laissait un vide à droite sur l'écran de
+   Vincent (visible sur sa capture). Remplacé par un calcul dynamique
+   (`computeMinZoomForWeekWidth` dans `useAgendaZoom.ts`) : `WeekView` mesure la largeur réelle
+   visible de son conteneur scrollable via `ResizeObserver` (réagit aussi à une rotation
+   d'écran/redimensionnement), et en déduit le zoom exact où `34px (gouttière) + 7 ×
+   dayColumnWidth = largeur du conteneur`. Ce zoom devient le nouveau plancher — impossible de
+   dézoomer davantage, quel que soit l'appareil. Le plafond de zoom (`MAX_ZOOM = 2`) n'a pas été
+   modifié (non demandé). `useAgendaZoom()` accepte maintenant un `minZoom` optionnel ;
+   `DayView` ne le fournit pas et garde le plancher par défaut (`MIN_ZOOM_FALLBACK = 0.35`),
+   utilisé aussi comme repli avant la première mesure du conteneur Semaine.
+3. **Masquage des heures 00h-06h dans les deux vues**. `TimeGrid.tsx` affiche désormais 18h
+   (06h-24h) au lieu de 24h : `HOURS` démarre à `GRID_START_HOUR = 6`, `gridHeight`/`minutesToPx`
+   sont recalées sur ce début (une tâche avec une heure avant 6h — cas non prévu par Vincent —
+   obtiendrait un `top` négatif et resterait hors-écran, sans plantage). Ce changement réduit
+   mécaniquement la hauteur totale de la grille à tous les niveaux de zoom, dans les deux vues.
+
+### Fichiers modifiés (suite)
+
+- `src/app/(app)/agenda/useAgendaZoom.ts` — `minZoom` paramétrable, `computeMinZoomForWeekWidth`,
+  `GUTTER_WIDTH`/`WEEK_DAYS_COUNT` exportés, renommage `MIN_ZOOM` → `MIN_ZOOM_FALLBACK`
+- `src/app/(app)/agenda/TimeGrid.tsx` — grille recalée sur `GRID_START_HOUR = 6`
+- `src/app/(app)/agenda/WeekView.tsx` — mesure de largeur (`ResizeObserver`) + `minZoom` dynamique
+- `src/app/(app)/agenda/DayView.tsx` — `pt-2` pour corriger le rognage de la première heure
+
+### Vérifications (suite)
+
+`npx tsc --noEmit`, `npx eslint "src/app/(app)/agenda/**/*.tsx" "src/app/(app)/agenda/**/*.ts"` et
+`npx next build` : ✅ tous passés sans erreur après ces changements. Pas de nouvelle vérification
+visuelle sur appareil réel dans ce sandbox (même limitation qu'en première partie) — Vincent
+devra retester sur son téléphone.
+
 ## Fin
 
-Rien n'a été poussé sur la branche `kilio` — en attente de confirmation de Vincent.
+Ces correctifs sont committés localement ; en attente de confirmation de Vincent avant de
+pousser sur `kilio`.

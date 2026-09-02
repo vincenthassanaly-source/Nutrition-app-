@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   addWeeks,
   eachDayOfInterval,
@@ -25,7 +25,18 @@ import {
   useInitialScroll,
   WorkHoursBand,
 } from "./TimeGrid";
-import { BASE_DAY_COLUMN_WIDTH, useAgendaZoom } from "./useAgendaZoom";
+import {
+  BASE_DAY_COLUMN_WIDTH,
+  computeMinZoomForWeekWidth,
+  GUTTER_WIDTH,
+  MIN_ZOOM_FALLBACK,
+  useAgendaZoom,
+} from "./useAgendaZoom";
+
+// useLayoutEffect ne fait rien côté serveur et logge un warning React si
+// utilisé tel quel dans un composant serveur-rendu ; cet alias bascule sur
+// useEffect côté serveur (mesure de toute façon impossible sans DOM).
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 type Tache = Tables<"taches">;
 
@@ -69,10 +80,29 @@ export function WeekView({
   const today = new Date();
   const weekContainsToday = days.some((d) => isSameDay(d, today));
 
-  const { zoom, touchHandlers } = useAgendaZoom();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Zoom minimal dynamique : le plancher de dézoom est fixé au niveau
+  // exact où les 7 colonnes remplissent la largeur visible du conteneur
+  // (mesurée via ResizeObserver), pour ne jamais laisser d'espace vide à
+  // droite. `containerWidth` vaut `null` tant que la mesure n'a pas eu
+  // lieu (premier rendu) : on retombe alors sur le plancher par défaut.
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  useIsomorphicLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const minZoom =
+    containerWidth !== null ? computeMinZoomForWeekWidth(containerWidth) : MIN_ZOOM_FALLBACK;
+
+  const { zoom, touchHandlers } = useAgendaZoom({ minZoom });
   const dayColumnWidth = BASE_DAY_COLUMN_WIDTH * zoom;
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const creneauxSelectedJour = getCreneauxDuJour(creneaux, selectedDate);
   useInitialScroll(
     scrollRef,
@@ -111,7 +141,7 @@ export function WeekView({
           style={{ touchAction: "pan-x pan-y" }}
           {...touchHandlers}
         >
-          <div className="flex" style={{ width: 34 + days.length * dayColumnWidth }}>
+          <div className="flex" style={{ width: GUTTER_WIDTH + days.length * dayColumnWidth }}>
             <div className="sticky left-0 z-20 bg-surface">
               <div className="h-11 border-b border-line" />
               <TimeGutter zoom={zoom} />

@@ -3,28 +3,38 @@
 import { useEffect, type RefObject } from "react";
 import type { Tables } from "@/lib/supabase/types";
 import { heureToMinutes } from "./date-utils";
-import { BASE_HOUR_HEIGHT } from "./useAgendaZoom";
+import { BASE_HOUR_HEIGHT, GUTTER_WIDTH } from "./useAgendaZoom";
 
-// Grille horaire partagée entre WeekView et DayView : 24h pleines avec
-// scroll vertical (pas de découpage arbitraire), 1 minute = hourHeight(zoom)/60 px.
+// Grille horaire partagée entre WeekView et DayView : scroll vertical (pas
+// de découpage en tranches de temps arbitraires), 1 minute =
+// hourHeight(zoom)/60 px. Les heures 00h-06h ne sont jamais affichées (il
+// ne s'y passe jamais rien côté usage réel) : la grille commence à 06h et
+// finit à 24h, ce qui fait gagner de la place à tous les niveaux de zoom.
 // Une tâche avec heure mais sans heure_fin reste visible comme un bloc
 // plutôt qu'un simple repère ponctuel : 30 min par défaut, cohérent avec
 // les pas de rappel existants (5/15/30 min).
 export const DEFAULT_TASK_DURATION_MINUTES = 30;
 export const MIN_BLOCK_HEIGHT = 18;
+export const GRID_START_HOUR = 6;
+const GRID_START_MINUTES = GRID_START_HOUR * 60;
+const GRID_HOURS_COUNT = 24 - GRID_START_HOUR;
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOURS = Array.from({ length: GRID_HOURS_COUNT }, (_, i) => i + GRID_START_HOUR);
 
 export function hourHeight(zoom: number): number {
   return BASE_HOUR_HEIGHT * zoom;
 }
 
 export function gridHeight(zoom: number): number {
-  return hourHeight(zoom) * 24;
+  return hourHeight(zoom) * GRID_HOURS_COUNT;
 }
 
+// `minutes` reste exprimé en minutes depuis minuit (échéances/créneaux non
+// modifiés) ; la conversion en px est relative au début affiché de la
+// grille (06h). Une valeur avant 06h donne un top négatif (hors-écran, ne
+// s'affiche pas) — accepté, cette plage n'est jamais utilisée en pratique.
 export function minutesToPx(minutes: number, zoom: number): number {
-  return (minutes / 60) * hourHeight(zoom);
+  return ((minutes - GRID_START_MINUTES) / 60) * hourHeight(zoom);
 }
 
 export function getTacheBlockStyle(
@@ -88,7 +98,7 @@ export function useInitialScroll(
 
 export function TimeGutter({ zoom }: { zoom: number }) {
   return (
-    <div className="relative shrink-0" style={{ width: 34, height: gridHeight(zoom) }}>
+    <div className="relative shrink-0" style={{ width: GUTTER_WIDTH, height: gridHeight(zoom) }}>
       {HOURS.map((h) => (
         <span
           key={h}

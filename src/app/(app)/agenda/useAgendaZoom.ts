@@ -15,23 +15,26 @@ import {
 export const BASE_HOUR_HEIGHT = 56;
 export const BASE_DAY_COLUMN_WIDTH = 96;
 export const DEFAULT_ZOOM = 1;
-// Bornes choisies empiriquement : au zoom minimal, un écran mobile standard
-// (~380px de large, ~500-600px de grille visible) affiche les 7 colonnes de
-// la semaine et une journée complète de 24h sans double scroll. Le zoom
-// maximal dépasse le rendu par défaut pour le confort de lecture fine.
-export const MIN_ZOOM = 0.35;
+// Largeur fixe de la gouttière d'heures (non affectée par le zoom), et
+// nombre de colonnes de la vue Semaine — utilisés pour calculer le zoom
+// minimal qui fait tenir exactement les 7 jours sur la largeur de l'écran.
+export const GUTTER_WIDTH = 34;
+export const WEEK_DAYS_COUNT = 7;
+// Plancher/plafond absolus de sécurité (cas d'un écran extrêmement étroit,
+// ou avant la toute première mesure de largeur du conteneur Semaine).
+export const MIN_ZOOM_FALLBACK = 0.35;
 export const MAX_ZOOM = 2;
 
 const STORAGE_KEY = "kilio-agenda-zoom";
 
-function clampZoom(zoom: number): number {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+function clampZoomAbsolute(zoom: number): number {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM_FALLBACK, zoom));
 }
 
 function readStoredZoom(): number {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   const parsed = raw !== null ? Number(raw) : NaN;
-  return Number.isFinite(parsed) ? clampZoom(parsed) : DEFAULT_ZOOM;
+  return Number.isFinite(parsed) ? clampZoomAbsolute(parsed) : DEFAULT_ZOOM;
 }
 
 // Resynchronise si le zoom est modifié depuis un autre onglet.
@@ -48,10 +51,25 @@ function touchDistance(a: React.Touch, b: React.Touch): number {
   return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
 }
 
+// Zoom minimal (vue Semaine) pour lequel les 7 colonnes + la gouttière
+// remplissent exactement la largeur visible du conteneur, sans espace vide
+// à droite ni scroll horizontal. En dessous de ce zoom, dézoomer ne sert à
+// rien (le contenu ne peut pas être plus large que l'écran).
+export function computeMinZoomForWeekWidth(containerWidthPx: number): number {
+  const availableForDays = containerWidthPx - GUTTER_WIDTH;
+  if (!Number.isFinite(availableForDays) || availableForDays <= 0) {
+    return MIN_ZOOM_FALLBACK;
+  }
+  const exactFitZoom = availableForDays / (WEEK_DAYS_COUNT * BASE_DAY_COLUMN_WIDTH);
+  return Math.min(MAX_ZOOM, Math.max(0.2, exactFitZoom));
+}
+
 // Zoom combiné (hauteur des heures + largeur des colonnes jour) partagé
 // entre WeekView et DayView via la même clé localStorage. Chaque vue
 // appelle ce hook indépendamment ; pas besoin de le faire remonter en props.
-export function useAgendaZoom() {
+// `minZoom` permet à une vue (la Semaine, via computeMinZoomForWeekWidth)
+// d'imposer un plancher de zoom plus élevé que le plancher par défaut.
+export function useAgendaZoom({ minZoom = MIN_ZOOM_FALLBACK }: { minZoom?: number } = {}) {
   // Valeur persistée, lue via useSyncExternalStore : getServerZoom() rend
   // un zoom 1 identique serveur/client au premier rendu (pas de mismatch
   // d'hydratation), puis React se resynchronise automatiquement sur la
@@ -62,12 +80,21 @@ export function useAgendaZoom() {
   // Valeur "live" pendant un pinch en cours ; `null` = pas de geste actif,
   // on affiche alors storedZoom.
   const [liveZoom, setLiveZoom] = useState<number | null>(null);
-  const zoom = liveZoom ?? storedZoom;
+
+  const clamp = useCallback((z: number) => Math.min(MAX_ZOOM, Math.max(minZoom, z)), [minZoom]);
+  const zoom = clamp(liveZoom ?? storedZoom);
 
   const zoomRef = useRef(zoom);
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
+  // `minZoom` peut changer (redimensionnement de la Semaine) ; les handlers
+  // de pinch ci-dessous sont stables (deps []), donc on lit toujours le
+  // plancher courant via cette ref plutôt qu'une valeur figée à leur création.
+  const minZoomRef = useRef(minZoom);
+  useEffect(() => {
+    minZoomRef.current = minZoom;
+  }, [minZoom]);
 
   const gestureRef = useRef<{ startDistance: number; startZoom: number } | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -92,7 +119,8 @@ export function useAgendaZoom() {
     const gesture = gestureRef.current;
     if (!gesture || e.touches.length !== 2 || gesture.startDistance <= 0) return;
     const ratio = touchDistance(e.touches[0], e.touches[1]) / gesture.startDistance;
-    pendingZoomRef.current = clampZoom(gesture.startZoom * ratio);
+    const next = gesture.startZoom * ratio;
+    pendingZoomRef.current = Math.min(MAX_ZOOM, Math.max(minZoomRef.current, next));
     if (rafRef.current !== null) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null;
