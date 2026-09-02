@@ -30,10 +30,12 @@ export function TachesView({
   taches,
   listes,
   tags,
+  defaultOpen,
 }: {
   taches: TacheAvecRelations[];
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
+  defaultOpen?: boolean;
 }) {
   const [vue, setVue] = useState<VueKey>("toutes");
   const [listeId, setListeId] = useState<string>("toutes");
@@ -101,6 +103,7 @@ export function TachesView({
         listes={listes}
         tags={tags}
         defaultListeId={listeId !== "toutes" ? listeId : undefined}
+        defaultOpen={defaultOpen}
       />
       <TasksList taches={filtered} listes={listes} tags={tags} />
     </div>

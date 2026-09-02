@@ -6,8 +6,14 @@ import { useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
 
-export function AddNoteToggle({ tags }: { tags: Tables<"tags">[] }) {
-  const [open, setOpen] = useState(false);
+export function AddNoteToggle({
+  tags,
+  defaultOpen = false,
+}: {
+  tags: Tables<"tags">[];
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   useBackClose(open, () => setOpen(false));
 
   if (!open) {

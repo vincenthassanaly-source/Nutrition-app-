@@ -29,5 +29,25 @@
     "params": {
       "files": [{ "name": "photos", "accept": ["image/*"] }]
     }
-  }
+  },
+  "shortcuts": [
+    {
+      "name": "Ajouter une tâche",
+      "short_name": "Tâche",
+      "url": "/taches?action=new",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Courses",
+      "short_name": "Courses",
+      "url": "/courses",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Nouvelle note",
+      "short_name": "Note",
+      "url": "/notes?action=new",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
 }
