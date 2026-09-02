@@ -52,6 +52,7 @@ function ImageThumb({
 
 const initialState: TacheFormState = { error: null };
 const FREQUENCES = Object.keys(FREQUENCE_LABELS) as Enums<"frequence_recurrence">[];
+const TITRE_MAX_HEIGHT_PX = 160; // ~8-9 lignes avant de passer en scroll interne
 
 const PRIORITES: { value: Enums<"priorite_tache">; label: string; activeClassName: string }[] = [
   { value: "aucune", label: "Aucune", activeClassName: "bg-ink-3 text-white" },
@@ -81,6 +82,9 @@ export function AddTaskForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const prevPending = useRef(pending);
 
+  const [titre, setTitre] = useState(tache?.titre ?? "");
+  const titreRef = useRef<HTMLTextAreaElement>(null);
+
   const [priorite, setPriorite] = useState<Enums<"priorite_tache">>(tache?.priorite ?? "aucune");
   const [frequence, setFrequence] = useState<string>(tache?.recurrence_frequence ?? "");
   const [tagIds, setTagIds] = useState<string[]>(tache?.tags.map((t) => t.id) ?? []);
@@ -107,6 +111,13 @@ export function AddTaskForm({
   useEffect(() => {
     return () => previews.forEach((url) => URL.revokeObjectURL(url));
   }, [previews]);
+
+  useEffect(() => {
+    const textarea = titreRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, TITRE_MAX_HEIGHT_PX) + "px";
+  }, [titre]);
 
   function toggleTag(id: string) {
     setTagIds((ids) => (ids.includes(id) ? ids.filter((t) => t !== id) : [...ids, id]));
@@ -146,7 +157,16 @@ export function AddTaskForm({
         <label htmlFor="titre" className={labelClass}>
           Titre
         </label>
-        <input id="titre" name="titre" required defaultValue={tache?.titre} className={input} />
+        <textarea
+          id="titre"
+          name="titre"
+          required
+          rows={1}
+          ref={titreRef}
+          value={titre}
+          onChange={(e) => setTitre(e.target.value)}
+          className={`${input} resize-none overflow-y-auto max-h-40`}
+        />
       </div>
 
       <div className="flex flex-col gap-1">
