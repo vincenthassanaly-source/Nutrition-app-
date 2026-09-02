@@ -15,6 +15,7 @@ import { fr } from "date-fns/locale";
 import { getHistoriqueHabitude } from "@/app/actions/habitudes";
 import type { Tables } from "@/lib/supabase/types";
 import { ghostButton, input } from "@/lib/ui";
+import { useSwipeHorizontal, type SensSwipe } from "@/hooks/useSwipeHorizontal";
 import { toISODate } from "./date-utils";
 
 const WEEKDAY_LABELS = ["L", "M", "M", "J", "V", "S", "D"];
@@ -31,6 +32,14 @@ export function HistoriqueView({ habitudes }: { habitudes: Tables<"habitudes">[]
   const [habitudeId, setHabitudeId] = useState(habitudes[0]?.id ?? "");
   const [mois, setMois] = useState(() => startOfMonth(new Date()));
   const [entries, setEntries] = useState<Tables<"habitude_entries">[]>([]);
+  // Sens du dernier changement de mois (swipe ou boutons ←/→), pilote le
+  // sens de l'animation `agenda-glisse-*` rejouée ci-dessous.
+  const [sens, setSens] = useState<SensSwipe>("suivant");
+
+  const swipeHandlers = useSwipeHorizontal((sensSwipe) => {
+    setSens(sensSwipe);
+    setMois(sensSwipe === "suivant" ? addMonths(mois, 1) : subMonths(mois, 1));
+  });
 
   const habitude = habitudes.find((h) => h.id === habitudeId);
 
@@ -72,65 +81,82 @@ export function HistoriqueView({ habitudes }: { habitudes: Tables<"habitudes">[]
       </select>
 
       {habitude && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setMois(subMonths(mois, 1))}
-              className={ghostButton}
-              aria-label="Mois précédent"
-            >
-              ←
-            </button>
-            <span className="text-sm font-semibold capitalize text-ink">
-              {format(mois, "MMMM yyyy", { locale: fr })}
-            </span>
-            <button
-              type="button"
-              onClick={() => setMois(addMonths(mois, 1))}
-              className={ghostButton}
-              aria-label="Mois suivant"
-            >
-              →
-            </button>
-          </div>
+        <div
+          onTouchStart={swipeHandlers.onTouchStart}
+          onTouchMove={swipeHandlers.onTouchMove}
+          onTouchEnd={swipeHandlers.onTouchEnd}
+        >
+          <div
+            key={format(mois, "yyyy-MM")}
+            className={`flex flex-col gap-3 ${
+              sens === "suivant" ? "agenda-glisse-suivant" : "agenda-glisse-precedent"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSens("precedent");
+                  setMois(subMonths(mois, 1));
+                }}
+                className={ghostButton}
+                aria-label="Mois précédent"
+              >
+                ←
+              </button>
+              <span className="text-sm font-semibold capitalize text-ink">
+                {format(mois, "MMMM yyyy", { locale: fr })}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSens("suivant");
+                  setMois(addMonths(mois, 1));
+                }}
+                className={ghostButton}
+                aria-label="Mois suivant"
+              >
+                →
+              </button>
+            </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-ink-2">
-            {WEEKDAY_LABELS.map((label, i) => (
-              <span key={i}>{label}</span>
-            ))}
-          </div>
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-ink-2">
+              {WEEKDAY_LABELS.map((label, i) => (
+                <span key={i}>{label}</span>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: decalage }).map((_, i) => (
-              <span key={`vide-${i}`} />
-            ))}
-            {days.map((day) => {
-              const iso = toISODate(day);
-              const ratio = intensite(habitude, valeurParDate.get(iso));
-              const inMonth = isSameMonth(day, mois);
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: decalage }).map((_, i) => (
+                <span key={`vide-${i}`} />
+              ))}
+              {days.map((day) => {
+                const iso = toISODate(day);
+                const ratio = intensite(habitude, valeurParDate.get(iso));
+                const inMonth = isSameMonth(day, mois);
 
-              return (
-                <div
-                  key={iso}
-                  title={iso}
-                  className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-[13px] ${
-                    isToday(day) ? "border-habitudes" : "border-line"
-                  } ${inMonth ? "text-ink" : "text-ink-3"}`}
-                  style={
-                    ratio > 0
-                      ? {
-                          background: `color-mix(in oklch, var(--accent-habitudes) ${
-                            15 + ratio * 70
-                          }%, transparent)`,
-                        }
-                      : undefined
-                  }
-                >
-                  {format(day, "d")}
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={iso}
+                    title={iso}
+                    className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-[13px] ${
+                      isToday(day) ? "border-habitudes" : "border-line"
+                    } ${inMonth ? "text-ink" : "text-ink-3"}`}
+                    style={
+                      ratio > 0
+                        ? {
+                            background: `color-mix(in oklch, var(--accent-habitudes) ${
+                              15 + ratio * 70
+                            }%, transparent)`,
+                          }
+                        : undefined
+                    }
+                  >
+                    {format(day, "d")}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
