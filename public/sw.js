@@ -1,5 +1,11 @@
 const CACHE_NAME = "nutrition-app-shell-v2";
-const APP_SHELL = ["/", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
+const APP_SHELL = [
+  "/",
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-badge.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -64,7 +70,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(data.title || "Kilio", {
       body: data.body || "",
       icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      badge: "/icons/icon-badge.png",
       data: { url: data.url || "/agenda" },
     })
   );
