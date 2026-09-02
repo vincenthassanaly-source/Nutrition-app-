@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBackClose } from "@/hooks/useBackClose";
 
 /** Overlay plein écran pour agrandir une image au tap. Fermeture au tap
  * n'importe où (y compris sur l'image, cf. object-contain qui laisse de
@@ -8,6 +9,10 @@ import { useState } from "react";
  * module Tâches. */
 export function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   const [downloading, setDownloading] = useState(false);
+
+  // Ce composant n'est monté que pendant que le lightbox est ouvert : `active`
+  // vaut donc toujours true tant qu'il existe dans l'arbre.
+  useBackClose(true, onClose);
 
   async function handleDownload(event: React.MouseEvent) {
     event.stopPropagation();

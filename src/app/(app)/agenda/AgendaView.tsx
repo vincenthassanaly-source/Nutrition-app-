@@ -6,6 +6,7 @@ import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { AddTaskForm } from "../taches/AddTaskForm";
 import { Modal } from "@/components/Modal";
+import { useBackClose } from "@/hooks/useBackClose";
 import { DayView } from "./DayView";
 import { WeekView } from "./WeekView";
 import { MonthView } from "./MonthView";
@@ -35,6 +36,8 @@ export function AgendaView({
   const [view, setView] = useState<ViewKey>("jour");
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [fabOpen, setFabOpen] = useState(false);
+
+  useBackClose(fabOpen, () => setFabOpen(false));
 
   function selectDay(date: Date) {
     setSelectedDate(date);
