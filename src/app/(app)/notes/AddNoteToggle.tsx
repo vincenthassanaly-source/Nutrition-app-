@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { NoteForm } from "./NoteForm";
+import { useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
 
 export function AddNoteToggle({ tags }: { tags: Tables<"tags">[] }) {
   const [open, setOpen] = useState(false);
+  useBackClose(open, () => setOpen(false));
 
   if (!open) {
     return (

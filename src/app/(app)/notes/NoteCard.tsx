@@ -5,6 +5,7 @@ import { deleteNote, toggleEpingle, toggleNoteItem, type NoteAvecRelations } fro
 import { NoteForm } from "./NoteForm";
 import { noteBackgroundStyle } from "@/lib/notes/palette";
 import { CheckToggle } from "@/components/CheckToggle";
+import { useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, nameText, pillTag } from "@/lib/ui";
 
@@ -35,6 +36,7 @@ function PinIcon({ filled }: { filled: boolean }) {
 export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables<"tags">[] }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  useBackClose(editing, () => setEditing(false));
 
   if (editing) {
     return (
