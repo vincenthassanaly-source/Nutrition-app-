@@ -61,19 +61,41 @@ React à le remonter et rejoue l'animation `agenda-glisse-suivant` /
 ## Écarts / points d'attention par rapport au prompt
 
 - **`data-swipe-ignore` ajouté sur `WeekView.tsx`, contrairement à
-  l'hypothèse initiale du prompt.** La Phase 1 demandait de vérifier si une
-  zone à scroll/swipe horizontal interne existait déjà dans
-  DayView/WeekView/MonthView avant d'ajouter cet attribut. C'est le cas dans
-  `WeekView` : son conteneur scrollable (`overflow-auto`, ref `scrollRef`)
-  devient réellement scrollable horizontalement dès que le zoom (pinch à 2
-  doigts, `useAgendaZoom`) dépasse le zoom minimal qui fait tenir les 7
-  colonnes à l'écran — un `scrollLeft` natif coexiste alors avec le swipe de
-  semaine. Sans `data-swipe-ignore`, un utilisateur scrollant la grille
-  zoomée déclencherait *en plus* un changement de semaine non voulu. DayView
-  (une seule colonne `flex-1`, jamais plus large que son conteneur) et
-  MonthView (grille statique sans overflow) n'ont pas ce problème et n'ont
-  donc reçu aucun attribut, conformément à la consigne de ne pas l'ajouter
-  inutilement.
+  l'hypothèse initiale du prompt — mais avec une sémantique différente
+  d'Officio (correctif du 2026-09-02 suite à un retour utilisateur).** La
+  Phase 1 demandait de vérifier si une zone à scroll/swipe horizontal
+  interne existait déjà dans DayView/WeekView/MonthView avant d'ajouter cet
+  attribut. C'est le cas dans `WeekView` : son conteneur scrollable
+  (`overflow-auto`, ref `scrollRef`) devient réellement scrollable
+  horizontalement dès que le zoom (pinch à 2 doigts, `useAgendaZoom`)
+  dépasse le zoom minimal qui fait tenir les 7 colonnes à l'écran.
+
+  Une première version reprenait le comportement exact d'Officio : ignorer
+  entièrement le geste dès le `touchstart` s'il démarre sous
+  `[data-swipe-ignore]` (`cible.closest(...)` → on annule immédiatement).
+  Chez Officio, cet attribut ne couvre qu'un petit strip annexe (une rangée
+  de jours cliquables) ; chez Kilio, le conteneur scrollable de `WeekView`
+  couvre la quasi-totalité de la vue Semaine (gouttière + les 7 colonnes de
+  la grille horaire), donc ignorer tout geste qui y démarre revenait à
+  désactiver le swipe de semaine presque partout — régression remontée par
+  Vincent (« ça marche pour jour et mois mais pas pour les semaines »).
+
+  Correctif : `[data-swipe-ignore]` ne provoque plus d'annulation immédiate
+  au `touchstart`. À la place, `AgendaView` retient l'élément le plus proche
+  portant cet attribut et son `scrollLeft` au démarrage du geste, puis
+  compare ce `scrollLeft` à celui du `touchend` : si la grille a réellement
+  défilé horizontalement pendant le geste (delta > 2px), le changement de
+  semaine est annulé (c'était un geste de défilement interne) ; sinon (la
+  grille tient à l'écran, ou elle est déjà en butée de scroll dans la
+  direction du geste) le swipe de semaine s'applique normalement. Ce
+  mécanisme est générique (basé sur `scrollLeft`, pas spécifique à
+  `WeekView`) et n'affecte ni Jour ni Mois, qui n'ont pas d'élément marqué
+  `[data-swipe-ignore]`.
+
+  DayView (une seule colonne `flex-1`, jamais plus large que son conteneur)
+  et MonthView (grille statique sans overflow) n'ont pas ce problème et
+  n'ont donc reçu aucun attribut, conformément à la consigne de ne pas
+  l'ajouter inutilement.
 - Aucun conflit constaté entre le pattern `.agenda-glisse-*` (transform
   `translateX` persistant via `animation-fill-mode: both`, qui devient le
   référentiel de positionnement des descendants `position: fixed`) et les

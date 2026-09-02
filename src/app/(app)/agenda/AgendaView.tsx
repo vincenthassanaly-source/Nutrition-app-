@@ -68,13 +68,25 @@ export function AgendaView({
   // dans chaque vue (et le bouton "Aujourd'hui"), en comparant la nouvelle
   // date à l'ancienne dans handleChangeDate.
   const [direction, setDirection] = useState<1 | -1>(1);
-  // Point de départ du geste en cours (null si aucun geste, ou si le geste a
-  // démarré sur une zone exclue via data-swipe-ignore).
+  // Point de départ du geste en cours (null si aucun geste).
   const toucheDebutRef = useRef<{ x: number; y: number } | null>(null);
   // true dès que le geste en cours s'est révélé vertical (scroll de page) :
   // on ne déclenche alors plus de changement de période à la fin, sans avoir
   // bloqué le scroll natif (aucun preventDefault n'est appelé ici).
   const swipeAnnulePourGesteRef = useRef(false);
+  // Élément scrollable horizontalement le plus proche sous le doigt au
+  // démarrage du geste (marqué `[data-swipe-ignore]`, ex. la grille Semaine
+  // qui défile au doigt quand elle est zoomée), et son scrollLeft à cet
+  // instant. Contrairement à Officio — où data-swipe-ignore ne couvre qu'un
+  // petit strip annexe — cette zone occupe ici la quasi-totalité de la vue
+  // Semaine : l'ignorer dès le touchstart désactiverait le swipe de semaine
+  // presque partout. On laisse donc le geste démarrer normalement et on ne
+  // l'annule qu'a posteriori, au touchend, si un défilement horizontal a
+  // réellement eu lieu dans cet élément (cf. gererToucheFin) — ce qui laisse
+  // le swipe de semaine fonctionner près des bords de la grille (déjà en
+  // butée de scroll) et à chaque fois qu'elle n'a pas besoin de défiler.
+  const swipeIgnoreElRef = useRef<HTMLElement | null>(null);
+  const swipeIgnoreScrollLeftDebutRef = useRef(0);
 
   useBackClose(fabOpen, () => setFabOpen(false));
 
@@ -91,10 +103,9 @@ export function AgendaView({
 
   function gererToucheDebut(e: React.TouchEvent<HTMLDivElement>) {
     const cible = e.target as HTMLElement;
-    if (cible.closest("[data-swipe-ignore]")) {
-      toucheDebutRef.current = null;
-      return;
-    }
+    const ignoreEl = cible.closest<HTMLElement>("[data-swipe-ignore]");
+    swipeIgnoreElRef.current = ignoreEl;
+    swipeIgnoreScrollLeftDebutRef.current = ignoreEl?.scrollLeft ?? 0;
     const touche = e.touches[0];
     toucheDebutRef.current = { x: touche.clientX, y: touche.clientY };
     swipeAnnulePourGesteRef.current = false;
@@ -112,14 +123,23 @@ export function AgendaView({
   function gererToucheFin(e: React.TouchEvent<HTMLDivElement>) {
     const debut = toucheDebutRef.current;
     const annule = swipeAnnulePourGesteRef.current;
+    const ignoreEl = swipeIgnoreElRef.current;
+    const aDefileHorizontalement =
+      ignoreEl !== null && Math.abs(ignoreEl.scrollLeft - swipeIgnoreScrollLeftDebutRef.current) > 2;
     toucheDebutRef.current = null;
     swipeAnnulePourGesteRef.current = false;
+    swipeIgnoreElRef.current = null;
     if (!debut) return;
 
     const touche = e.changedTouches[0];
     const deltaX = touche.clientX - debut.x;
     const deltaY = touche.clientY - debut.y;
-    if (annule || Math.abs(deltaX) < SEUIL_SWIPE_HORIZONTAL_PX || Math.abs(deltaY) > TOLERANCE_SWIPE_VERTICAL_PX) {
+    if (
+      annule ||
+      aDefileHorizontalement ||
+      Math.abs(deltaX) < SEUIL_SWIPE_HORIZONTAL_PX ||
+      Math.abs(deltaY) > TOLERANCE_SWIPE_VERTICAL_PX
+    ) {
       return;
     }
 
