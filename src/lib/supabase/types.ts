@@ -174,6 +174,68 @@ export type Database = {
         }
         Relationships: []
       }
+      collection_items: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          ordre: number
+          titre: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          ordre?: number
+          titre?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          ordre?: number
+          titre?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          ordre: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          ordre?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          ordre?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courses_items: {
         Row: {
           coche: boolean

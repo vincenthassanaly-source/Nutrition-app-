@@ -68,6 +68,21 @@ export const MODULES: AppModule[] = [
       ),
   },
   {
+    href: "/collection",
+    label: "Collection",
+    description: "Collections de photos façon Raindrop",
+    accentVar: "var(--accent-collection)",
+    icon: (c) =>
+      createElement(
+        "svg",
+        { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" },
+        createElement("path", { d: "M8.5 20.5h9a2 2 0 0 0 2-2v-9" }),
+        createElement("rect", { x: 3.5, y: 3.5, width: 12.5, height: 12.5, rx: 2.5 }),
+        createElement("circle", { cx: 7.2, cy: 7.2, r: 1, fill: c, stroke: "none" }),
+        createElement("path", { d: "M4.5 13l2.7-3.1 3 3.3 2-2.2 3.3 3.5" })
+      ),
+  },
+  {
     href: "/notes",
     label: "Notes",
     description: "Notes libres",

@@ -45,7 +45,7 @@ const ITEMS: { href: string; label: string; icon: (color: string) => ReactNode; 
   { href: "/nutrition", label: "Nutrition", icon: NUTRITION_ICON, match: (p) => p.startsWith("/nutrition") },
   { href: "/taches", label: "Tâches", icon: TACHES_ICON, match: (p) => p.startsWith("/taches") || p.startsWith("/agenda") },
   { href: "/habitudes", label: "Habitudes", icon: HABITUDES_ICON, match: (p) => p.startsWith("/habitudes") },
-  { href: "/plus", label: "Plus", icon: PLUS_ICON, match: (p) => p === "/plus" || ["/courses", "/budget", "/objectifs", "/notes", "/reglages"].some((m) => p.startsWith(m)) },
+  { href: "/plus", label: "Plus", icon: PLUS_ICON, match: (p) => p === "/plus" || ["/courses", "/budget", "/objectifs", "/notes", "/collection", "/reglages"].some((m) => p.startsWith(m)) },
 ];
 
 export function BottomNav() {
