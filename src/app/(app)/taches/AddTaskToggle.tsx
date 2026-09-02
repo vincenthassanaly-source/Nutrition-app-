@@ -12,7 +12,6 @@ export function AddTaskToggle({
   defaultEcheance,
   defaultHeure,
   label = "+ Ajouter une tâche",
-  defaultOpen = false,
   onSaved,
 }: {
   listes: Tables<"listes_taches">[];
@@ -21,10 +20,9 @@ export function AddTaskToggle({
   defaultEcheance?: string;
   defaultHeure?: string;
   label?: string;
-  defaultOpen?: boolean;
   onSaved?: () => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(false);
 
   if (!open) {
     return (

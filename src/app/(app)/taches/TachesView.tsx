@@ -29,7 +29,7 @@ const VUES: { key: VueKey; label: string }[] = [
   { key: "toutes", label: "Toutes" },
 ];
 
-export function TachesView({ defaultOpen }: { defaultOpen?: boolean }) {
+export function TachesView() {
   const [vue, setVue] = useState<VueKey>("toutes");
   const [listeId, setListeId] = useState<string>("toutes");
   const queryClient = useQueryClient();
@@ -109,7 +109,6 @@ export function TachesView({ defaultOpen }: { defaultOpen?: boolean }) {
         listes={listes}
         tags={tags}
         defaultListeId={listeId !== "toutes" ? listeId : undefined}
-        defaultOpen={defaultOpen}
         onSaved={invalidateTaches}
       />
       {tachesLoading ? (
