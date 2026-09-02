@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { startOfToday } from "date-fns";
+import { useRef, useState } from "react";
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  startOfToday,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks,
+} from "date-fns";
 import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { AddTaskForm } from "../taches/AddTaskForm";
@@ -22,6 +31,23 @@ const VIEWS: { key: ViewKey; label: string }[] = [
   { key: "liste", label: "Liste" },
 ];
 
+// Distance horizontale minimum pour qu'un geste soit considéré comme un
+// swipe intentionnel (plutôt qu'un tap ou un léger tremblement du doigt).
+const SEUIL_SWIPE_HORIZONTAL_PX = 50;
+// Tolérance verticale : au-delà, le geste est un scroll de page, pas un
+// swipe de période — on n'interfère pas (pas de preventDefault) et on
+// annule la détection pour ce geste.
+const TOLERANCE_SWIPE_VERTICAL_PX = 60;
+
+// Clé remontée à chaque changement de période affichée (indépendante de la
+// vue Jour/Semaine/Mois) : force React à démonter/remonter le conteneur
+// pour rejouer l'animation `agenda-glisse-*` définie dans globals.css.
+function periodKey(view: ViewKey, date: Date): string {
+  if (view === "semaine") return toISODate(startOfWeek(date, { weekStartsOn: 1 }));
+  if (view === "mois") return toISODate(date).slice(0, 7);
+  return toISODate(date);
+}
+
 export function AgendaView({
   taches,
   listes,
@@ -36,12 +62,74 @@ export function AgendaView({
   const [view, setView] = useState<ViewKey>("jour");
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [fabOpen, setFabOpen] = useState(false);
+  // Sens du dernier changement de période (1 = vers la suivante, -1 = vers
+  // la précédente), pilote le sens de la transition CSS ci-dessous. Mis à
+  // jour aussi bien par le swipe que par les flèches ‹/› déjà existantes
+  // dans chaque vue (et le bouton "Aujourd'hui"), en comparant la nouvelle
+  // date à l'ancienne dans handleChangeDate.
+  const [direction, setDirection] = useState<1 | -1>(1);
+  // Point de départ du geste en cours (null si aucun geste, ou si le geste a
+  // démarré sur une zone exclue via data-swipe-ignore).
+  const toucheDebutRef = useRef<{ x: number; y: number } | null>(null);
+  // true dès que le geste en cours s'est révélé vertical (scroll de page) :
+  // on ne déclenche alors plus de changement de période à la fin, sans avoir
+  // bloqué le scroll natif (aucun preventDefault n'est appelé ici).
+  const swipeAnnulePourGesteRef = useRef(false);
 
   useBackClose(fabOpen, () => setFabOpen(false));
 
   function selectDay(date: Date) {
     setSelectedDate(date);
     setView("jour");
+  }
+
+  function handleChangeDate(date: Date) {
+    if (date.getTime() > selectedDate.getTime()) setDirection(1);
+    else if (date.getTime() < selectedDate.getTime()) setDirection(-1);
+    setSelectedDate(date);
+  }
+
+  function gererToucheDebut(e: React.TouchEvent<HTMLDivElement>) {
+    const cible = e.target as HTMLElement;
+    if (cible.closest("[data-swipe-ignore]")) {
+      toucheDebutRef.current = null;
+      return;
+    }
+    const touche = e.touches[0];
+    toucheDebutRef.current = { x: touche.clientX, y: touche.clientY };
+    swipeAnnulePourGesteRef.current = false;
+  }
+
+  function gererToucheMove(e: React.TouchEvent<HTMLDivElement>) {
+    const debut = toucheDebutRef.current;
+    if (!debut || swipeAnnulePourGesteRef.current) return;
+    const touche = e.touches[0];
+    if (Math.abs(touche.clientY - debut.y) > TOLERANCE_SWIPE_VERTICAL_PX) {
+      swipeAnnulePourGesteRef.current = true;
+    }
+  }
+
+  function gererToucheFin(e: React.TouchEvent<HTMLDivElement>) {
+    const debut = toucheDebutRef.current;
+    const annule = swipeAnnulePourGesteRef.current;
+    toucheDebutRef.current = null;
+    swipeAnnulePourGesteRef.current = false;
+    if (!debut) return;
+
+    const touche = e.changedTouches[0];
+    const deltaX = touche.clientX - debut.x;
+    const deltaY = touche.clientY - debut.y;
+    if (annule || Math.abs(deltaX) < SEUIL_SWIPE_HORIZONTAL_PX || Math.abs(deltaY) > TOLERANCE_SWIPE_VERTICAL_PX) {
+      return;
+    }
+
+    if (view === "jour") {
+      handleChangeDate(deltaX < 0 ? addDays(selectedDate, 1) : subDays(selectedDate, 1));
+    } else if (view === "semaine") {
+      handleChangeDate(deltaX < 0 ? addWeeks(selectedDate, 1) : subWeeks(selectedDate, 1));
+    } else if (view === "mois") {
+      handleChangeDate(deltaX < 0 ? addMonths(selectedDate, 1) : subMonths(selectedDate, 1));
+    }
   }
 
   return (
@@ -86,33 +174,42 @@ export function AgendaView({
         </div>
       </div>
 
-      {view === "jour" && (
-        <DayView
-          taches={taches}
-          listes={listes}
-          tags={tags}
-          creneaux={creneaux}
-          selectedDate={selectedDate}
-          onChangeDate={setSelectedDate}
-        />
-      )}
-      {view === "semaine" && (
-        <WeekView
-          taches={taches}
-          creneaux={creneaux}
-          selectedDate={selectedDate}
-          onChangeDate={setSelectedDate}
-          onSelectDay={selectDay}
-        />
-      )}
-      {view === "mois" && (
-        <MonthView
-          taches={taches}
-          creneaux={creneaux}
-          selectedDate={selectedDate}
-          onChangeDate={setSelectedDate}
-          onSelectDay={selectDay}
-        />
+      {view !== "liste" && (
+        <div onTouchStart={gererToucheDebut} onTouchMove={gererToucheMove} onTouchEnd={gererToucheFin}>
+          <div
+            key={periodKey(view, selectedDate)}
+            className={direction === 1 ? "agenda-glisse-suivant" : "agenda-glisse-precedent"}
+          >
+            {view === "jour" && (
+              <DayView
+                taches={taches}
+                listes={listes}
+                tags={tags}
+                creneaux={creneaux}
+                selectedDate={selectedDate}
+                onChangeDate={handleChangeDate}
+              />
+            )}
+            {view === "semaine" && (
+              <WeekView
+                taches={taches}
+                creneaux={creneaux}
+                selectedDate={selectedDate}
+                onChangeDate={handleChangeDate}
+                onSelectDay={selectDay}
+              />
+            )}
+            {view === "mois" && (
+              <MonthView
+                taches={taches}
+                creneaux={creneaux}
+                selectedDate={selectedDate}
+                onChangeDate={handleChangeDate}
+                onSelectDay={selectDay}
+              />
+            )}
+          </div>
+        </div>
       )}
       {view === "liste" && <ListView taches={taches} listes={listes} tags={tags} />}
     </div>

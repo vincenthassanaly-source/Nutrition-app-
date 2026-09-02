@@ -139,6 +139,7 @@ export function WeekView({
           ref={scrollRef}
           className="max-h-[65vh] overflow-auto"
           style={{ touchAction: "pan-x pan-y" }}
+          data-swipe-ignore
           {...touchHandlers}
         >
           <div className="flex" style={{ width: GUTTER_WIDTH + days.length * dayColumnWidth }}>
