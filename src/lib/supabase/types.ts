@@ -371,29 +371,106 @@ export type Database = {
         }
         Relationships: []
       }
+      note_items: {
+        Row: {
+          coche: boolean
+          created_at: string
+          id: string
+          libelle: string
+          note_id: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          coche?: boolean
+          created_at?: string
+          id?: string
+          libelle: string
+          note_id: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          coche?: boolean
+          created_at?: string
+          id?: string
+          libelle?: string
+          note_id?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_items_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           contenu: string
+          couleur: string | null
           created_at: string
+          epingle: boolean
           id: string
           titre: string
+          type: Database["public"]["Enums"]["note_type"]
           updated_at: string
         }
         Insert: {
           contenu: string
+          couleur?: string | null
           created_at?: string
+          epingle?: boolean
           id?: string
           titre: string
+          type?: Database["public"]["Enums"]["note_type"]
           updated_at?: string
         }
         Update: {
           contenu?: string
+          couleur?: string | null
           created_at?: string
+          epingle?: boolean
           id?: string
           titre?: string
+          type?: Database["public"]["Enums"]["note_type"]
           updated_at?: string
         }
         Relationships: []
+      }
+      notes_tags: {
+        Row: {
+          note_id: string
+          tag_id: string
+        }
+        Insert: {
+          note_id: string
+          tag_id: string
+        }
+        Update: {
+          note_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_tags_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       objectif_entries: {
         Row: {
@@ -1112,6 +1189,7 @@ export type Database = {
       habitude_type: "boolean" | "streak" | "quantifiee"
       jour_type_ppl: "entrainement" | "repos"
       moment_repas: "petit_dej" | "dejeuner" | "diner" | "collation"
+      note_type: "texte" | "checklist"
       priorite_tache: "aucune" | "basse" | "moyenne" | "haute"
       recette_source: "manuel" | "hellofresh"
       statut_objectif: "en_cours" | "atteint" | "abandonne"
@@ -1135,12 +1213,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1164,11 +1242,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1189,11 +1267,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1214,11 +1292,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1231,11 +1309,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1252,6 +1330,7 @@ export const Constants = {
       habitude_type: ["boolean", "streak", "quantifiee"],
       jour_type_ppl: ["entrainement", "repos"],
       moment_repas: ["petit_dej", "dejeuner", "diner", "collation"],
+      note_type: ["texte", "checklist"],
       priorite_tache: ["aucune", "basse", "moyenne", "haute"],
       recette_source: ["manuel", "hellofresh"],
       statut_objectif: ["en_cours", "atteint", "abandonne"],

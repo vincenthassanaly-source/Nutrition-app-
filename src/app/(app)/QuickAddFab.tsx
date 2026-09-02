@@ -145,7 +145,7 @@ export function QuickAddFab({
 
       {mode === "note" && (
         <Modal title="Nouvelle note" onClose={() => history.back()}>
-          <NoteForm onDone={() => goBackSteps(2)} />
+          <NoteForm tags={tags} onDone={() => goBackSteps(2)} />
         </Modal>
       )}
 

@@ -26,6 +26,14 @@
   --accent-reglages: oklch(0.55 0.14 150);
   --nav-bg: oklch(0.995 0.006 95 / 0.78);
   --shadow-card: 0 10px 24px oklch(0.35 0.03 150 / 0.09);
+  --note-sauge: oklch(0.93 0.035 150);
+  --note-peche: oklch(0.93 0.045 55);
+  --note-lavande: oklch(0.92 0.035 300);
+  --note-ciel: oklch(0.92 0.035 230);
+  --note-rose: oklch(0.92 0.045 10);
+  --note-citron: oklch(0.93 0.05 100);
+  --note-menthe: oklch(0.93 0.035 185);
+  --note-argile: oklch(0.91 0.04 40);
 }
 
 :root.dark {
@@ -52,6 +60,14 @@
   --accent-reglages: oklch(0.72 0.13 150);
   --nav-bg: oklch(0.22 0.018 195 / 0.72);
   --shadow-card: 0 10px 26px rgba(0, 0, 0, 0.42);
+  --note-sauge: oklch(0.32 0.045 150);
+  --note-peche: oklch(0.34 0.06 55);
+  --note-lavande: oklch(0.32 0.045 300);
+  --note-ciel: oklch(0.32 0.045 230);
+  --note-rose: oklch(0.33 0.06 10);
+  --note-citron: oklch(0.34 0.065 100);
+  --note-menthe: oklch(0.32 0.045 185);
+  --note-argile: oklch(0.32 0.05 40);
 }
 
 @theme inline {

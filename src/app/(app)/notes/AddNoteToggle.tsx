@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { NoteForm } from "./NoteForm";
+import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
 
-export function AddNoteToggle() {
+export function AddNoteToggle({ tags }: { tags: Tables<"tags">[] }) {
   const [open, setOpen] = useState(false);
 
   if (!open) {
@@ -17,7 +18,7 @@ export function AddNoteToggle() {
 
   return (
     <div className={card}>
-      <NoteForm onDone={() => setOpen(false)} />
+      <NoteForm tags={tags} onDone={() => setOpen(false)} />
       <button type="button" onClick={() => setOpen(false)} className="mt-2 text-sm text-ink-2 underline">
         Annuler
       </button>
