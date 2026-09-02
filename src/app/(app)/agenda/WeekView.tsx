@@ -19,19 +19,15 @@ import { parseISODate } from "./date-utils";
 import {
   computeInitialScrollMinutes,
   getTacheBlockStyle,
-  GRID_HEIGHT,
+  gridHeight,
   HourLines,
   TimeGutter,
   useInitialScroll,
   WorkHoursBand,
 } from "./TimeGrid";
+import { BASE_DAY_COLUMN_WIDTH, useAgendaZoom } from "./useAgendaZoom";
 
 type Tache = Tables<"taches">;
-
-// Largeur minimale par colonne pour rester lisible (titre + heure) plutôt
-// que de comprimer 7 colonnes dans les ~380px d'un écran mobile : la grille
-// défile horizontalement (overflow-x-auto) au lieu de tout tasser.
-const DAY_COLUMN_WIDTH = 96;
 
 const PRIORITE_BLOCK_CLASS: Record<Tache["priorite"], string> = {
   aucune: "bg-surface-alt text-ink",
@@ -40,8 +36,8 @@ const PRIORITE_BLOCK_CLASS: Record<Tache["priorite"], string> = {
   haute: "bg-alert/15 text-alert",
 };
 
-function TacheBlock({ tache }: { tache: Tache }) {
-  const style = getTacheBlockStyle(tache);
+function TacheBlock({ tache, zoom }: { tache: Tache; zoom: number }) {
+  const style = getTacheBlockStyle(tache, zoom);
   if (!style) return null;
 
   return (
@@ -73,11 +69,15 @@ export function WeekView({
   const today = new Date();
   const weekContainsToday = days.some((d) => isSameDay(d, today));
 
+  const { zoom, touchHandlers } = useAgendaZoom();
+  const dayColumnWidth = BASE_DAY_COLUMN_WIDTH * zoom;
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const creneauxSelectedJour = getCreneauxDuJour(creneaux, selectedDate);
   useInitialScroll(
     scrollRef,
-    computeInitialScrollMinutes({ showCurrentTime: weekContainsToday, creneaux: creneauxSelectedJour })
+    computeInitialScrollMinutes({ showCurrentTime: weekContainsToday, creneaux: creneauxSelectedJour }),
+    zoom
   );
 
   return (
@@ -105,11 +105,16 @@ export function WeekView({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <div ref={scrollRef} className="max-h-[65vh] overflow-auto">
-          <div className="flex" style={{ width: 34 + days.length * DAY_COLUMN_WIDTH }}>
+        <div
+          ref={scrollRef}
+          className="max-h-[65vh] overflow-auto"
+          style={{ touchAction: "pan-x pan-y" }}
+          {...touchHandlers}
+        >
+          <div className="flex" style={{ width: 34 + days.length * dayColumnWidth }}>
             <div className="sticky left-0 z-20 bg-surface">
               <div className="h-11 border-b border-line" />
-              <TimeGutter />
+              <TimeGutter zoom={zoom} />
             </div>
 
             {days.map((day) => {
@@ -125,7 +130,7 @@ export function WeekView({
                 <div
                   key={day.toISOString()}
                   className="flex shrink-0 flex-col border-l border-line"
-                  style={{ width: DAY_COLUMN_WIDTH }}
+                  style={{ width: dayColumnWidth }}
                 >
                   <button
                     type="button"
@@ -162,13 +167,13 @@ export function WeekView({
                     type="button"
                     onClick={() => onSelectDay(day)}
                     className="relative block w-full text-left"
-                    style={{ height: GRID_HEIGHT }}
+                    style={{ height: gridHeight(zoom) }}
                     aria-label={`Voir le ${format(day, "EEEE d MMMM", { locale: fr })}`}
                   >
-                    <HourLines />
-                    <WorkHoursBand creneaux={creneauxJour} />
+                    <HourLines zoom={zoom} />
+                    <WorkHoursBand creneaux={creneauxJour} zoom={zoom} />
                     {dayTachesAvecHeure.map((t) => (
-                      <TacheBlock key={t.id} tache={t} />
+                      <TacheBlock key={t.id} tache={t} zoom={zoom} />
                     ))}
                   </button>
                 </div>

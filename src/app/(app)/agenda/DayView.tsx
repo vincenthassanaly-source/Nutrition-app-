@@ -13,12 +13,13 @@ import { parseISODate, sortByHeure, toISODate } from "./date-utils";
 import {
   computeInitialScrollMinutes,
   getTacheBlockStyle,
-  GRID_HEIGHT,
+  gridHeight,
   HourLines,
   TimeGutter,
   useInitialScroll,
   WorkHoursBand,
 } from "./TimeGrid";
+import { useAgendaZoom } from "./useAgendaZoom";
 
 const PRIORITE_BLOCK_CLASS: Record<TacheAvecRelations["priorite"], string> = {
   aucune: "bg-surface-alt text-ink",
@@ -27,8 +28,8 @@ const PRIORITE_BLOCK_CLASS: Record<TacheAvecRelations["priorite"], string> = {
   haute: "bg-alert/15 text-alert",
 };
 
-function TacheBlock({ tache }: { tache: TacheAvecRelations }) {
-  const style = getTacheBlockStyle(tache);
+function TacheBlock({ tache, zoom }: { tache: TacheAvecRelations; zoom: number }) {
+  const style = getTacheBlockStyle(tache, zoom);
   if (!style) return null;
 
   const plage = tache.heure_fin
@@ -70,10 +71,12 @@ export function DayView({
   const dayTachesAvecHeure = dayTaches.filter((t) => t.heure);
 
   const creneauxJour = getCreneauxDuJour(creneaux, selectedDate);
+  const { zoom, touchHandlers } = useAgendaZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
   useInitialScroll(
     scrollRef,
-    computeInitialScrollMinutes({ showCurrentTime: isToday(selectedDate), creneaux: creneauxJour })
+    computeInitialScrollMinutes({ showCurrentTime: isToday(selectedDate), creneaux: creneauxJour }),
+    zoom
   );
 
   return (
@@ -112,14 +115,19 @@ export function DayView({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <div ref={scrollRef} className="max-h-[55vh] overflow-auto">
+        <div
+          ref={scrollRef}
+          className="max-h-[55vh] overflow-auto"
+          style={{ touchAction: "pan-x pan-y" }}
+          {...touchHandlers}
+        >
           <div className="flex">
-            <TimeGutter />
-            <div className="relative flex-1" style={{ height: GRID_HEIGHT }}>
-              <HourLines />
-              <WorkHoursBand creneaux={creneauxJour} />
+            <TimeGutter zoom={zoom} />
+            <div className="relative flex-1" style={{ height: gridHeight(zoom) }}>
+              <HourLines zoom={zoom} />
+              <WorkHoursBand creneaux={creneauxJour} zoom={zoom} />
               {dayTachesAvecHeure.map((t) => (
-                <TacheBlock key={t.id} tache={t} />
+                <TacheBlock key={t.id} tache={t} zoom={zoom} />
               ))}
             </div>
           </div>

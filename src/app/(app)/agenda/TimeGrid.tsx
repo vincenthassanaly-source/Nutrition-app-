@@ -3,11 +3,10 @@
 import { useEffect, type RefObject } from "react";
 import type { Tables } from "@/lib/supabase/types";
 import { heureToMinutes } from "./date-utils";
+import { BASE_HOUR_HEIGHT } from "./useAgendaZoom";
 
 // Grille horaire partagée entre WeekView et DayView : 24h pleines avec
-// scroll vertical (pas de découpage arbitraire), 1 minute = HOUR_HEIGHT/60 px.
-export const HOUR_HEIGHT = 56;
-export const GRID_HEIGHT = HOUR_HEIGHT * 24;
+// scroll vertical (pas de découpage arbitraire), 1 minute = hourHeight(zoom)/60 px.
 // Une tâche avec heure mais sans heure_fin reste visible comme un bloc
 // plutôt qu'un simple repère ponctuel : 30 min par défaut, cohérent avec
 // les pas de rappel existants (5/15/30 min).
@@ -16,14 +15,25 @@ export const MIN_BLOCK_HEIGHT = 18;
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-export function minutesToPx(minutes: number): number {
-  return (minutes / 60) * HOUR_HEIGHT;
+export function hourHeight(zoom: number): number {
+  return BASE_HOUR_HEIGHT * zoom;
 }
 
-export function getTacheBlockStyle(tache: {
-  heure: string | null;
-  heure_fin: string | null;
-}): { top: number; height: number } | null {
+export function gridHeight(zoom: number): number {
+  return hourHeight(zoom) * 24;
+}
+
+export function minutesToPx(minutes: number, zoom: number): number {
+  return (minutes / 60) * hourHeight(zoom);
+}
+
+export function getTacheBlockStyle(
+  tache: {
+    heure: string | null;
+    heure_fin: string | null;
+  },
+  zoom: number
+): { top: number; height: number } | null {
   const start = heureToMinutes(tache.heure);
   if (start === null) return null;
 
@@ -31,8 +41,8 @@ export function getTacheBlockStyle(tache: {
   const end = endRaw !== null && endRaw > start ? endRaw : start + DEFAULT_TASK_DURATION_MINUTES;
 
   return {
-    top: minutesToPx(start),
-    height: Math.max(minutesToPx(end - start), MIN_BLOCK_HEIGHT),
+    top: minutesToPx(start, zoom),
+    height: Math.max(minutesToPx(end - start, zoom), MIN_BLOCK_HEIGHT),
   };
 }
 
@@ -60,26 +70,30 @@ export function computeInitialScrollMinutes({
 
 export function useInitialScroll(
   containerRef: RefObject<HTMLDivElement | null>,
-  targetMinutes: number
+  targetMinutes: number,
+  zoom: number
 ) {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    el.scrollTop = Math.max(minutesToPx(targetMinutes) - 80, 0);
+    el.scrollTop = Math.max(minutesToPx(targetMinutes, zoom) - 80, 0);
     // Positionnement au montage uniquement : un re-scroll à chaque rendu
-    // écraserait le scroll manuel de l'utilisateur.
+    // (ou à chaque pinch) écraserait le scroll manuel de l'utilisateur. Si
+    // le zoom mémorisé (localStorage) diffère du zoom par défaut utilisé le
+    // temps de l'hydratation, ce calcul initial peut être légèrement décalé
+    // — limitation connue, voir le rapport.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }
 
-export function TimeGutter() {
+export function TimeGutter({ zoom }: { zoom: number }) {
   return (
-    <div className="relative shrink-0" style={{ width: 34, height: GRID_HEIGHT }}>
+    <div className="relative shrink-0" style={{ width: 34, height: gridHeight(zoom) }}>
       {HOURS.map((h) => (
         <span
           key={h}
           className="absolute right-1 -translate-y-1/2 text-[10px] font-medium text-ink-2"
-          style={{ top: minutesToPx(h * 60) }}
+          style={{ top: minutesToPx(h * 60, zoom) }}
         >
           {String(h).padStart(2, "0")}h
         </span>
@@ -88,14 +102,14 @@ export function TimeGutter() {
   );
 }
 
-export function HourLines() {
+export function HourLines({ zoom }: { zoom: number }) {
   return (
-    <div className="pointer-events-none absolute inset-0" style={{ height: GRID_HEIGHT }}>
+    <div className="pointer-events-none absolute inset-0" style={{ height: gridHeight(zoom) }}>
       {HOURS.map((h) => (
         <div
           key={h}
           className="absolute inset-x-0 border-t border-line/70"
-          style={{ top: minutesToPx(h * 60) }}
+          style={{ top: minutesToPx(h * 60, zoom) }}
         />
       ))}
     </div>
@@ -107,8 +121,10 @@ export function HourLines() {
 // visible à ~30% d'opacité. Un jour sans créneau ne dessine aucune bande.
 export function WorkHoursBand({
   creneaux,
+  zoom,
 }: {
   creneaux: Tables<"horaires_travail_creneaux">[];
+  zoom: number;
 }) {
   return (
     <>
@@ -122,8 +138,8 @@ export function WorkHoursBand({
             key={creneau.id}
             className="pointer-events-none absolute inset-x-0 rounded-md"
             style={{
-              top: minutesToPx(start),
-              height: minutesToPx(end - start),
+              top: minutesToPx(start, zoom),
+              height: minutesToPx(end - start, zoom),
               backgroundColor: "var(--accent-planning-travail)",
               opacity: 0.3,
             }}
