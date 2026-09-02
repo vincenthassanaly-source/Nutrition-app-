@@ -157,5 +157,4 @@ devra retester sur son téléphone.
 
 ## Fin
 
-Ces correctifs sont committés localement ; en attente de confirmation de Vincent avant de
-pousser sur `kilio`.
+Poussé sur `kilio` à la demande explicite de Vincent.
