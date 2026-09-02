@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AddTaskForm } from "./taches/AddTaskForm";
 import { NoteForm } from "./notes/NoteForm";
 import { AddCourseForm } from "./courses/AddCourseForm";
 import { Modal } from "@/components/Modal";
 import { goBackSteps, useBackClose } from "@/hooks/useBackClose";
+import { queryKeys } from "@/lib/query/keys";
 import type { Tables } from "@/lib/supabase/types";
 
 type Mode = null | "menu" | "tache" | "note" | "course";
@@ -18,6 +20,7 @@ export function QuickAddFab({
   tags: Tables<"tags">[];
 }) {
   const [mode, setMode] = useState<Mode>(null);
+  const queryClient = useQueryClient();
 
   // The dial's history entry stays pushed for as long as *anything* is
   // open (menu or form) so a single back press from a form lands on the
@@ -139,13 +142,26 @@ export function QuickAddFab({
 
       {mode === "tache" && (
         <Modal title="Nouvelle tâche" onClose={() => history.back()}>
-          <AddTaskForm listes={listes} tags={tags} onDone={() => goBackSteps(2)} />
+          <AddTaskForm
+            listes={listes}
+            tags={tags}
+            onDone={() => {
+              queryClient.invalidateQueries({ queryKey: queryKeys.taches });
+              goBackSteps(2);
+            }}
+          />
         </Modal>
       )}
 
       {mode === "note" && (
         <Modal title="Nouvelle note" onClose={() => history.back()}>
-          <NoteForm tags={tags} onDone={() => goBackSteps(2)} />
+          <NoteForm
+            tags={tags}
+            onDone={() => {
+              queryClient.invalidateQueries({ queryKey: queryKeys.notes });
+              goBackSteps(2);
+            }}
+          />
         </Modal>
       )}
 

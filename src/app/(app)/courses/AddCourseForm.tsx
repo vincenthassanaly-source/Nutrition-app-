@@ -1,13 +1,52 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCourseItem } from "@/app/actions/courses";
+import { queryKeys } from "@/lib/query/keys";
+import { showToast } from "@/components/toast/toast-store";
+import type { Tables } from "@/lib/supabase/types";
 import { errorText, input, primaryButton } from "@/lib/ui";
 
+// Ajouter un article est l'action la plus fréquente du module Courses :
+// insertion optimiste immédiate dans la liste (item temporaire, id local),
+// remplacée par la ligne réelle au refetch ; rollback silencieux + toast
+// discret si l'insertion serveur échoue.
 export function AddCourseForm({ onDone }: { onDone?: () => void }) {
   const [libelle, setLibelle] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (value: string) => createCourseItem(value),
+    onMutate: async (value) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.courses });
+      const previous = queryClient.getQueryData<Tables<"courses_items">[]>(queryKeys.courses);
+      const now = new Date().toISOString();
+      const optimiste: Tables<"courses_items"> = {
+        id: `temp-${crypto.randomUUID()}`,
+        libelle: value,
+        coche: false,
+        created_at: now,
+        updated_at: now,
+      };
+      queryClient.setQueryData<Tables<"courses_items">[]>(queryKeys.courses, (old) => [
+        optimiste,
+        ...(old ?? []),
+      ]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.courses, context.previous);
+      setError("Erreur lors de l'ajout.");
+      showToast("Impossible d'ajouter l'article.");
+    },
+    onSuccess: () => {
+      setLibelle("");
+      onDone?.();
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.courses }),
+  });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,17 +55,8 @@ export function AddCourseForm({ onDone }: { onDone?: () => void }) {
       setError("Le libellé est requis.");
       return;
     }
-
     setError(null);
-    startTransition(async () => {
-      try {
-        await createCourseItem(trimmed);
-        setLibelle("");
-        onDone?.();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur inconnue.");
-      }
-    });
+    mutation.mutate(trimmed);
   }
 
   return (
@@ -46,8 +76,8 @@ export function AddCourseForm({ onDone }: { onDone?: () => void }) {
         </p>
       )}
 
-      <button type="submit" disabled={isPending} className={primaryButton}>
-        {isPending ? "Ajout..." : "Ajouter"}
+      <button type="submit" disabled={mutation.isPending} className={primaryButton}>
+        {mutation.isPending ? "Ajout..." : "Ajouter"}
       </button>
     </form>
   );

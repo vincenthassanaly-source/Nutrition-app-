@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   addNoteItem,
   createNote,
@@ -12,6 +13,7 @@ import {
   type NoteAvecRelations,
   type NoteFormState,
 } from "@/app/actions/notes";
+import { queryKeys } from "@/lib/query/keys";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { NOTE_PALETTE, estCouleurValide, type NoteCouleur } from "@/lib/notes/palette";
 import { CheckToggle } from "@/components/CheckToggle";
@@ -26,11 +28,19 @@ const initialState: NoteFormState = { error: null };
 function NoteItemsEditor({ noteId, items }: { noteId: string; items: Tables<"note_items">[] }) {
   const [nouvelItem, setNouvelItem] = useState("");
   const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.notes });
+  }
 
   function ajouter() {
     const trimmed = nouvelItem.trim();
     if (!trimmed) return;
-    startTransition(() => addNoteItem(noteId, trimmed));
+    startTransition(async () => {
+      await addNoteItem(noteId, trimmed);
+      invalidate();
+    });
     setNouvelItem("");
   }
 
@@ -40,7 +50,12 @@ function NoteItemsEditor({ noteId, items }: { noteId: string; items: Tables<"not
         <div key={item.id} className="flex items-center gap-1.5">
           <CheckToggle
             checked={item.coche}
-            onToggle={() => startTransition(() => toggleNoteItem(item.id, !item.coche))}
+            onToggle={() =>
+              startTransition(async () => {
+                await toggleNoteItem(item.id, !item.coche);
+                invalidate();
+              })
+            }
             label={item.coche ? "Décocher l'item" : "Cocher l'item"}
             size={20}
           />
@@ -49,7 +64,10 @@ function NoteItemsEditor({ noteId, items }: { noteId: string; items: Tables<"not
             onBlur={(e) => {
               const value = e.target.value.trim();
               if (value && value !== item.libelle) {
-                startTransition(() => updateNoteItemLibelle(item.id, value));
+                startTransition(async () => {
+                  await updateNoteItemLibelle(item.id, value);
+                  invalidate();
+                });
               }
             }}
             className={`${input} flex-1 py-1.5 ${item.coche ? "text-ink-3 line-through" : ""}`}
@@ -57,7 +75,12 @@ function NoteItemsEditor({ noteId, items }: { noteId: string; items: Tables<"not
           <button
             type="button"
             disabled={isPending || index === 0}
-            onClick={() => startTransition(() => reorderNoteItems(noteId, item.id, "haut"))}
+            onClick={() =>
+              startTransition(async () => {
+                await reorderNoteItems(noteId, item.id, "haut");
+                invalidate();
+              })
+            }
             className={`${ghostButton} disabled:opacity-30`}
             aria-label="Monter l'item"
           >
@@ -66,7 +89,12 @@ function NoteItemsEditor({ noteId, items }: { noteId: string; items: Tables<"not
           <button
             type="button"
             disabled={isPending || index === items.length - 1}
-            onClick={() => startTransition(() => reorderNoteItems(noteId, item.id, "bas"))}
+            onClick={() =>
+              startTransition(async () => {
+                await reorderNoteItems(noteId, item.id, "bas");
+                invalidate();
+              })
+            }
             className={`${ghostButton} disabled:opacity-30`}
             aria-label="Descendre l'item"
           >
@@ -75,7 +103,12 @@ function NoteItemsEditor({ noteId, items }: { noteId: string; items: Tables<"not
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => deleteNoteItem(item.id))}
+            onClick={() =>
+              startTransition(async () => {
+                await deleteNoteItem(item.id);
+                invalidate();
+              })
+            }
             className={ghostButton}
             aria-label="Supprimer l'item"
           >

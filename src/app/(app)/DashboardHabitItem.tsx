@@ -1,11 +1,13 @@
 "use client";
 
-import { useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { enregistrerEntreeHabitude, type HabitudeDuJour } from "@/app/actions/habitudes";
+import { queryKeys } from "@/lib/query/keys";
+import { showToast } from "@/components/toast/toast-store";
 import { ProgressRing } from "@/components/ProgressRing";
 
 export function DashboardHabitItem({ habitude, date }: { habitude: HabitudeDuJour; date: string }) {
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
   const valeur = habitude.entreeDuJour?.valeur ?? 0;
   const fait = valeur > 0;
   const pct =
@@ -15,15 +17,44 @@ export function DashboardHabitItem({ habitude, date }: { habitude: HabitudeDuJou
         ? 1
         : 0;
 
+  // Même mutation optimiste que HabitudeCard (src/app/(app)/habitudes/HabitudeCard.tsx),
+  // sur la même query key : cocher depuis le dashboard ou /habitudes met à
+  // jour le même cache.
+  const toggleMutation = useMutation({
+    mutationFn: (nouvelleValeur: number) => enregistrerEntreeHabitude(habitude.id, date, nouvelleValeur),
+    onMutate: async (nouvelleValeur) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.habitudes(date) });
+      const previous = queryClient.getQueryData<HabitudeDuJour[]>(queryKeys.habitudes(date));
+      queryClient.setQueryData<HabitudeDuJour[]>(queryKeys.habitudes(date), (old) =>
+        old?.map((h) =>
+          h.id === habitude.id
+            ? {
+                ...h,
+                entreeDuJour: h.entreeDuJour
+                  ? { ...h.entreeDuJour, valeur: nouvelleValeur }
+                  : { id: "", habitude_id: h.id, date, valeur: nouvelleValeur, created_at: new Date().toISOString() },
+              }
+            : h
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.habitudes(date), context.previous);
+      showToast("Impossible de mettre à jour l'habitude.");
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.habitudes(date) }),
+  });
+
   function toggle() {
     if (habitude.type === "quantifiee") return;
-    startTransition(() => enregistrerEntreeHabitude(habitude.id, date, fait ? 0 : 1));
+    toggleMutation.mutate(fait ? 0 : 1);
   }
 
   return (
     <button
       type="button"
-      disabled={isPending || habitude.type === "quantifiee"}
+      disabled={toggleMutation.isPending || habitude.type === "quantifiee"}
       onClick={toggle}
       className="flex w-[60px] shrink-0 flex-col items-center gap-1.5"
     >

@@ -1,7 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { removeJournalEntry } from "@/app/actions/journal";
+import { showToast } from "@/components/toast/toast-store";
 import type { Nutrition } from "@/lib/nutrition/compute";
 import type { Enums } from "@/lib/supabase/types";
 import { cardTight, dangerButton } from "@/lib/ui";
@@ -22,11 +24,16 @@ const MOMENT_LABEL: Record<string, string> = {
   collation: "Collation",
 };
 
-function EntryRow({ entry }: { entry: JournalEntryView }) {
-  const [isPending, startTransition] = useTransition();
-
+function EntryRow({ entry, onDelete }: { entry: JournalEntryView; onDelete: (id: string) => void }) {
   return (
-    <li className={`${cardTight} flex flex-col gap-2`}>
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18 }}
+      className={`${cardTight} flex flex-col gap-2`}
+    >
       <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-3">
         {MOMENT_LABEL[entry.moment]}
       </span>
@@ -39,34 +46,52 @@ function EntryRow({ entry }: { entry: JournalEntryView }) {
           <span className="font-display text-[15px] font-semibold text-ink">
             {Math.round(entry.nutrition.kcal)} kcal
           </span>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => startTransition(() => removeJournalEntry(entry.id))}
-            className={dangerButton}
-          >
+          <button type="button" onClick={() => onDelete(entry.id)} className={dangerButton}>
             Suppr.
           </button>
         </div>
       </div>
-    </li>
+    </motion.li>
   );
 }
 
+// Suppression optimiste sans TanStack Query : la page reste un Server
+// Component (navigation entre jours pilotée par l'URL, déjà instantanée via
+// le prefetch de <Link>), donc `useOptimistic` + Server Action suffit ici —
+// masquage immédiat de la ligne, réconcilié par les nouvelles props une fois
+// `removeJournalEntry` (qui appelle revalidatePath) effectivement résolue.
 export function JournalEntriesList({ entries }: { entries: JournalEntryView[] }) {
-  if (entries.length === 0) {
+  const [optimisticEntries, removeOptimistic] = useOptimistic(entries, (state, id: string) =>
+    state.filter((e) => e.id !== id)
+  );
+  const [, startTransition] = useTransition();
+
+  function handleDelete(id: string) {
+    startTransition(async () => {
+      removeOptimistic(id);
+      try {
+        await removeJournalEntry(id);
+      } catch {
+        showToast("Impossible de supprimer ce repas.");
+      }
+    });
+  }
+
+  if (optimisticEntries.length === 0) {
     return <p className="text-ink-2">Aucun repas enregistré pour ce jour.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      {MOMENT_ORDER.filter((m) => entries.some((e) => e.moment === m)).map((moment) => (
+      {MOMENT_ORDER.filter((m) => optimisticEntries.some((e) => e.moment === m)).map((moment) => (
         <ul key={moment} className="flex flex-col gap-2.5">
-          {entries
-            .filter((e) => e.moment === moment)
-            .map((entry) => (
-              <EntryRow key={entry.id} entry={entry} />
-            ))}
+          <AnimatePresence initial={false}>
+            {optimisticEntries
+              .filter((e) => e.moment === moment)
+              .map((entry) => (
+                <EntryRow key={entry.id} entry={entry} onDelete={handleDelete} />
+              ))}
+          </AnimatePresence>
         </ul>
       ))}
     </div>

@@ -9,9 +9,11 @@ import { card, dashedAddButton } from "@/lib/ui";
 export function AddNoteToggle({
   tags,
   defaultOpen = false,
+  onSaved,
 }: {
   tags: Tables<"tags">[];
   defaultOpen?: boolean;
+  onSaved?: () => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   useBackClose(open, () => setOpen(false));
@@ -26,7 +28,13 @@ export function AddNoteToggle({
 
   return (
     <div className={card}>
-      <NoteForm tags={tags} onDone={() => setOpen(false)} />
+      <NoteForm
+        tags={tags}
+        onDone={() => {
+          setOpen(false);
+          onSaved?.();
+        }}
+      />
       <button type="button" onClick={() => setOpen(false)} className="mt-2 text-sm text-ink-2 underline">
         Annuler
       </button>

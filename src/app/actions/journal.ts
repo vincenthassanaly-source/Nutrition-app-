@@ -2,9 +2,67 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import {
+  addNutrition,
+  hasNutritionOverride,
+  nutritionAliment,
+  nutritionFromOverride,
+  nutritionRecette,
+  zeroNutrition,
+  type Nutrition,
+} from "@/lib/nutrition/compute";
 import type { Enums } from "@/lib/supabase/types";
 
 export type JournalFormState = { error: string | null };
+
+// Résumé nutritionnel du jour (consommé + objectif), utilisé par la carte
+// Nutrition du dashboard (src/app/(app)/DashboardNutritionCard.tsx) via
+// TanStack Query — même calcul que celui fait en Server Component dans
+// src/app/(app)/nutrition/journal/page.tsx, exposé ici en lecture
+// côté client.
+export type ResumeNutritionJour = {
+  consomme: Nutrition;
+  kcalGoal: number;
+  macroGoals: { proteines: number; glucides: number; lipides: number };
+};
+
+export async function getResumeNutritionJour(
+  date: string,
+  jourType: Enums<"jour_type_ppl"> = "repos"
+): Promise<ResumeNutritionJour> {
+  const supabase = await createClient();
+
+  const [{ data: objectif }, { data: entries }] = await Promise.all([
+    supabase.from("objectifs_nutritionnels").select("*").eq("jour_type", jourType).maybeSingle(),
+    supabase
+      .from("journal_repas")
+      .select(
+        "*, aliment:aliments(*), recette:recettes(id, nom, portions, kcal_portion, proteines_portion, glucides_portion, lipides_portion, recette_ingredients(quantite, aliment:aliments(kcal_100g, proteines_100g, glucides_100g, lipides_100g)))"
+      )
+      .eq("date", date),
+  ]);
+
+  const consomme = (entries ?? []).reduce((acc, entry) => {
+    if (entry.aliment) return addNutrition(acc, nutritionAliment(entry.aliment, entry.quantite));
+    const recette = entry.recette!;
+    return addNutrition(
+      acc,
+      hasNutritionOverride(recette)
+        ? nutritionFromOverride(recette, entry.quantite)
+        : nutritionRecette(recette.recette_ingredients, recette.portions, entry.quantite)
+    );
+  }, zeroNutrition());
+
+  return {
+    consomme,
+    kcalGoal: objectif?.kcal_cible ?? 2100,
+    macroGoals: {
+      proteines: objectif?.proteines_cible_g ?? 120,
+      glucides: objectif?.glucides_cible_g ?? 230,
+      lipides: objectif?.lipides_cible_g ?? 70,
+    },
+  };
+}
 
 const MOMENTS: readonly Enums<"moment_repas">[] = [
   "petit_dej",

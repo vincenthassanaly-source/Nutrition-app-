@@ -2,6 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Tables } from "@/lib/supabase/types";
+
+export async function getCoursesItems(): Promise<Tables<"courses_items">[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("courses_items")
+    .select("*")
+    .order("coche", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
 
 export async function createCourseItem(libelle: string) {
   const trimmed = libelle.trim();

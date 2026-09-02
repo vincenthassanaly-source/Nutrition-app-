@@ -1,7 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
-import { toggleTache } from "@/app/actions/taches";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toggleTache, type TacheAvecRelations } from "@/app/actions/taches";
+import { queryKeys } from "@/lib/query/keys";
+import { showToast } from "@/components/toast/toast-store";
+import { CheckToggle } from "@/components/CheckToggle";
 
 export function DashboardTaskItem({
   id,
@@ -14,31 +17,36 @@ export function DashboardTaskItem({
   heure: string | null;
   fait: boolean;
 }) {
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  // Même mutation optimiste que TaskCard (src/app/(app)/taches/TasksList.tsx),
+  // sur la même query key : cocher une tâche depuis le dashboard ou depuis
+  // /taches met à jour le même cache, dans les deux sens.
+  const toggleMutation = useMutation({
+    mutationFn: () => toggleTache(id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.taches });
+      const previous = queryClient.getQueryData<TacheAvecRelations[]>(queryKeys.taches);
+      queryClient.setQueryData<TacheAvecRelations[]>(queryKeys.taches, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, fait: !t.fait } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.taches, context.previous);
+      showToast("Impossible de mettre à jour la tâche.");
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.taches }),
+  });
 
   return (
     <div className="flex items-center gap-2.5">
-      <button
-        type="button"
-        disabled={isPending}
-        onClick={() => startTransition(() => toggleTache(id))}
-        className="shrink-0"
-        aria-label={fait ? "Marquer non fait" : "Marquer fait"}
-      >
-        <span
-          className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2"
-          style={{
-            borderColor: fait ? "var(--accent-kcal)" : "var(--line)",
-            background: fait ? "var(--accent-kcal)" : "transparent",
-          }}
-        >
-          {fait && (
-            <svg width="11" height="11" viewBox="0 0 12 12">
-              <path d="M1 6l3.2 3.2L11 2" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </span>
-      </button>
+      <CheckToggle
+        checked={fait}
+        disabled={toggleMutation.isPending}
+        onToggle={() => toggleMutation.mutate()}
+        label={fait ? "Marquer non fait" : "Marquer fait"}
+      />
       <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
         <span
           className="truncate text-[14px] font-medium"

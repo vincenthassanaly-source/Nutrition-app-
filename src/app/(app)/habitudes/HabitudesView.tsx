@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { HabitudeDuJour } from "@/app/actions/habitudes";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getHabitudesDuJour } from "@/app/actions/habitudes";
+import { queryKeys } from "@/lib/query/keys";
 import { AddHabitudeToggle } from "./AddHabitudeToggle";
 import { HabitudeCard } from "./HabitudeCard";
 import { HistoriqueView } from "./HistoriqueView";
+import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
+import { errorText } from "@/lib/ui";
 
 type ViewKey = "aujourdhui" | "historique";
 
@@ -13,14 +17,14 @@ const VIEWS: { key: ViewKey; label: string }[] = [
   { key: "historique", label: "Historique" },
 ];
 
-export function HabitudesView({
-  habitudes,
-  today,
-}: {
-  habitudes: HabitudeDuJour[];
-  today: string;
-}) {
+export function HabitudesView({ today }: { today: string }) {
   const [view, setView] = useState<ViewKey>("aujourdhui");
+  const queryClient = useQueryClient();
+
+  const { data: habitudes = [], isLoading, isError } = useQuery({
+    queryKey: queryKeys.habitudes(today),
+    queryFn: () => getHabitudesDuJour(today),
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,8 +45,14 @@ export function HabitudesView({
 
       {view === "aujourdhui" && (
         <div className="flex flex-col gap-4">
-          <AddHabitudeToggle />
-          {habitudes.length === 0 ? (
+          <AddHabitudeToggle
+            onSaved={() => queryClient.invalidateQueries({ queryKey: queryKeys.habitudes(today) })}
+          />
+          {isLoading ? (
+            <ListItemSkeletonGroup count={3} withSubtitle />
+          ) : isError ? (
+            <p className={errorText}>Erreur de chargement des habitudes. Réessaie.</p>
+          ) : habitudes.length === 0 ? (
             <p className="text-ink-2">Aucune habitude pour l&apos;instant.</p>
           ) : (
             <ul className="flex flex-col gap-2.5">

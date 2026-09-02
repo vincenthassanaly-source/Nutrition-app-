@@ -1,20 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getNotesAvecRelations } from "@/app/actions/notes";
+import { getTags } from "@/app/actions/taches";
+import { queryKeys } from "@/lib/query/keys";
 import { NoteCard } from "./NoteCard";
-import type { NoteAvecRelations } from "@/app/actions/notes";
-import type { Tables } from "@/lib/supabase/types";
-import { input, pillTag, sectionTitle } from "@/lib/ui";
+import { AddNoteToggle } from "./AddNoteToggle";
+import { GridSkeleton } from "@/components/skeletons/GridSkeleton";
+import { errorText, input, pillTag, sectionTitle } from "@/lib/ui";
 
-export function NotesGrid({
-  notes,
-  tags,
-}: {
-  notes: NoteAvecRelations[];
-  tags: Tables<"tags">[];
-}) {
+export function NotesGrid({ defaultOpen }: { defaultOpen?: boolean }) {
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data: notes, isLoading, isError } = useQuery({
+    queryKey: queryKeys.notes,
+    queryFn: getNotesAvecRelations,
+  });
+  const { data: tags = [] } = useQuery({ queryKey: queryKeys.tags, queryFn: getTags });
 
   function toggleTagFilter(id: string) {
     setTagFilter((ids) => (ids.includes(id) ? ids.filter((t) => t !== id) : [...ids, id]));
@@ -24,6 +30,7 @@ export function NotesGrid({
   // checklist + noms de tags. Pas de recherche full-text Postgres, le
   // volume de données mono-utilisateur ne le justifie pas (cf. prompt).
   const filtered = useMemo(() => {
+    if (!notes) return [];
     const term = search.toLowerCase().trim();
     return notes.filter((note) => {
       const matchesSearch =
@@ -41,60 +48,76 @@ export function NotesGrid({
   const epinglees = filtered.filter((n) => n.epingle);
   const autres = filtered.filter((n) => !n.epingle);
 
-  if (notes.length === 0) {
-    return <p className="text-ink-2">Aucune note pour l&apos;instant.</p>;
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      <input
-        type="search"
-        placeholder="Rechercher une note…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className={input}
+      <AddNoteToggle
+        tags={tags}
+        defaultOpen={defaultOpen}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: queryKeys.notes })}
       />
 
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {tags.map((tag) => (
-            <button
-              key={tag.id}
-              type="button"
-              onClick={() => toggleTagFilter(tag.id)}
-              className={
-                tagFilter.includes(tag.id) ? `${pillTag} bg-kcal-soft text-kcal font-bold` : pillTag
-              }
-            >
-              #{tag.nom}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {filtered.length === 0 ? (
-        <p className="py-5 text-center text-sm text-ink-3">Aucune note ne correspond à ta recherche.</p>
+      {isLoading ? (
+        <GridSkeleton />
+      ) : isError ? (
+        <p className={errorText}>Erreur de chargement des notes. Réessaie.</p>
+      ) : !notes || notes.length === 0 ? (
+        <p className="text-ink-2">Aucune note pour l&apos;instant.</p>
       ) : (
         <>
-          {epinglees.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className={sectionTitle}>Épinglées</p>
-              <ul className="columns-2 gap-3">
-                {epinglees.map((note) => (
-                  <NoteCard key={note.id} note={note} tags={tags} />
-                ))}
-              </ul>
+          <input
+            type="search"
+            placeholder="Rechercher une note…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={input}
+          />
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleTagFilter(tag.id)}
+                  className={
+                    tagFilter.includes(tag.id) ? `${pillTag} bg-kcal-soft text-kcal font-bold` : pillTag
+                  }
+                >
+                  #{tag.nom}
+                </button>
+              ))}
             </div>
           )}
-          {autres.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {epinglees.length > 0 && <p className={sectionTitle}>Autres</p>}
-              <ul className="columns-2 gap-3">
-                {autres.map((note) => (
-                  <NoteCard key={note.id} note={note} tags={tags} />
-                ))}
-              </ul>
-            </div>
+
+          {filtered.length === 0 ? (
+            <p className="py-5 text-center text-sm text-ink-3">Aucune note ne correspond à ta recherche.</p>
+          ) : (
+            <>
+              {epinglees.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className={sectionTitle}>Épinglées</p>
+                  <ul className="columns-2 gap-3">
+                    <AnimatePresence initial={false}>
+                      {epinglees.map((note) => (
+                        <NoteCard key={note.id} note={note} tags={tags} />
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                </div>
+              )}
+              {autres.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {epinglees.length > 0 && <p className={sectionTitle}>Autres</p>}
+                  <ul className="columns-2 gap-3">
+                    <AnimatePresence initial={false}>
+                      {autres.map((note) => (
+                        <NoteCard key={note.id} note={note} tags={tags} />
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { CollectionMosaic } from "./CollectionMosaic";
 import type { CollectionAvecApercu } from "@/app/actions/collections";
 import { nameText } from "@/lib/ui";
@@ -10,8 +13,15 @@ export function CollectionsGrid({ collections }: { collections: CollectionAvecAp
 
   return (
     <ul className="columns-2 gap-3">
-      {collections.map((collection) => (
-        <li key={collection.id} className="mb-3 break-inside-avoid">
+      {collections.map((collection, index) => (
+        <motion.li
+          key={collection.id}
+          className="mb-3 break-inside-avoid"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: Math.min(index * 0.035, 0.35) }}
+          whileTap={{ scale: 0.97 }}
+        >
           <Link href={`/collection/${collection.id}`} className="flex flex-col gap-1.5">
             <CollectionMosaic photos={collection.photos_apercu} />
             <p className={nameText}>{collection.nom}</p>
@@ -19,7 +29,7 @@ export function CollectionsGrid({ collections }: { collections: CollectionAvecAp
               {collection.nb_photos} photo{collection.nb_photos > 1 ? "s" : ""}
             </p>
           </Link>
-        </li>
+        </motion.li>
       ))}
     </ul>
   );

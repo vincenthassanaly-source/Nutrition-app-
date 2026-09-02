@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { enregistrerEntreeHabitude, supprimerHabitude, type HabitudeDuJour } from "@/app/actions/habitudes";
+import { queryKeys } from "@/lib/query/keys";
+import { showToast } from "@/components/toast/toast-store";
 import { HabitudeForm } from "./HabitudeForm";
 import { ProgressRing } from "@/components/ProgressRing";
 import { card, dangerButton, ghostButton, input, listCard, metaText, nameText, pillTag } from "@/lib/ui";
@@ -12,11 +15,53 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
   const [valeurInput, setValeurInput] = useState(
     habitude.entreeDuJour ? String(habitude.entreeDuJour.valeur) : ""
   );
+  const queryClient = useQueryClient();
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.habitudes(date) });
+  }
+
+  // Cocher/décocher une habitude booléenne ou série est l'action la plus
+  // fréquente du module : optimiste (le ring bascule à l'instant du tap),
+  // rollback silencieux + toast discret si le serveur échoue. Le streak
+  // affiché reste celui d'avant le tap le temps du round-trip (recalculé
+  // côté serveur, pas approximé ici) — `onSettled` réconcilie.
+  const toggleMutation = useMutation({
+    mutationFn: (nouvelleValeur: number) => enregistrerEntreeHabitude(habitude.id, date, nouvelleValeur),
+    onMutate: async (nouvelleValeur) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.habitudes(date) });
+      const previous = queryClient.getQueryData<HabitudeDuJour[]>(queryKeys.habitudes(date));
+      queryClient.setQueryData<HabitudeDuJour[]>(queryKeys.habitudes(date), (old) =>
+        old?.map((h) =>
+          h.id === habitude.id
+            ? {
+                ...h,
+                entreeDuJour: h.entreeDuJour
+                  ? { ...h.entreeDuJour, valeur: nouvelleValeur }
+                  : { id: "", habitude_id: h.id, date, valeur: nouvelleValeur, created_at: new Date().toISOString() },
+              }
+            : h
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.habitudes(date), context.previous);
+      showToast("Impossible de mettre à jour l'habitude.");
+    },
+    onSettled: invalidate,
+  });
 
   if (editing) {
     return (
       <li className={card}>
-        <HabitudeForm habitude={habitude} onDone={() => setEditing(false)} />
+        <HabitudeForm
+          habitude={habitude}
+          onDone={() => {
+            setEditing(false);
+            invalidate();
+          }}
+        />
         <button
           type="button"
           onClick={() => setEditing(false)}
@@ -33,14 +78,13 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
   const atteint = habitude.valeur_cible != null && valeur >= habitude.valeur_cible;
   const pct = habitude.type === "quantifiee" && habitude.valeur_cible ? valeur / habitude.valeur_cible : fait ? 1 : 0;
 
-  function toggleFait() {
-    startTransition(() => enregistrerEntreeHabitude(habitude.id, date, fait ? 0 : 1));
-  }
-
   function enregistrerValeur() {
     const valeur = Number(valeurInput);
     if (!Number.isFinite(valeur) || valeur < 0) return;
-    startTransition(() => enregistrerEntreeHabitude(habitude.id, date, valeur));
+    startTransition(async () => {
+      await enregistrerEntreeHabitude(habitude.id, date, valeur);
+      invalidate();
+    });
   }
 
   return (
@@ -50,8 +94,8 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
           {habitude.type !== "quantifiee" && (
             <button
               type="button"
-              disabled={isPending}
-              onClick={toggleFait}
+              disabled={toggleMutation.isPending}
+              onClick={() => toggleMutation.mutate(fait ? 0 : 1)}
               aria-label={fait ? "Marquer non fait" : "Marquer fait"}
               className="flex h-full w-full items-center justify-center"
             >
@@ -104,7 +148,12 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
         <button
           type="button"
           disabled={isPending}
-          onClick={() => startTransition(() => supprimerHabitude(habitude.id))}
+          onClick={() =>
+            startTransition(async () => {
+              await supprimerHabitude(habitude.id);
+              invalidate();
+            })
+          }
           className={dangerButton}
         >
           Archiver

@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteNote, toggleEpingle, toggleNoteItem, type NoteAvecRelations } from "@/app/actions/notes";
+import { queryKeys } from "@/lib/query/keys";
+import { showToast } from "@/components/toast/toast-store";
 import { NoteForm } from "./NoteForm";
 import { noteBackgroundStyle } from "@/lib/notes/palette";
 import { CheckToggle } from "@/components/CheckToggle";
@@ -35,13 +39,82 @@ function PinIcon({ filled }: { filled: boolean }) {
 
 export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables<"tags">[] }) {
   const [editing, setEditing] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
   useBackClose(editing, () => setEditing(false));
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.notes });
+  }
+
+  // Épingler et cocher un item de checklist sont les actions les plus
+  // fréquentes sur une note existante : mise à jour optimiste du cache,
+  // rollback silencieux + toast discret en cas d'échec serveur.
+  const pinMutation = useMutation({
+    mutationFn: () => toggleEpingle(note.id, !note.epingle),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notes });
+      const previous = queryClient.getQueryData<NoteAvecRelations[]>(queryKeys.notes);
+      queryClient.setQueryData<NoteAvecRelations[]>(queryKeys.notes, (old) =>
+        old?.map((n) => (n.id === note.id ? { ...n, epingle: !n.epingle } : n))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.notes, context.previous);
+      showToast("Impossible de mettre à jour la note.");
+    },
+    onSettled: invalidate,
+  });
+
+  const itemMutation = useMutation({
+    mutationFn: ({ itemId, coche }: { itemId: string; coche: boolean }) => toggleNoteItem(itemId, coche),
+    onMutate: async ({ itemId, coche }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notes });
+      const previous = queryClient.getQueryData<NoteAvecRelations[]>(queryKeys.notes);
+      queryClient.setQueryData<NoteAvecRelations[]>(queryKeys.notes, (old) =>
+        old?.map((n) =>
+          n.id === note.id
+            ? { ...n, items: n.items.map((i) => (i.id === itemId ? { ...i, coche } : i)) }
+            : n
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.notes, context.previous);
+      showToast("Impossible de mettre à jour l'item.");
+    },
+    onSettled: invalidate,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteNote(note.id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notes });
+      const previous = queryClient.getQueryData<NoteAvecRelations[]>(queryKeys.notes);
+      queryClient.setQueryData<NoteAvecRelations[]>(queryKeys.notes, (old) =>
+        old?.filter((n) => n.id !== note.id)
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.notes, context.previous);
+      showToast("Impossible de supprimer la note.");
+    },
+    onSettled: invalidate,
+  });
 
   if (editing) {
     return (
       <li className={`${card} mb-3 break-inside-avoid`}>
-        <NoteForm note={note} tags={tags} onDone={() => setEditing(false)} />
+        <NoteForm
+          note={note}
+          tags={tags}
+          onDone={() => {
+            setEditing(false);
+            invalidate();
+          }}
+        />
         <button
           type="button"
           onClick={() => setEditing(false)}
@@ -59,7 +132,12 @@ export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables
   const itemsRestants = note.items.length - itemsAffiches.length;
 
   return (
-    <li
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.18 }}
       className={`${card} mb-3 flex flex-col gap-2 break-inside-avoid`}
       style={noteBackgroundStyle(note.couleur)}
     >
@@ -67,8 +145,8 @@ export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables
         <p className={nameText}>{note.titre}</p>
         <button
           type="button"
-          disabled={isPending}
-          onClick={() => startTransition(() => toggleEpingle(note.id, !note.epingle))}
+          disabled={pinMutation.isPending}
+          onClick={() => pinMutation.mutate()}
           aria-label={note.epingle ? "Désépingler" : "Épingler"}
           className={`shrink-0 ${note.epingle ? "text-kcal" : "text-ink-3"}`}
         >
@@ -89,7 +167,7 @@ export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables
             <div key={item.id} className="flex items-center gap-2">
               <CheckToggle
                 checked={item.coche}
-                onToggle={() => startTransition(() => toggleNoteItem(item.id, !item.coche))}
+                onToggle={() => itemMutation.mutate({ itemId: item.id, coche: !item.coche })}
                 label={item.coche ? "Décocher l'item" : "Cocher l'item"}
                 size={18}
               />
@@ -118,13 +196,13 @@ export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables
         </button>
         <button
           type="button"
-          disabled={isPending}
-          onClick={() => startTransition(() => deleteNote(note.id))}
+          disabled={deleteMutation.isPending}
+          onClick={() => deleteMutation.mutate()}
           className={dangerButton}
         >
           Suppr.
         </button>
       </div>
-    </li>
+    </motion.li>
   );
 }

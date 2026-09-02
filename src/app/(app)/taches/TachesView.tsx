@@ -2,13 +2,16 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, format } from "date-fns";
 import { aujourdhuiISO } from "@/lib/budget/compute";
-import type { TacheAvecRelations } from "@/app/actions/taches";
-import type { Tables } from "@/lib/supabase/types";
+import { getListes, getTachesAvecRelations, getTags } from "@/app/actions/taches";
+import { queryKeys } from "@/lib/query/keys";
 import { AddTaskToggle } from "./AddTaskToggle";
 import { TasksList } from "./TasksList";
-import { pillTag } from "@/lib/ui";
+import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
+import { Skeleton } from "@/components/skeletons/Skeleton";
+import { errorText, pillTag } from "@/lib/ui";
 
 const LISTE_ICON = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -26,21 +29,20 @@ const VUES: { key: VueKey; label: string }[] = [
   { key: "toutes", label: "Toutes" },
 ];
 
-export function TachesView({
-  taches,
-  listes,
-  tags,
-  defaultOpen,
-}: {
-  taches: TacheAvecRelations[];
-  listes: Tables<"listes_taches">[];
-  tags: Tables<"tags">[];
-  defaultOpen?: boolean;
-}) {
+export function TachesView({ defaultOpen }: { defaultOpen?: boolean }) {
   const [vue, setVue] = useState<VueKey>("toutes");
   const [listeId, setListeId] = useState<string>("toutes");
+  const queryClient = useQueryClient();
+
+  const { data: taches, isLoading: tachesLoading, isError: tachesError } = useQuery({
+    queryKey: queryKeys.taches,
+    queryFn: getTachesAvecRelations,
+  });
+  const { data: listes = [] } = useQuery({ queryKey: queryKeys.listes, queryFn: getListes });
+  const { data: tags = [] } = useQuery({ queryKey: queryKeys.tags, queryFn: getTags });
 
   const filtered = useMemo(() => {
+    if (!taches) return [];
     const today = aujourdhuiISO();
     const dansSeptJours = format(addDays(new Date(`${today}T00:00:00`), 7), "yyyy-MM-dd");
 
@@ -53,6 +55,10 @@ export function TachesView({
       return true;
     });
   }, [taches, vue, listeId]);
+
+  function invalidateTaches() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.taches });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,8 +110,18 @@ export function TachesView({
         tags={tags}
         defaultListeId={listeId !== "toutes" ? listeId : undefined}
         defaultOpen={defaultOpen}
+        onSaved={invalidateTaches}
       />
-      <TasksList taches={filtered} listes={listes} tags={tags} />
+      {tachesLoading ? (
+        <div className="flex flex-col gap-2.5">
+          <Skeleton className="h-3 w-24" />
+          <ListItemSkeletonGroup count={5} />
+        </div>
+      ) : tachesError ? (
+        <p className={errorText}>Erreur de chargement des tâches. Réessaie.</p>
+      ) : (
+        <TasksList taches={filtered} listes={listes} tags={tags} />
+      )}
     </div>
   );
 }

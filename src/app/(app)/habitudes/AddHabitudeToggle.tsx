@@ -4,7 +4,7 @@ import { useState } from "react";
 import { HabitudeForm } from "./HabitudeForm";
 import { card, dashedAddButton } from "@/lib/ui";
 
-export function AddHabitudeToggle() {
+export function AddHabitudeToggle({ onSaved }: { onSaved?: () => void }) {
   const [open, setOpen] = useState(false);
 
   if (!open) {
@@ -17,7 +17,12 @@ export function AddHabitudeToggle() {
 
   return (
     <div className={card}>
-      <HabitudeForm onDone={() => setOpen(false)} />
+      <HabitudeForm
+        onDone={() => {
+          setOpen(false);
+          onSaved?.();
+        }}
+      />
       <button type="button" onClick={() => setOpen(false)} className="mt-2 text-sm text-ink-2 underline">
         Annuler
       </button>

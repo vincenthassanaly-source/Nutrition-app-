@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   createSousTache,
   deleteSousTache,
@@ -11,6 +13,8 @@ import {
   toggleTache,
   type TacheAvecRelations,
 } from "@/app/actions/taches";
+import { queryKeys } from "@/lib/query/keys";
+import { showToast } from "@/components/toast/toast-store";
 import { AddTaskForm } from "./AddTaskForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
@@ -50,6 +54,11 @@ function couleurStyle(couleur: string | null): React.CSSProperties | undefined {
 function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
   const [isPending, startTransition] = useTransition();
   const [titre, setTitre] = useState("");
+  const queryClient = useQueryClient();
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.taches });
+  }
 
   function handleAjouter(e: React.FormEvent) {
     e.preventDefault();
@@ -57,6 +66,7 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
     if (!trimmed) return;
     startTransition(async () => {
       await createSousTache(tache.id, trimmed);
+      invalidate();
     });
     setTitre("");
   }
@@ -70,7 +80,12 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
               <CheckToggle
                 checked={sousTache.fait}
                 disabled={isPending}
-                onToggle={() => startTransition(() => toggleSousTache(sousTache.id, !sousTache.fait))}
+                onToggle={() =>
+                  startTransition(async () => {
+                    await toggleSousTache(sousTache.id, !sousTache.fait);
+                    invalidate();
+                  })
+                }
                 size={17}
                 label={sousTache.fait ? "Marquer non fait" : "Marquer fait"}
               />
@@ -85,7 +100,10 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
                 type="button"
                 disabled={isPending || index === 0}
                 onClick={() =>
-                  startTransition(() => reordonnerSousTaches(tache.id, sousTache.id, "haut"))
+                  startTransition(async () => {
+                    await reordonnerSousTaches(tache.id, sousTache.id, "haut");
+                    invalidate();
+                  })
                 }
                 className="text-ink-2 disabled:opacity-30"
                 aria-label="Monter la sous-tâche"
@@ -96,7 +114,10 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
                 type="button"
                 disabled={isPending || index === tache.sous_taches.length - 1}
                 onClick={() =>
-                  startTransition(() => reordonnerSousTaches(tache.id, sousTache.id, "bas"))
+                  startTransition(async () => {
+                    await reordonnerSousTaches(tache.id, sousTache.id, "bas");
+                    invalidate();
+                  })
                 }
                 className="text-ink-2 disabled:opacity-30"
                 aria-label="Descendre la sous-tâche"
@@ -106,7 +127,12 @@ function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => startTransition(() => deleteSousTache(sousTache.id))}
+                onClick={() =>
+                  startTransition(async () => {
+                    await deleteSousTache(sousTache.id);
+                    invalidate();
+                  })
+                }
                 className="text-alert"
                 aria-label="Supprimer la sous-tâche"
               >
@@ -173,11 +199,63 @@ export function TaskCard({
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  function invalidateTaches() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.taches });
+  }
+
+  // Cocher/décocher est l'action la plus fréquente sur une tâche : mise à
+  // jour optimiste du cache (le cercle bascule à l'instant du tap), rollback
+  // silencieux + toast discret si le serveur échoue. La logique de
+  // récurrence (échéance suivante) reste calculée côté serveur ; on ne
+  // l'approxime pas ici, `onSettled` réconcilie avec l'état réel.
+  const toggleMutation = useMutation({
+    mutationFn: () => toggleTache(tache.id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.taches });
+      const previous = queryClient.getQueryData<TacheAvecRelations[]>(queryKeys.taches);
+      queryClient.setQueryData<TacheAvecRelations[]>(queryKeys.taches, (old) =>
+        old?.map((t) => (t.id === tache.id ? { ...t, fait: !t.fait } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.taches, context.previous);
+      showToast("Impossible de mettre à jour la tâche.");
+    },
+    onSettled: invalidateTaches,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteTache(tache.id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.taches });
+      const previous = queryClient.getQueryData<TacheAvecRelations[]>(queryKeys.taches);
+      queryClient.setQueryData<TacheAvecRelations[]>(queryKeys.taches, (old) =>
+        old?.filter((t) => t.id !== tache.id)
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.taches, context.previous);
+      showToast("Impossible de supprimer la tâche.");
+    },
+    onSettled: invalidateTaches,
+  });
 
   if (editing) {
     return (
-      <li className={card}>
-        <AddTaskForm tache={tache} listes={listes} tags={tags} onDone={() => setEditing(false)} />
+      <motion.li layout className={card}>
+        <AddTaskForm
+          tache={tache}
+          listes={listes}
+          tags={tags}
+          onDone={() => {
+            setEditing(false);
+            invalidateTaches();
+          }}
+        />
         <button
           type="button"
           onClick={() => setEditing(false)}
@@ -185,19 +263,26 @@ export function TaskCard({
         >
           Annuler
         </button>
-      </li>
+      </motion.li>
     );
   }
 
   const sousTachesFaites = tache.sous_taches.filter((s) => s.fait).length;
 
   return (
-    <li className={listCard}>
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18 }}
+      className={listCard}
+    >
       <div className="flex items-start gap-3">
         <CheckToggle
           checked={tache.fait}
           disabled={isPending}
-          onToggle={() => startTransition(() => toggleTache(tache.id))}
+          onToggle={() => toggleMutation.mutate()}
           className="mt-0.5"
           label={tache.fait ? "Marquer non fait" : "Marquer fait"}
         />
@@ -264,7 +349,12 @@ export function TaskCard({
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => reordonnerTaches(tache.id, "haut"))}
+            onClick={() =>
+              startTransition(async () => {
+                await reordonnerTaches(tache.id, "haut");
+                invalidateTaches();
+              })
+            }
             className={ghostButton}
             aria-label="Monter"
           >
@@ -273,7 +363,12 @@ export function TaskCard({
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => reordonnerTaches(tache.id, "bas"))}
+            onClick={() =>
+              startTransition(async () => {
+                await reordonnerTaches(tache.id, "bas");
+                invalidateTaches();
+              })
+            }
             className={ghostButton}
             aria-label="Descendre"
           >
@@ -286,15 +381,15 @@ export function TaskCard({
           </button>
           <button
             type="button"
-            disabled={isPending}
-            onClick={() => startTransition(() => deleteTache(tache.id))}
+            disabled={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate()}
             className={dangerButton}
           >
             Suppr.
           </button>
         </div>
       </div>
-    </li>
+    </motion.li>
   );
 }
 
@@ -323,9 +418,11 @@ export function TasksList({
     <>
       {actives.length > 0 && (
         <ul className="flex flex-col gap-2.5">
-          {actives.map((tache) => (
-            <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
-          ))}
+          <AnimatePresence initial={false}>
+            {actives.map((tache) => (
+              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+            ))}
+          </AnimatePresence>
         </ul>
       )}
       {archivees.length > 0 && (
@@ -334,9 +431,11 @@ export function TasksList({
             Tâches archivées ({archivees.length})
           </summary>
           <ul className="mt-2.5 flex flex-col gap-2.5">
-            {archivees.map((tache) => (
-              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
-            ))}
+            <AnimatePresence initial={false}>
+              {archivees.map((tache) => (
+                <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+              ))}
+            </AnimatePresence>
           </ul>
         </details>
       )}
