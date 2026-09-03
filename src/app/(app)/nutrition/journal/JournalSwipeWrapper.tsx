@@ -3,12 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { useSwipeHorizontal, type SensSwipe } from "@/hooks/useSwipeHorizontal";
-
-export function shiftDate(date: string, days: number) {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
+import { shiftDate } from "./date-utils";
 
 /**
  * Ajoute le swipe horizontal (même geste/tolérances que l'Agenda, voir

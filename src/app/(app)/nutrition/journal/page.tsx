@@ -14,7 +14,8 @@ import {
 import type { Enums } from "@/lib/supabase/types";
 import { card, eyebrow, screenTitle, sectionTitle } from "@/lib/ui";
 import { NutritionSubNav } from "@/components/NutritionSubNav";
-import { JournalSwipeWrapper, shiftDate } from "./JournalSwipeWrapper";
+import { JournalSwipeWrapper } from "./JournalSwipeWrapper";
+import { shiftDate } from "./date-utils";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -51,45 +52,49 @@ export default async function JournalPage({
       .eq("date", date),
   ]);
 
-  const views: JournalEntryView[] = (entries ?? []).map((entry) => {
-    if (entry.aliment) {
-      const { quantite, aliment } = entry;
-      // journal_repas.quantite est toujours en grammes/ml, y compris pour un
-      // aliment "pièce" (converti avant l'insert via poids_unite_g) : on
-      // affiche donc le poids réel, avec l'équivalent en pièces en rappel.
-      const piecesEquivalent =
-        aliment.unite === "piece" && aliment.poids_unite_g
-          ? quantite / aliment.poids_unite_g
-          : null;
-      const detail =
-        piecesEquivalent !== null
-          ? `${quantite} g (≈ ${
-              Number.isInteger(piecesEquivalent)
-                ? piecesEquivalent
-                : piecesEquivalent.toFixed(1)
-            } pièce${piecesEquivalent > 1 ? "s" : ""})`
-          : `${quantite} ${aliment.unite === "ml" ? "ml" : "g"}`;
+  // Une entrée sans `aliment` ni `recette` est orpheline (référence supprimée
+  // en base) : on l'ignore plutôt que de planter sur `entry.recette!` plus bas.
+  const views: JournalEntryView[] = (entries ?? [])
+    .filter((entry) => entry.aliment || entry.recette)
+    .map((entry) => {
+      if (entry.aliment) {
+        const { quantite, aliment } = entry;
+        // journal_repas.quantite est toujours en grammes/ml, y compris pour un
+        // aliment "pièce" (converti avant l'insert via poids_unite_g) : on
+        // affiche donc le poids réel, avec l'équivalent en pièces en rappel.
+        const piecesEquivalent =
+          aliment.unite === "piece" && aliment.poids_unite_g
+            ? quantite / aliment.poids_unite_g
+            : null;
+        const detail =
+          piecesEquivalent !== null
+            ? `${quantite} g (≈ ${
+                Number.isInteger(piecesEquivalent)
+                  ? piecesEquivalent
+                  : piecesEquivalent.toFixed(1)
+              } pièce${piecesEquivalent > 1 ? "s" : ""})`
+            : `${quantite} ${aliment.unite === "ml" ? "ml" : "g"}`;
 
+        return {
+          id: entry.id,
+          moment: entry.moment,
+          label: aliment.nom,
+          detail,
+          nutrition: nutritionAliment(aliment, quantite),
+        };
+      }
+
+      const recette = entry.recette!;
       return {
         id: entry.id,
         moment: entry.moment,
-        label: aliment.nom,
-        detail,
-        nutrition: nutritionAliment(aliment, quantite),
+        label: recette.nom,
+        detail: `${entry.quantite} portion${entry.quantite > 1 ? "s" : ""}`,
+        nutrition: hasNutritionOverride(recette)
+          ? nutritionFromOverride(recette, entry.quantite)
+          : nutritionRecette(recette.recette_ingredients, recette.portions, entry.quantite),
       };
-    }
-
-    const recette = entry.recette!;
-    return {
-      id: entry.id,
-      moment: entry.moment,
-      label: recette.nom,
-      detail: `${entry.quantite} portion${entry.quantite > 1 ? "s" : ""}`,
-      nutrition: hasNutritionOverride(recette)
-        ? nutritionFromOverride(recette, entry.quantite)
-        : nutritionRecette(recette.recette_ingredients, recette.portions, entry.quantite),
-    };
-  });
+    });
 
   const consomme = views.reduce((acc, v) => addNutrition(acc, v.nutrition), zeroNutrition());
   const cible = objectif
