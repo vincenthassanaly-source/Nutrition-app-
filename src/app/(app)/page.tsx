@@ -2,6 +2,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { eyebrow } from "@/lib/ui";
 import { GlobalSearchBar } from "./GlobalSearchBar";
 import { DashboardView } from "./DashboardView";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { makeServerQueryClient } from "@/lib/query/server-client";
 import { queryKeys } from "@/lib/query/keys";
 import { getListes, getTachesAvecRelations, getTags } from "@/app/actions/taches";
@@ -55,7 +56,9 @@ export default async function DashboardPage() {
       <GlobalSearchBar />
 
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <DashboardView today={today} />
+        <PullToRefresh>
+          <DashboardView today={today} />
+        </PullToRefresh>
       </HydrationBoundary>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ToastHost } from "@/components/toast/ToastHost";
+import { useOnlineSync } from "@/lib/offline/useOnlineSync";
 
 // App mono-utilisateur, données modifiées uniquement via ce client : pas
 // besoin de refetch agressif au focus/reconnect. `staleTime` évite un
@@ -32,6 +33,9 @@ function getQueryClient() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(getQueryClient);
+  // Écoute online/offline et rejoue la file d'attente offline (voir
+  // src/lib/offline/) au retour en ligne, pour toute l'app.
+  useOnlineSync();
 
   return (
     <QueryClientProvider client={queryClient}>

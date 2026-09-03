@@ -5,6 +5,8 @@ import { enregistrerEntreeHabitude, type HabitudeDuJour } from "@/app/actions/ha
 import { queryKeys } from "@/lib/query/keys";
 import { showToast } from "@/components/toast/toast-store";
 import { ProgressRing } from "@/components/ProgressRing";
+import { vibrate } from "@/lib/haptics";
+import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 export function DashboardHabitItem({ habitude, date }: { habitude: HabitudeDuJour; date: string }) {
   const queryClient = useQueryClient();
@@ -21,7 +23,16 @@ export function DashboardHabitItem({ habitude, date }: { habitude: HabitudeDuJou
   // sur la même query key : cocher depuis le dashboard ou /habitudes met à
   // jour le même cache.
   const toggleMutation = useMutation({
-    mutationFn: (nouvelleValeur: number) => enregistrerEntreeHabitude(habitude.id, date, nouvelleValeur),
+    mutationFn: async (nouvelleValeur: number) => {
+      vibrate();
+      try {
+        await enregistrerEntreeHabitude(habitude.id, date, nouvelleValeur);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("habitudes", "enregistrerEntreeHabitude", [habitude.id, date, nouvelleValeur]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async (nouvelleValeur) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.habitudes(date) });
       const previous = queryClient.getQueryData<HabitudeDuJour[]>(queryKeys.habitudes(date));

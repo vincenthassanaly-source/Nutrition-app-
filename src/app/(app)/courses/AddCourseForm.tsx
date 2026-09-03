@@ -7,6 +7,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { showToast } from "@/components/toast/toast-store";
 import type { Tables } from "@/lib/supabase/types";
 import { errorText, input, primaryButton } from "@/lib/ui";
+import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 // Ajouter un article est l'action la plus fréquente du module Courses :
 // insertion optimiste immédiate dans la liste (item temporaire, id local),
@@ -18,7 +19,15 @@ export function AddCourseForm({ onDone }: { onDone?: () => void }) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (value: string) => createCourseItem(value),
+    mutationFn: async (value: string) => {
+      try {
+        await createCourseItem(value);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("courses", "createCourseItem", [value]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async (value) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.courses });
       const previous = queryClient.getQueryData<Tables<"courses_items">[]>(queryKeys.courses);

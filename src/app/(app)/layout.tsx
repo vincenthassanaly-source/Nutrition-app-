@@ -18,6 +18,7 @@ export default function AppLayout({
           style={{
             paddingTop: "calc(env(safe-area-inset-top) + 64px)",
             paddingBottom: "calc(env(safe-area-inset-bottom) + 112px)",
+            overscrollBehaviorY: "contain",
           }}
         >
           {children}

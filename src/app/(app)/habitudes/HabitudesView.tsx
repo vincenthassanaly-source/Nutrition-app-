@@ -9,6 +9,7 @@ import { HabitudeCard } from "./HabitudeCard";
 import { HistoriqueView } from "./HistoriqueView";
 import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
 import { errorText } from "@/lib/ui";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 type ViewKey = "aujourdhui" | "historique";
 
@@ -27,6 +28,9 @@ export function HabitudesView({ today }: { today: string }) {
   });
 
   return (
+    <PullToRefresh
+      onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.habitudes(today) })}
+    >
     <div className="flex flex-col gap-4">
       <div className="flex rounded-2xl border border-line bg-surface p-1">
         {VIEWS.map((v) => (
@@ -66,5 +70,6 @@ export function HabitudesView({ today }: { today: string }) {
 
       {view === "historique" && <HistoriqueView habitudes={habitudes} />}
     </div>
+    </PullToRefresh>
   );
 }

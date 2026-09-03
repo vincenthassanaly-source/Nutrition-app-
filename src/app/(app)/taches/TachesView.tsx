@@ -12,6 +12,7 @@ import { TasksList } from "./TasksList";
 import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
 import { Skeleton } from "@/components/skeletons/Skeleton";
 import { errorText, pillTag } from "@/lib/ui";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 const LISTE_ICON = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -60,7 +61,16 @@ export function TachesView() {
     queryClient.invalidateQueries({ queryKey: queryKeys.taches });
   }
 
+  async function handleRefresh() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.taches }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.listes }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags }),
+    ]);
+  }
+
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="flex flex-col gap-4">
       <div className="flex rounded-2xl border border-line bg-surface p-1">
         {VUES.map((v) => (
@@ -122,5 +132,6 @@ export function TachesView() {
         <TasksList taches={filtered} listes={listes} tags={tags} />
       )}
     </div>
+    </PullToRefresh>
   );
 }

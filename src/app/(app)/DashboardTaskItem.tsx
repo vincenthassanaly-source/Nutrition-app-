@@ -5,6 +5,8 @@ import { toggleTache, type TacheAvecRelations } from "@/app/actions/taches";
 import { queryKeys } from "@/lib/query/keys";
 import { showToast } from "@/components/toast/toast-store";
 import { CheckToggle } from "@/components/CheckToggle";
+import { vibrate } from "@/lib/haptics";
+import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 export function DashboardTaskItem({
   id,
@@ -23,7 +25,16 @@ export function DashboardTaskItem({
   // sur la même query key : cocher une tâche depuis le dashboard ou depuis
   // /taches met à jour le même cache, dans les deux sens.
   const toggleMutation = useMutation({
-    mutationFn: () => toggleTache(id),
+    mutationFn: async () => {
+      vibrate();
+      try {
+        await toggleTache(id);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("taches", "toggleTache", [id]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.taches });
       const previous = queryClient.getQueryData<TacheAvecRelations[]>(queryKeys.taches);

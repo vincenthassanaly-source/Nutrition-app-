@@ -10,6 +10,7 @@ import { NoteCard } from "./NoteCard";
 import { AddNoteToggle } from "./AddNoteToggle";
 import { GridSkeleton } from "@/components/skeletons/GridSkeleton";
 import { errorText, input, pillTag, sectionTitle } from "@/lib/ui";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 export function NotesGrid({ defaultOpen }: { defaultOpen?: boolean }) {
   const [search, setSearch] = useState("");
@@ -48,7 +49,15 @@ export function NotesGrid({ defaultOpen }: { defaultOpen?: boolean }) {
   const epinglees = filtered.filter((n) => n.epingle);
   const autres = filtered.filter((n) => !n.epingle);
 
+  async function handleRefresh() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags }),
+    ]);
+  }
+
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <div className="flex flex-col gap-4">
       <AddNoteToggle
         tags={tags}
@@ -122,5 +131,6 @@ export function NotesGrid({ defaultOpen }: { defaultOpen?: boolean }) {
         </>
       )}
     </div>
+    </PullToRefresh>
   );
 }

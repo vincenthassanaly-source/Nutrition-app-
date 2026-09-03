@@ -8,6 +8,9 @@ import { showToast } from "@/components/toast/toast-store";
 import { HabitudeForm } from "./HabitudeForm";
 import { ProgressRing } from "@/components/ProgressRing";
 import { card, dangerButton, ghostButton, input, listCard, metaText, nameText, pillTag } from "@/lib/ui";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
+import { vibrate } from "@/lib/haptics";
+import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; date: string }) {
   const [editing, setEditing] = useState(false);
@@ -27,7 +30,16 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
   // affiché reste celui d'avant le tap le temps du round-trip (recalculé
   // côté serveur, pas approximé ici) — `onSettled` réconcilie.
   const toggleMutation = useMutation({
-    mutationFn: (nouvelleValeur: number) => enregistrerEntreeHabitude(habitude.id, date, nouvelleValeur),
+    mutationFn: async (nouvelleValeur: number) => {
+      vibrate();
+      try {
+        await enregistrerEntreeHabitude(habitude.id, date, nouvelleValeur);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("habitudes", "enregistrerEntreeHabitude", [habitude.id, date, nouvelleValeur]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async (nouvelleValeur) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.habitudes(date) });
       const previous = queryClient.getQueryData<HabitudeDuJour[]>(queryKeys.habitudes(date));
@@ -87,8 +99,22 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
     });
   }
 
+  function archiver() {
+    startTransition(async () => {
+      try {
+        await supprimerHabitude(habitude.id);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("habitudes", "supprimerHabitude", [habitude.id]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+      invalidate();
+    });
+  }
+
   return (
     <li className={listCard}>
+      <SwipeToDelete onDelete={archiver} disabled={isPending} contentClassName="flex flex-col gap-1.5">
       <div className="flex items-start gap-3">
         <ProgressRing size={34} strokeWidth={4} pct={pct} color="var(--accent-habitudes)">
           {habitude.type !== "quantifiee" && (
@@ -145,20 +171,11 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
         <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
           Modifier
         </button>
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() =>
-            startTransition(async () => {
-              await supprimerHabitude(habitude.id);
-              invalidate();
-            })
-          }
-          className={dangerButton}
-        >
+        <button type="button" disabled={isPending} onClick={archiver} className={dangerButton}>
           Archiver
         </button>
       </div>
+      </SwipeToDelete>
     </li>
   );
 }

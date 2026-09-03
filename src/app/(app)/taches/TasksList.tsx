@@ -20,6 +20,9 @@ import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
+import { vibrate } from "@/lib/haptics";
+import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 const AddTaskForm = dynamic(() => import("./AddTaskForm").then((m) => m.AddTaskForm), { ssr: false });
 
@@ -213,7 +216,16 @@ export function TaskCard({
   // récurrence (échéance suivante) reste calculée côté serveur ; on ne
   // l'approxime pas ici, `onSettled` réconcilie avec l'état réel.
   const toggleMutation = useMutation({
-    mutationFn: () => toggleTache(tache.id),
+    mutationFn: async () => {
+      vibrate();
+      try {
+        await toggleTache(tache.id);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("taches", "toggleTache", [tache.id]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.taches });
       const previous = queryClient.getQueryData<TacheAvecRelations[]>(queryKeys.taches);
@@ -230,7 +242,15 @@ export function TaskCard({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteTache(tache.id),
+    mutationFn: async () => {
+      try {
+        await deleteTache(tache.id);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("taches", "deleteTache", [tache.id]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.taches });
       const previous = queryClient.getQueryData<TacheAvecRelations[]>(queryKeys.taches);
@@ -280,6 +300,11 @@ export function TaskCard({
       transition={{ duration: 0.18 }}
       className={listCard}
     >
+      <SwipeToDelete
+        onDelete={() => deleteMutation.mutate()}
+        disabled={deleteMutation.isPending}
+        contentClassName="flex flex-col gap-1.5"
+      >
       <div className="flex items-start gap-3">
         <CheckToggle
           checked={tache.fait}
@@ -391,6 +416,7 @@ export function TaskCard({
           </button>
         </div>
       </div>
+      </SwipeToDelete>
     </motion.li>
   );
 }

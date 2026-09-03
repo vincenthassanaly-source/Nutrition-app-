@@ -9,6 +9,8 @@ import type { Tables } from "@/lib/supabase/types";
 import { dangerButton, errorText, listCard, nameText } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
 import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
+import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
   const queryClient = useQueryClient();
@@ -20,7 +22,15 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
   // Cocher un article est l'action la plus fréquente du module : optimiste,
   // rollback silencieux + toast discret si le serveur échoue.
   const toggleMutation = useMutation({
-    mutationFn: () => toggleCourseItem(item.id, !item.coche),
+    mutationFn: async () => {
+      try {
+        await toggleCourseItem(item.id, !item.coche);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("courses", "toggleCourseItem", [item.id, !item.coche]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.courses });
       const previous = queryClient.getQueryData<Tables<"courses_items">[]>(queryKeys.courses);
@@ -37,7 +47,15 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteCourseItem(item.id),
+    mutationFn: async () => {
+      try {
+        await deleteCourseItem(item.id);
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        await enqueueAction("courses", "deleteCourseItem", [item.id]);
+        showToast("Enregistré, sera synchronisé à la reconnexion");
+      }
+    },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.courses });
       const previous = queryClient.getQueryData<Tables<"courses_items">[]>(queryKeys.courses);
@@ -62,7 +80,11 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
       transition={{ duration: 0.18 }}
       className={listCard}
     >
-      <div className="flex items-center gap-3">
+      <SwipeToDelete
+        onDelete={() => deleteMutation.mutate()}
+        disabled={deleteMutation.isPending}
+        contentClassName="flex items-center gap-3"
+      >
         <CheckToggle
           checked={item.coche}
           disabled={toggleMutation.isPending}
@@ -81,7 +103,7 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
         >
           Suppr.
         </button>
-      </div>
+      </SwipeToDelete>
     </motion.li>
   );
 }
