@@ -12,7 +12,6 @@ import { CheckToggle } from "@/components/CheckToggle";
 import { useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, nameText, pillTag } from "@/lib/ui";
-import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 const NoteForm = dynamic(() => import("./NoteForm").then((m) => m.NoteForm), { ssr: false });
@@ -158,14 +157,9 @@ export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.18 }}
-      className={`${card} mb-3 break-inside-avoid`}
+      className={`${card} mb-3 flex flex-col gap-2 break-inside-avoid`}
       style={noteBackgroundStyle(note.couleur)}
     >
-      <SwipeToDelete
-        onDelete={() => deleteMutation.mutate()}
-        disabled={deleteMutation.isPending}
-        contentClassName="flex flex-col gap-2"
-      >
       <div className="flex items-start justify-between gap-2">
         <p className={nameText}>{note.titre}</p>
         <button
@@ -228,7 +222,6 @@ export function NoteCard({ note, tags }: { note: NoteAvecRelations; tags: Tables
           Suppr.
         </button>
       </div>
-      </SwipeToDelete>
     </motion.li>
   );
 }

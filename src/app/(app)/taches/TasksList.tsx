@@ -20,7 +20,6 @@ import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { vibrate } from "@/lib/haptics";
 import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
@@ -300,11 +299,6 @@ export function TaskCard({
       transition={{ duration: 0.18 }}
       className={listCard}
     >
-      <SwipeToDelete
-        onDelete={() => deleteMutation.mutate()}
-        disabled={deleteMutation.isPending}
-        contentClassName="flex flex-col gap-1.5"
-      >
       <div className="flex items-start gap-3">
         <CheckToggle
           checked={tache.fait}
@@ -416,7 +410,6 @@ export function TaskCard({
           </button>
         </div>
       </div>
-      </SwipeToDelete>
     </motion.li>
   );
 }

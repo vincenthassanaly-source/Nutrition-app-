@@ -9,7 +9,6 @@ import type { Tables } from "@/lib/supabase/types";
 import { dangerButton, errorText, listCard, nameText } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
 import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
-import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
 function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
@@ -80,11 +79,7 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
       transition={{ duration: 0.18 }}
       className={listCard}
     >
-      <SwipeToDelete
-        onDelete={() => deleteMutation.mutate()}
-        disabled={deleteMutation.isPending}
-        contentClassName="flex items-center gap-3"
-      >
+      <div className="flex items-center gap-3">
         <CheckToggle
           checked={item.coche}
           disabled={toggleMutation.isPending}
@@ -103,7 +98,7 @@ function CourseItemRow({ item }: { item: Tables<"courses_items"> }) {
         >
           Suppr.
         </button>
-      </SwipeToDelete>
+      </div>
     </motion.li>
   );
 }

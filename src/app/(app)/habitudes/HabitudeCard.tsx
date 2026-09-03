@@ -8,7 +8,6 @@ import { showToast } from "@/components/toast/toast-store";
 import { HabitudeForm } from "./HabitudeForm";
 import { ProgressRing } from "@/components/ProgressRing";
 import { card, dangerButton, ghostButton, input, listCard, metaText, nameText, pillTag } from "@/lib/ui";
-import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { vibrate } from "@/lib/haptics";
 import { enqueueAction, isNetworkError } from "@/lib/offline/queue";
 
@@ -114,7 +113,6 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
 
   return (
     <li className={listCard}>
-      <SwipeToDelete onDelete={archiver} disabled={isPending} contentClassName="flex flex-col gap-1.5">
       <div className="flex items-start gap-3">
         <ProgressRing size={34} strokeWidth={4} pct={pct} color="var(--accent-habitudes)">
           {habitude.type !== "quantifiee" && (
@@ -175,7 +173,6 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
           Archiver
         </button>
       </div>
-      </SwipeToDelete>
     </li>
   );
 }

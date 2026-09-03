@@ -1,4 +1,14 @@
-# Feedback tactile natif (haptique, swipe, pull-to-refresh) + file d'attente offline
+# Feedback tactile natif (haptique, pull-to-refresh) + file d'attente offline
+
+> **Mise à jour** : le swipe-to-delete (2.2 du prompt initial) a été
+> implémenté puis **retiré** sur retour visuel de Vincent (rendu en usage
+> réel non satisfaisant — voir capture fournie : le fond rouge "Supprimer"
+> restait visible/mal positionné derrière plusieurs cartes à la fois plutôt
+> que de rester caché tant que l'item n'est pas swipé). `SwipeToDelete.tsx`
+> a été supprimé et les 4 listes (Tâches, Notes, Courses, Habitudes) sont
+> revenues à leurs boutons "Suppr."/"Archiver" explicites uniquement, sans
+> geste de swipe. Le reste (haptique, pull-to-refresh, file d'attente
+> offline) est inchangé et reste en place.
 
 ## Fichiers créés
 
@@ -6,17 +16,6 @@
   avec check de support (`"vibrate" in navigator`), no-op silencieux sinon
   (try/catch inclus — certains navigateurs lèvent si l'appel n'est pas
   rattaché à un geste utilisateur direct).
-- **`src/components/SwipeToDelete.tsx`** : gestes tactiles natifs
-  (`touchstart`/`touchmove`/`touchend`, pas de nouvelle dépendance).
-  S'insère à la place du contenu direct d'un item de liste existant (le
-  `<li>`/carte englobant·e garde son fond/bordure/ombre/rayon inchangés) :
-  révèle un bouton "Supprimer" (fond `--accent-alert`) au swipe horizontal
-  vers la gauche, avec un axe de geste déterminé au premier mouvement
-  (vertical → laisse passer le scroll de la liste, horizontal → anime le
-  contenu). `vibrate(12)` au franchissement du seuil (64px), `vibrate(15)`
-  au tap sur "Supprimer". Prop `contentClassName` pour reporter le layout
-  flex du contenu d'origine (qui vivait sur le conteneur englobant) sur le
-  conteneur qui glisse.
 - **`src/components/PullToRefresh.tsx`** : détecte un tiré vers le bas
   quand le conteneur scrollable ancêtre (trouvé en remontant les parents
   jusqu'à `overflow-y: auto|scroll`, `main` en pratique) est en haut de
@@ -52,15 +51,15 @@
 `DashboardTaskItem.tsx`, `TasksList.tsx` (`TaskCard`), `DashboardHabitItem.tsx`,
 `HabitudeCard.tsx`. Pas ajouté sur le cochage d'un article de courses ni
 d'un item de checklist de note (hors scope explicite du prompt — seuls
-tâches et habitudes sont listées).
+tâches et habitudes sont listées). Le `vibrate()` prévu sur la confirmation
+de suppression (swipe) n'a plus de point d'appel depuis le retrait du
+swipe-to-delete.
 
-**Swipe-to-delete (2.2)** — `SwipeToDelete` intégré dans les 4 listes
-demandées : `TasksList.tsx` (`TaskCard`), `notes/NoteCard.tsx`,
-`courses/CoursesList.tsx` (`CourseItemRow`), `habitudes/HabitudeCard.tsx`
-(archive plutôt que suppression, cohérent avec le comportement existant du
-module). Les boutons "Suppr."/"Archiver" explicites sont conservés en plus
-du swipe : le swipe n'est pas découvrable par un lecteur d'écran ni au
-clavier, le bouton reste le chemin accessible.
+**Swipe-to-delete (2.2)** — implémenté puis retiré, voir note en tête de
+rapport. `SwipeToDelete.tsx` supprimé ; `TasksList.tsx`, `notes/NoteCard.tsx`,
+`courses/CoursesList.tsx`, `habitudes/HabitudeCard.tsx` reviennent à leur
+structure d'avant ce prompt (mutations de suppression/haptique/offline
+queue conservées, juste le wrapping de swipe retiré).
 
 **Pull-to-refresh (2.3)** — intégré sur les 5 pages demandées :
 - `src/app/(app)/page.tsx` (dashboard) : `PullToRefresh` enveloppe
@@ -123,15 +122,15 @@ l'indicateur custom.
 - **Vérification interactive limitée dans cette session** : l'environnement
   d'exécution bloque l'accès réseau sortant vers le projet Supabase
   (`Host not in allowlist`), donc aucune liste réelle (tâches/notes/
-  courses/habitudes) n'a pu être chargée pour tester le swipe/pull en
+  courses/habitudes) n'a pu être chargée pour tester le pull-to-refresh en
   conditions réelles dans le navigateur headless de cette session. `tsc`,
   `eslint` et `next build` passent tous sans erreur, et les 5 pages se
   chargent sans erreur JS ; la simulation de gestes tactiles via CDP s'est
   montrée peu fiable dans ce sandbox headless (touchstart atteint parfois
-  les handlers React, touchmove non observé de façon reproductible). Un
-  test manuel sur un vrai appareil (ou au moins dans Chrome DevTools avec
-  émulation tactile) est recommandé avant de considérer le swipe et le
-  pull-to-refresh entièrement validés visuellement.
+  les handlers React, touchmove non observé de façon reproductible). C'est
+  d'ailleurs ce qui a empêché de repérer le problème visuel du swipe avant
+  le retour de Vincent sur mobile réel — un test manuel sur un vrai
+  appareil reste recommandé pour le pull-to-refresh également.
 
 ## Points de vigilance pour la suite
 
@@ -154,9 +153,6 @@ l'indicateur custom.
   Sans impact fonctionnel ici (les actions couvertes sont idempotentes ou
   sans effet cumulatif), mais à garder en tête si la file est étendue à
   des actions non idempotentes.
-- **`SwipeToDelete` et accessibilité** : le geste n'est pas exposé aux
-  technologies d'assistance ; les boutons de suppression explicites
-  existants ont été conservés pour cette raison plutôt que remplacés.
 - **Dexie et `output: "export"` / SSR** : `db.ts`/`queue.ts` sont chargés
   uniquement côté client (`"use client"`, appelés depuis des gestionnaires
   d'événements ou `useEffect`) — pas de risque d'exécution côté serveur,
