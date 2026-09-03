@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,11 +16,12 @@ import {
 } from "@/app/actions/taches";
 import { queryKeys } from "@/lib/query/keys";
 import { showToast } from "@/components/toast/toast-store";
-import { AddTaskForm } from "./AddTaskForm";
 import type { Enums, Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, listCard, metaText, pillTag } from "@/lib/ui";
 import { CheckToggle } from "@/components/CheckToggle";
 import { ImageLightbox } from "@/components/ImageLightbox";
+
+const AddTaskForm = dynamic(() => import("./AddTaskForm").then((m) => m.AddTaskForm), { ssr: false });
 
 export function formatEcheance(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("fr-FR", {

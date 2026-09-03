@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useState, useTransition } from "react";
-import { RecetteForm } from "../RecetteForm";
 import { deleteRecette } from "@/app/actions/recettes";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, errorText, ghostButton, linkButton } from "@/lib/ui";
+
+const RecetteForm = dynamic(() => import("../RecetteForm").then((m) => m.RecetteForm), { ssr: false });
 
 const SOURCE_LABEL: Record<string, string> = {
   manuel: "Manuel",

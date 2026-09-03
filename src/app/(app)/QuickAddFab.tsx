@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
-import { AddTaskForm } from "./taches/AddTaskForm";
-import { NoteForm } from "./notes/NoteForm";
 import { AddCourseForm } from "./courses/AddCourseForm";
 import { Modal } from "@/components/Modal";
 import { goBackSteps, useBackClose } from "@/hooks/useBackClose";
 import { queryKeys } from "@/lib/query/keys";
 import type { Tables } from "@/lib/supabase/types";
+
+const AddTaskForm = dynamic(() => import("./taches/AddTaskForm").then((m) => m.AddTaskForm), {
+  ssr: false,
+});
+const NoteForm = dynamic(() => import("./notes/NoteForm").then((m) => m.NoteForm), { ssr: false });
 
 type Mode = null | "menu" | "tache" | "note" | "course";
 

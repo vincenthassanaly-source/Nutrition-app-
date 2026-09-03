@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   addDays,
   addMonths,
@@ -13,7 +14,6 @@ import {
 } from "date-fns";
 import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
-import { AddTaskForm } from "../taches/AddTaskForm";
 import { Modal } from "@/components/Modal";
 import { useBackClose } from "@/hooks/useBackClose";
 import { DayView } from "./DayView";
@@ -21,6 +21,10 @@ import { WeekView } from "./WeekView";
 import { MonthView } from "./MonthView";
 import { ListView } from "./ListView";
 import { toISODate } from "./date-utils";
+
+const AddTaskForm = dynamic(() => import("../taches/AddTaskForm").then((m) => m.AddTaskForm), {
+  ssr: false,
+});
 
 type ViewKey = "jour" | "semaine" | "mois" | "liste";
 

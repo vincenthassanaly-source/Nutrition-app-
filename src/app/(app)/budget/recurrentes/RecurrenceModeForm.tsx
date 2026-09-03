@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { RecurrenceAvecRelations } from "@/app/actions/transactions-recurrentes";
 import type { CompteAvecSolde } from "@/app/actions/comptes";
 import type { Tables } from "@/lib/supabase/types";
-import { RecurrenceForm } from "./RecurrenceForm";
 import { RecurrenceVirementForm } from "./RecurrenceVirementForm";
+
+const RecurrenceForm = dynamic(() => import("./RecurrenceForm").then((m) => m.RecurrenceForm), {
+  ssr: false,
+});
 
 type Mode = "depense" | "revenu" | "virement";
 

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { NoteForm } from "./NoteForm";
+import dynamic from "next/dynamic";
 import { useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
+
+const NoteForm = dynamic(() => import("./NoteForm").then((m) => m.NoteForm), { ssr: false });
 
 export function AddNoteToggle({
   tags,

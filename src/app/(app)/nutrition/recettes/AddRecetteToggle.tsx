@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { RecetteForm } from "./RecetteForm";
+import dynamic from "next/dynamic";
 import { card, dashedAddButton } from "@/lib/ui";
+
+const RecetteForm = dynamic(() => import("./RecetteForm").then((m) => m.RecetteForm), { ssr: false });
 
 export function AddRecetteToggle() {
   const [open, setOpen] = useState(false);

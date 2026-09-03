@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { AddTaskForm } from "./AddTaskForm";
+import dynamic from "next/dynamic";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dashedAddButton } from "@/lib/ui";
+
+const AddTaskForm = dynamic(() => import("./AddTaskForm").then((m) => m.AddTaskForm), { ssr: false });
 
 export function AddTaskToggle({
   listes,

@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteNote, toggleEpingle, toggleNoteItem, type NoteAvecRelations } from "@/app/actions/notes";
 import { queryKeys } from "@/lib/query/keys";
 import { showToast } from "@/components/toast/toast-store";
-import { NoteForm } from "./NoteForm";
 import { noteBackgroundStyle } from "@/lib/notes/palette";
 import { CheckToggle } from "@/components/CheckToggle";
 import { useBackClose } from "@/hooks/useBackClose";
 import type { Tables } from "@/lib/supabase/types";
 import { card, dangerButton, ghostButton, nameText, pillTag } from "@/lib/ui";
+
+const NoteForm = dynamic(() => import("./NoteForm").then((m) => m.NoteForm), { ssr: false });
 
 const ITEMS_PREVIEW_LIMIT = 6;
 
