@@ -119,6 +119,12 @@ export function AddTaskForm({
     textarea.style.height = Math.min(textarea.scrollHeight, TITRE_MAX_HEIGHT_PX) + "px";
   }, [titre]);
 
+  // Autofocus uniquement en création : ne vole pas le focus quand le formulaire sert à éditer une tâche existante.
+  useEffect(() => {
+    if (!tache) titreRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ne doit s'exécuter qu'au montage
+  }, []);
+
   function toggleTag(id: string) {
     setTagIds((ids) => (ids.includes(id) ? ids.filter((t) => t !== id) : [...ids, id]));
   }
