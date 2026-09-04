@@ -2,15 +2,28 @@
 
 import { useState } from "react";
 import { AddCategorieForm } from "./AddCategorieForm";
-import { card, dashedAddButton } from "@/lib/ui";
+import { addCard, addCardIcon, card } from "@/lib/ui";
 
 export function AddCategorieToggle() {
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={dashedAddButton}>
-        + Ajouter une catégorie
+      <button type="button" onClick={() => setOpen(true)} className={addCard}>
+        <div
+          className={addCardIcon}
+          style={{
+            background:
+              "linear-gradient(150deg, color-mix(in oklch, var(--color-kcal) 85%, white 15%), var(--color-kcal))",
+            boxShadow: "0 3px 8px color-mix(in oklch, var(--color-kcal) 45%, transparent)",
+          }}
+        >
+          +
+        </div>
+        <div className="flex flex-col gap-[1px]">
+          <span className="font-display text-[14.5px] font-bold tracking-tight text-ink">Ajouter une catégorie</span>
+          <span className="text-xs font-medium text-ink-3">Nouvelle catégorie</span>
+        </div>
       </button>
     );
   }

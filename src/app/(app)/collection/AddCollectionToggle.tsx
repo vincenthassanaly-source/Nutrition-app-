@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createCollection, type CollectionFormState } from "@/app/actions/collections";
 import { useBackClose } from "@/hooks/useBackClose";
-import { card, dashedAddButton, errorText, input, primaryButton } from "@/lib/ui";
+import { addCard, addCardIcon, card, errorText, input, primaryButton } from "@/lib/ui";
 
 const initialState: CollectionFormState = { error: null };
 
@@ -22,8 +22,21 @@ export function AddCollectionToggle() {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={dashedAddButton}>
-        + Nouvelle collection
+      <button type="button" onClick={() => setOpen(true)} className={addCard}>
+        <div
+          className={addCardIcon}
+          style={{
+            background:
+              "linear-gradient(150deg, color-mix(in oklch, var(--color-kcal) 85%, white 15%), var(--color-kcal))",
+            boxShadow: "0 3px 8px color-mix(in oklch, var(--color-kcal) 45%, transparent)",
+          }}
+        >
+          +
+        </div>
+        <div className="flex flex-col gap-[1px]">
+          <span className="font-display text-[14.5px] font-bold tracking-tight text-ink">Nouvelle collection</span>
+          <span className="text-xs font-medium text-ink-3">Nouveau classeur</span>
+        </div>
       </button>
     );
   }

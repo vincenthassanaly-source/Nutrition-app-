@@ -18,8 +18,10 @@ export const primaryButton =
   "rounded-2xl bg-kcal px-4 py-2.5 font-semibold text-white transition-opacity disabled:opacity-60";
 export const secondaryButton =
   "rounded-2xl border border-line bg-surface px-4 py-2.5 font-semibold text-ink transition-colors disabled:opacity-60";
-export const dashedAddButton =
-  "w-full rounded-2xl border-[1.5px] border-dashed border-kcal/50 py-3 font-semibold text-kcal transition-colors hover:bg-kcal-soft";
+export const addCard =
+  "flex w-full items-center gap-[13px] rounded-[22px] border border-line bg-surface p-4 shadow-card text-left transition-transform active:scale-[0.99]";
+export const addCardIcon =
+  "flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[13px] text-white text-lg font-semibold";
 
 export const ghostButton =
   "rounded-xl border border-line px-2.5 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-alt";

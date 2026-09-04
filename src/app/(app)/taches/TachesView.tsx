@@ -11,7 +11,7 @@ import { AddTaskToggle } from "./AddTaskToggle";
 import { TasksList } from "./TasksList";
 import { ListItemSkeletonGroup } from "@/components/skeletons/ListItemSkeleton";
 import { Skeleton } from "@/components/skeletons/Skeleton";
-import { errorText, pillTag } from "@/lib/ui";
+import { errorText } from "@/lib/ui";
 import { PullToRefresh } from "@/components/PullToRefresh";
 
 const LISTE_ICON = (
@@ -92,25 +92,31 @@ export function TachesView() {
           href="/taches/listes"
           aria-label="Gérer les listes"
           title="Gérer les listes"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-2 transition-colors hover:bg-surface-alt"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-2 transition-colors hover:bg-surface-alt"
         >
           {LISTE_ICON}
         </Link>
         <button
           type="button"
           onClick={() => setListeId("toutes")}
-          className={listeId === "toutes" ? `${pillTag} bg-kcal/10 text-kcal` : pillTag}
+          className={`flex shrink-0 items-center gap-[7px] whitespace-nowrap rounded-2xl border px-3.5 py-2.5 shadow-card transition-colors ${
+            listeId === "toutes" ? "border-kcal bg-kcal-soft" : "border-line bg-surface"
+          }`}
         >
-          Toutes les listes
+          <span className="h-[9px] w-[9px] rounded-full" style={{ background: "var(--color-kcal)" }} />
+          <span className="text-[13.5px] font-semibold text-ink">Toutes</span>
         </button>
         {listes.map((liste) => (
           <button
             key={liste.id}
             type="button"
             onClick={() => setListeId(liste.id)}
-            className={listeId === liste.id ? `${pillTag} bg-kcal/10 text-kcal` : pillTag}
+            className={`flex shrink-0 items-center gap-[7px] whitespace-nowrap rounded-2xl border px-3.5 py-2.5 shadow-card transition-colors ${
+              listeId === liste.id ? "border-kcal bg-kcal-soft" : "border-line bg-surface"
+            }`}
           >
-            {liste.nom}
+            <span className="h-[9px] w-[9px] rounded-full" style={{ background: liste.couleur ?? "var(--color-kcal)" }} />
+            <span className="text-[13.5px] font-semibold text-ink">{liste.nom}</span>
           </button>
         ))}
       </div>
