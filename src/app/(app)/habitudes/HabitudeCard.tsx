@@ -98,7 +98,7 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
     });
   }
 
-  function archiver() {
+  function supprimer() {
     startTransition(async () => {
       try {
         await supprimerHabitude(habitude.id);
@@ -169,8 +169,8 @@ export function HabitudeCard({ habitude, date }: { habitude: HabitudeDuJour; dat
         <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
           Modifier
         </button>
-        <button type="button" disabled={isPending} onClick={archiver} className={dangerButton}>
-          Archiver
+        <button type="button" disabled={isPending} onClick={supprimer} className={dangerButton}>
+          Supprimer
         </button>
       </div>
     </li>

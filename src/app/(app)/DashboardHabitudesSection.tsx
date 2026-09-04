@@ -13,7 +13,7 @@ export function DashboardHabitudesSection({ today }: { today: string }) {
   });
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="mt-4 flex flex-col gap-2.5">
       <span className="px-0.5 text-[14px] font-semibold text-ink">Habitudes</span>
       {isLoading ? (
         <div className="flex gap-3 overflow-x-hidden pb-0.5">
