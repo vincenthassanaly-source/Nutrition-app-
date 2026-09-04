@@ -151,9 +151,42 @@ textarea::placeholder {
   animation: agenda-glisse-depuis-gauche 220ms ease-out both;
 }
 
+/* Crossfade global de la View Transitions API entre deux pages (navigation
+   bottom nav / <Link> internes, voir useViewTransitionNavigate.ts). Portée
+   volontairement simple : fondu de toute la racine, pas de shared-element
+   nommé. Durée cohérente avec les ~220ms des agenda-glisse-* ci-dessus. */
+::view-transition-old(root) {
+  animation: kilio-fondu-sortie 180ms ease-out both;
+}
+::view-transition-new(root) {
+  animation: kilio-fondu-entree 200ms ease-out both;
+}
+@keyframes kilio-fondu-sortie {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes kilio-fondu-entree {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .agenda-glisse-suivant,
   .agenda-glisse-precedent {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
     animation-duration: 0.01ms !important;
     animation-delay: 0s !important;
   }

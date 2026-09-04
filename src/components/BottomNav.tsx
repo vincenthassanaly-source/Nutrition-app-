@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
+import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
 
 const ACCUEIL_ICON = (c: string) => (
   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -50,6 +51,17 @@ const ITEMS: { href: string; label: string; icon: (color: string) => ReactNode; 
 
 export function BottomNav() {
   const pathname = usePathname();
+  const navigate = useViewTransitionNavigate();
+
+  function handleClick(e: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Ne bloque la navigation native de <Link> (et son prefetch) que si
+    // l'API View Transitions est disponible : sinon on laisse Next.js gérer
+    // la navigation comme avant, sans rien casser sur Safari/Firefox.
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      e.preventDefault();
+      navigate(href);
+    }
+  }
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+14px)]">
@@ -61,6 +73,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={(e) => handleClick(e, item.href)}
               className="flex flex-col items-center gap-0.5 rounded-[18px] px-3 py-[7px] transition-colors"
               style={{ background: active ? "var(--accent-kcal-soft)" : "transparent" }}
             >

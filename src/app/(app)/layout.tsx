@@ -1,6 +1,7 @@
 import { BottomNav } from "@/components/BottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Providers } from "@/app/providers";
+import { TabSwipeWrapper } from "@/components/TabSwipeWrapper";
 
 export default function AppLayout({
   children,
@@ -13,16 +14,7 @@ export default function AppLayout({
         <div className="fixed right-4 z-40" style={{ top: "calc(env(safe-area-inset-top) + 14px)" }}>
           <ThemeToggle />
         </div>
-        <main
-          className="flex-1 overflow-x-hidden overflow-y-auto px-4"
-          style={{
-            paddingTop: "calc(env(safe-area-inset-top) + 64px)",
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 112px)",
-            overscrollBehaviorY: "contain",
-          }}
-        >
-          {children}
-        </main>
+        <TabSwipeWrapper>{children}</TabSwipeWrapper>
         <BottomNav />
       </div>
     </Providers>
