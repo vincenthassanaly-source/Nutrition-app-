@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AddCourseForm } from "./courses/AddCourseForm";
 import { Modal } from "@/components/Modal";
 import { goBackSteps, useBackClose } from "@/hooks/useBackClose";
+import { getListes, getTags } from "@/app/actions/taches";
 import { queryKeys } from "@/lib/query/keys";
-import type { Tables } from "@/lib/supabase/types";
 
 const AddTaskForm = dynamic(() => import("./taches/AddTaskForm").then((m) => m.AddTaskForm), {
   ssr: false,
@@ -16,15 +16,14 @@ const NoteForm = dynamic(() => import("./notes/NoteForm").then((m) => m.NoteForm
 
 type Mode = null | "menu" | "tache" | "note" | "course";
 
-export function QuickAddFab({
-  listes,
-  tags,
-}: {
-  listes: Tables<"listes_taches">[];
-  tags: Tables<"tags">[];
-}) {
+// listes/tags ne servent qu'une fois un formulaire ouvert : fetch client
+// pur, non préchargé côté serveur, pour ne jamais retarder l'affichage des
+// cartes principales du dashboard (voir reports/2026-09-04-dashboard-streaming-par-section.md).
+export function QuickAddFab() {
   const [mode, setMode] = useState<Mode>(null);
   const queryClient = useQueryClient();
+  const { data: listes = [] } = useQuery({ queryKey: queryKeys.listes, queryFn: getListes });
+  const { data: tags = [] } = useQuery({ queryKey: queryKeys.tags, queryFn: getTags });
 
   // The dial's history entry stays pushed for as long as *anything* is
   // open (menu or form) so a single back press from a form lands on the

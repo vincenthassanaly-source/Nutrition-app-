@@ -1,0 +1,23 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { makeServerQueryClient } from "@/lib/query/server-client";
+import { queryKeys } from "@/lib/query/keys";
+import { getResumeNutritionJour } from "@/app/actions/journal";
+import { DashboardNutritionSection } from "./DashboardNutritionSection";
+
+// Server Component async indépendant : ne précharge que la query nutrition
+// (voir reports/2026-09-04-dashboard-streaming-par-section.md). Le
+// <Suspense> englobant dans DashboardView.tsx laisse cette section
+// apparaître dès que sa requête est prête, sans attendre les autres cartes.
+export async function DashboardNutritionCard({ today }: { today: string }) {
+  const queryClient = makeServerQueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.objectifNutritionnel("repos"),
+    queryFn: () => getResumeNutritionJour(today, "repos"),
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DashboardNutritionSection today={today} />
+    </HydrationBoundary>
+  );
+}
