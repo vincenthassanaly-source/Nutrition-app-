@@ -87,7 +87,7 @@ export function TachesView() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1" data-swipe-ignore>
         <Link
           href="/taches/listes"
           aria-label="Gérer les listes"
