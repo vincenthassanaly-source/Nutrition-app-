@@ -48,7 +48,7 @@ export function ArchivedTasksSection({
             <ul className="mt-2.5 flex flex-col gap-2.5">
               <AnimatePresence initial={false}>
                 {taches.map((tache) => (
-                  <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+                  <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} colorByListe />
                 ))}
               </AnimatePresence>
             </ul>

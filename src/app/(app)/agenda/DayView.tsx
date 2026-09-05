@@ -150,7 +150,7 @@ export function DayView({
       ) : (
         <ul className="flex flex-col gap-2.5">
           {dayTaches.map((tache) => (
-            <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+            <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} colorByListe />
           ))}
         </ul>
       )}

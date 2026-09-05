@@ -56,7 +56,7 @@ export function ListView({
             </h2>
             <ul className="flex flex-col gap-2.5">
               {dayTaches.map((tache) => (
-                <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+                <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} colorByListe />
               ))}
             </ul>
           </div>
@@ -68,7 +68,7 @@ export function ListView({
           <h2 className={sectionTitle}>Sans date</h2>
           <ul className="flex flex-col gap-2.5">
             {withoutDate.map((tache) => (
-              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} colorByListe />
             ))}
           </ul>
         </div>

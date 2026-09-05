@@ -65,6 +65,17 @@ function couleurStyle(couleur: string | null): React.CSSProperties | undefined {
   return { backgroundColor: `${couleur}1a`, color: couleur };
 }
 
+// Accent de carte par couleur de liste (Agenda uniquement, cf. prop
+// `colorByListe` de TaskCard) : fond très clair (même opacité que
+// couleurStyle) + bordure plus marquée pour se distinguer du fond d'écran
+// en thème sombre, sans écraser les classes `listCard` (forme/ombre).
+// Pas de couleur de liste (ex. "Général") -> undefined, on garde le
+// `bg-surface`/`border-line` par défaut de `listCard`.
+function carteAccentStyle(couleur: string | null | undefined): React.CSSProperties | undefined {
+  if (!couleur) return undefined;
+  return { backgroundColor: `${couleur}1a`, borderColor: `${couleur}4d` };
+}
+
 // Poignée de drag dédiée (6 points), plutôt qu'une carte entière
 // "appui long" comme les tuiles de la page d'accueil : sur une LISTE
 // VERTICALE, le geste de drag (déplacer haut/bas) est sur le même axe que
@@ -226,6 +237,7 @@ export function TaskCard({
   listes,
   tags,
   reorderable = false,
+  colorByListe = false,
 }: {
   tache: TacheAvecRelations;
   listes: Tables<"listes_taches">[];
@@ -240,6 +252,12 @@ export function TaskCard({
   // `Context` par défaut), donc sans effet ni erreur pour les usages
   // statiques (archivées, agenda).
   reorderable?: boolean;
+  // Teinte le fond/la bordure de la carte avec la couleur de la liste de la
+  // tâche (cf. couleurStyle) : uniquement utilisé par les 3 vues Agenda
+  // (DayView, ListView, ArchivedTasksSection), où le fond des cartes se
+  // confondait avec celui de l'écran en thème sombre. La page /taches garde
+  // son rendu neutre habituel (valeur par défaut `false`).
+  colorByListe?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -431,6 +449,8 @@ export function TaskCard({
     </>
   );
 
+  const accentStyle = colorByListe ? carteAccentStyle(tache.liste?.couleur) : undefined;
+
   // Sans `reorderable` (tâches archivées, ou vue filtrée où le drag est
   // désactivé — voir TasksList) : carte statique, motion.li porte lui-même
   // l'animation d'entrée/sortie/layout.
@@ -443,6 +463,7 @@ export function TaskCard({
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.18 }}
         className={listCard}
+        style={accentStyle}
       >
         {content}
       </motion.li>
@@ -471,6 +492,7 @@ export function TaskCard({
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.18 }}
         className={listCard}
+        style={accentStyle}
       >
         {content}
       </motion.div>
