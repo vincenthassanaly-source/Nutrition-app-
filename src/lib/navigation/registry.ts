@@ -115,16 +115,45 @@ const REGLAGES_ICON = (c: string) =>
     })
   );
 
-// Ordre canonique : les 4 modules primaires (barre du bas par défaut) puis
-// les 7 modules secondaires (grille "Plus" par défaut). L'ordre réel affiché
-// à Vincent est piloté par preferences_navigation, résolu par
+// Ordre canonique : les 4 modules primaires (épinglés en barre du bas par
+// défaut) puis les 7 modules secondaires. La grille "Plus" liste TOUJOURS
+// les 11 items (voir resolveOrdreGrillePlus dans
+// src/app/actions/preferences-navigation.ts) : un module reste accessible
+// depuis /plus même s'il est aussi épinglé en barre du bas, pour ne jamais
+// perdre l'accès à un module qu'on aurait délogé de la barre du bas (ex.
+// Nutrition ou Habitudes remplacées par un autre module épinglé). L'ordre
+// réel affiché à Vincent est piloté par preferences_navigation, résolu par
 // resolveOrdreGrillePlus / resolveModulesBarreBasse dans
 // src/app/actions/preferences-navigation.ts.
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Accueil", icon: ACCUEIL_ICON, accentVar: "var(--accent-kcal)" },
-  { href: "/nutrition", label: "Nutrition", icon: NUTRITION_ICON, accentVar: "var(--accent-kcal)" },
-  { href: "/taches", label: "Tâches", icon: TACHES_ICON, accentVar: "var(--accent-kcal)" },
-  { href: "/habitudes", label: "Habitudes", icon: HABITUDES_ICON, accentVar: "var(--accent-kcal)" },
+  {
+    href: "/",
+    label: "Accueil",
+    description: "Tableau de bord du jour",
+    icon: ACCUEIL_ICON,
+    accentVar: "var(--accent-kcal)",
+  },
+  {
+    href: "/nutrition",
+    label: "Nutrition",
+    description: "Journal alimentaire et macros",
+    icon: NUTRITION_ICON,
+    accentVar: "var(--accent-kcal)",
+  },
+  {
+    href: "/taches",
+    label: "Tâches",
+    description: "Listes de tâches et sous-tâches",
+    icon: TACHES_ICON,
+    accentVar: "var(--accent-kcal)",
+  },
+  {
+    href: "/habitudes",
+    label: "Habitudes",
+    description: "Suivi quotidien de tes habitudes",
+    icon: HABITUDES_ICON,
+    accentVar: "var(--accent-kcal)",
+  },
   {
     href: "/agenda",
     label: "Agenda",

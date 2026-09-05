@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/skeletons/Skeleton";
+import { NAV_ITEMS } from "@/lib/navigation/registry";
 import { card, screenTitle } from "@/lib/ui";
 
 export default function PlusLoading() {
@@ -6,7 +7,7 @@ export default function PlusLoading() {
     <div className="flex flex-col gap-4">
       <h1 className={screenTitle}>Plus</h1>
       <div className="grid grid-cols-2 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: NAV_ITEMS.length }).map((_, i) => (
           <div key={i} className={`${card} flex flex-col gap-2.5`}>
             <Skeleton className="h-10 w-10 rounded-xl" />
             <div className="flex flex-col gap-1.5">

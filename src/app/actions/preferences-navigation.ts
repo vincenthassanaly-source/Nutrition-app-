@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_MODULES_BARRE_BASSE, NAV_ITEMS } from "@/lib/navigation/registry";
-import { MODULES } from "@/lib/modules";
 import type { Tables } from "@/lib/supabase/types";
 
 // Table singleton : une seule ligne, id fixé à 1 (voir
@@ -24,12 +23,17 @@ async function getPreferencesNavigation(): Promise<PreferencesNavigation> {
   return data;
 }
 
-// Toute entrée de MODULES absente du tableau enregistré (nouveau module
-// ajouté plus tard au registre) s'affiche en fin de grille par défaut.
+// La grille "Plus" liste TOUJOURS tous les items du registre (y compris les
+// 4 modules primaires épinglables en barre du bas) : un module reste
+// accessible depuis /plus même quand il est aussi épinglé en barre du bas,
+// et surtout même quand un module normalement épinglé par défaut (ex.
+// Nutrition, Habitudes) en a été délogé par un autre. Toute entrée absente
+// du tableau enregistré (nouveau module ajouté plus tard au registre, ou
+// tableau enregistré avant ce changement) s'affiche en fin de grille.
 function resolveOrdreGrillePlus(saved: string[]): string[] {
-  const hrefsConnus = new Set(MODULES.map((m) => m.href));
+  const hrefsConnus = new Set(NAV_ITEMS.map((item) => item.href));
   const sauvegardeFiltree = saved.filter((href) => hrefsConnus.has(href));
-  const manquants = MODULES.map((m) => m.href).filter((href) => !sauvegardeFiltree.includes(href));
+  const manquants = NAV_ITEMS.map((item) => item.href).filter((href) => !sauvegardeFiltree.includes(href));
   return [...sauvegardeFiltree, ...manquants];
 }
 

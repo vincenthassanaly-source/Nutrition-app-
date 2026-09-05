@@ -5,12 +5,12 @@ import type { CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MODULES } from "@/lib/modules";
+import { findNavItem } from "@/lib/navigation/registry";
 import { useNavigationEdit } from "@/lib/navigation/NavigationEditContext";
 import { card } from "@/lib/ui";
 
 function ModuleTile({ href, isEditing }: { href: string; isEditing: boolean }) {
-  const mod = MODULES.find((m) => m.href === href);
+  const mod = findNavItem(href);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: href });
 
   if (!mod) return null;
