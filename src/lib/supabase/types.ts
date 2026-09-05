@@ -147,33 +147,6 @@ export type Database = {
           },
         ]
       }
-      comptes: {
-        Row: {
-          created_at: string
-          id: string
-          nom: string
-          solde_initial: number
-          type: Database["public"]["Enums"]["type_compte"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          nom: string
-          solde_initial?: number
-          type?: Database["public"]["Enums"]["type_compte"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          nom?: string
-          solde_initial?: number
-          type?: Database["public"]["Enums"]["type_compte"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       collection_items: {
         Row: {
           collection_id: string
@@ -232,6 +205,33 @@ export type Database = {
           id?: string
           nom?: string
           ordre?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      comptes: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          solde_initial: number
+          type: Database["public"]["Enums"]["type_compte"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          solde_initial?: number
+          type?: Database["public"]["Enums"]["type_compte"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          solde_initial?: number
+          type?: Database["public"]["Enums"]["type_compte"]
           updated_at?: string
         }
         Relationships: []
@@ -675,6 +675,27 @@ export type Database = {
           kcal_cible?: number
           lipides_cible_g?: number
           proteines_cible_g?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      preferences_navigation: {
+        Row: {
+          id: number
+          modules_barre_basse: string[]
+          ordre_grille_plus: string[]
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          modules_barre_basse?: string[]
+          ordre_grille_plus?: string[]
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          modules_barre_basse?: string[]
+          ordre_grille_plus?: string[]
           updated_at?: string
         }
         Relationships: []

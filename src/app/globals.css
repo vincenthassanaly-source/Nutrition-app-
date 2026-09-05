@@ -178,6 +178,25 @@ textarea::placeholder {
   }
 }
 
+/* Tremblement façon iOS des tuiles de la grille "Plus" en mode édition (voir
+   ModulesGrid.tsx) : deux variantes de rotation légèrement différentes,
+   alternées par tuile (nth-child pair/impair) pour éviter que toute la
+   grille tremble parfaitement en phase. */
+@keyframes plus-tuile-tremble-a {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
+}
+@keyframes plus-tuile-tremble-b {
+  0%, 100% { transform: rotate(1deg); }
+  50% { transform: rotate(-1deg); }
+}
+.plus-tuile-edition:nth-child(odd) {
+  animation: plus-tuile-tremble-a 160ms ease-in-out infinite;
+}
+.plus-tuile-edition:nth-child(even) {
+  animation: plus-tuile-tremble-b 160ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .agenda-glisse-suivant,
   .agenda-glisse-precedent {
@@ -189,5 +208,10 @@ textarea::placeholder {
   ::view-transition-new(root) {
     animation-duration: 0.01ms !important;
     animation-delay: 0s !important;
+  }
+
+  .plus-tuile-edition:nth-child(odd),
+  .plus-tuile-edition:nth-child(even) {
+    animation: none !important;
   }
 }
