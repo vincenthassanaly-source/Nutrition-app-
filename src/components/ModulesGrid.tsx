@@ -19,7 +19,13 @@ function ModuleTile({ href, isEditing }: { href: string; isEditing: boolean }) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0 : 1,
-    touchAction: "none",
+    // "none" bloquerait le scroll vertical de la page dès qu'un doigt touche
+    // une tuile (touch-action est tranché par le navigateur au premier
+    // contact, indépendamment du délai JS de l'activationConstraint de
+    // PointerSensor) : "manipulation" laisse le scroll natif fonctionner
+    // normalement, tout en laissant l'appui long (400ms sans déplacement,
+    // voir NavigationEditContext) déclencher le drag.
+    touchAction: "manipulation",
   };
 
   const content = (
