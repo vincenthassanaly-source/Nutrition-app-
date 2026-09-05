@@ -405,7 +405,7 @@ export async function reordonnerTaches(id: string, direction: "haut" | "bas") {
 
   const { data: courante, error: fetchError } = await supabase
     .from("taches")
-    .select("liste_id")
+    .select("liste_id, fait")
     .eq("id", id)
     .single();
   if (fetchError) throw new Error(fetchError.message);
@@ -414,6 +414,7 @@ export async function reordonnerTaches(id: string, direction: "haut" | "bas") {
     .from("taches")
     .select("id, ordre")
     .eq("liste_id", courante.liste_id)
+    .eq("fait", courante.fait)
     .order("ordre", { ascending: true });
 
   if (error) throw new Error(error.message);
