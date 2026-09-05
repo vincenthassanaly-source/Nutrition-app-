@@ -5,8 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
-  MouseSensor,
-  TouchSensor,
+  PointerSensor,
   pointerWithin,
   useSensor,
   useSensors,
@@ -107,17 +106,20 @@ export function NavigationEditProvider({
 
   // Appui long ~400ms (avec tolérance de mouvement pour ne pas gêner le
   // scroll) déclenche à la fois le mode édition et le drag : pas besoin
-  // d'un second système de détection de long-press séparé. PointerSensor a
-  // été remplacé par TouchSensor (+ MouseSensor pour la souris/trackpad) :
-  // les deux partagent la même logique d'activation dans dnd-kit, mais un
-  // `pointercancel` est déclenché par les navigateurs mobiles dès qu'un
-  // geste de pan natif est reconnu (c'est écrit dans la spec Pointer
-  // Events), alors qu'un `touchcancel` équivalent est beaucoup plus rare en
-  // pratique sur un simple pan — ce qui réduit la fenêtre de course entre
-  // la reconnaissance de geste native et les 400ms de dnd-kit sur mobile.
+  // d'un second système de détection de long-press séparé.
+  //
+  // TouchSensor + MouseSensor (à la place de PointerSensor) a été testé pour
+  // ce même correctif : en théorie, `touchcancel` est déclenché par les
+  // navigateurs de façon plus rare que `pointercancel` pour un simple pan
+  // natif reconnu pendant la fenêtre d'activation (voir le rapport
+  // reports/2026-09-05-fiabilite-drag-preview-swap.md pour l'analyse du
+  // code source de dnd-kit). En pratique sur le téléphone de Vincent
+  // (Brave / Android), ce changement a cassé l'activation à 100% (contre un
+  // problème seulement intermittent avec PointerSensor) — abandonné, retour
+  // à PointerSensor. À ne pas retenter sans un moyen de tester directement
+  // sur cet appareil.
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { delay: 400, tolerance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 400, tolerance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { delay: 400, tolerance: 8 } })
   );
 
   // Instantané de l'état pris au tout début du drag : sert de base pure pour

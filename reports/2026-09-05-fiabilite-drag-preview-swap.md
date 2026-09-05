@@ -31,7 +31,9 @@ Un test physique sur téléphone n'étant pas possible dans cet environnement, j
 
 Je n'ai pas ajouté de `console.log` dans le code applicatif livré : les callbacks exposés par `DndContext` (`onDragStart`/`onDragCancel`) ne donnent de toute façon pas accès à la raison de l'annulation (tolérance JS vs `pointercancel` natif) — cette information n'existe qu'à l'intérieur de dnd-kit, déjà lue directement en `1.` ci-dessus. Ajouter des logs sans pouvoir les observer sur un vrai appareil n'aurait rien apporté de plus que cette lecture de code.
 
-## 2. Correctif retenu : `MouseSensor` + `TouchSensor` au lieu de `PointerSensor`
+## 2. Correctif tenté puis abandonné : `MouseSensor` + `TouchSensor` au lieu de `PointerSensor`
+
+**⚠️ Ce correctif a été revert après déploiement — voir "Correction post-déploiement" plus bas.** Conservé ici tel qu'initialement raisonné, par transparence sur la démarche.
 
 `NavigationEditContext.tsx` utilisait un seul `PointerSensor`. Remplacé par `useSensor(MouseSensor, ...)` + `useSensor(TouchSensor, ...)`, avec le même `activationConstraint: { delay: 400, tolerance: 8 }` pour les deux.
 
@@ -62,6 +64,14 @@ Dans `NavigationEditContext.tsx` :
 
 Aucun changement nécessaire dans `ModulesGrid.tsx` (le `rectSortingStrategy` de `SortableContext` anime déjà automatiquement les tuiles vers leur nouvelle position dès que l'ordre change, qu'il s'agisse d'un `arrayMove` ou d'un `arraySwap`) ni dans `BottomNav.tsx` (chaque slot affiche déjà le module courant de `modulesBarreBasse[index]`, donc la mise à jour locale pendant `onDragOver` suffit à faire apparaître visuellement la tuile déplacée à la place de l'ancienne, avant le lâcher).
 
+## Correction post-déploiement : régression sur téléphone réel
+
+**Retour terrain de Vincent après déploiement** : avec `TouchSensor` + `MouseSensor`, le drag ne s'activait plus **du tout** (0% de réussite, à chaque tentative), contre un problème seulement intermittent avec `PointerSensor` — et l'appui long finissait alors interprété comme un simple tap, déclenchant la navigation normale du `<Link>` vers le module, laquelle échouait ("This page couldn't load", l'écran d'erreur réseau natif du navigateur — pas une erreur applicative).
+
+Ce résultat contredit directement l'hypothèse de la spec (`touchcancel` plus rare que `pointercancel`) : soit elle ne s'applique pas telle quelle sur ce navigateur/appareil précis (Brave sur Android), soit un autre effet de bord du changement de sensor (ex. `TouchSensor` attache ses listeners `touchmove`/`touchend` directement sur le nœud DOM de la tuile plutôt que sur `document`, contrairement à `PointerSensor`/`MouseSensor` — une piste plausible mais non confirmée faute de pouvoir tester sur cet appareil) est en cause. **Revert immédiat vers `PointerSensor` seul**, en conservant intégralement la preview live (§3, indépendante du sensor utilisé).
+
+**Conséquence** : le problème de fiabilité d'origine (activation intermittente, 1-2 essais parfois nécessaires) n'est donc **pas résolu** par ce chantier — seule la régression introduite par la tentative de correctif a été annulée, revenant au comportement antérieur (imparfait mais fonctionnel). Toute nouvelle tentative sur ce point (ajustement `delay`/`tolerance`, ou `touchAction: "none"` en dernier recours, voir plus bas) devrait être testée un changement à la fois, avec confirmation de Vincent entre chaque, plutôt que combinée avec d'autres changements.
+
 ## Vérifications
 
 - `next build` (inclut le typecheck TypeScript) : ✅, 22 routes, aucune régression.
@@ -71,7 +81,7 @@ Aucun changement nécessaire dans `ModulesGrid.tsx` (le `rectSortingStrategy` de
 
 ## Limitations et point en suspens pour Vincent
 
-- **Compromis produit non tranché — je ne l'ai pas appliqué.** Si, après test réel sur téléphone, l'activation reste occasionnellement peu fiable malgré le passage à `TouchSensor`, les leviers suivants restent disponibles par ordre de risque croissant : (a) affiner `delay`/`tolerance` (ex. délai légèrement réduit, tolérance légèrement augmentée, pour réduire davantage la fenêtre de course) ; (b) en dernier recours, `touchAction: "none"` sur les tuiles supprimerait complètement le scroll natif pendant que le doigt est posé sur une tuile, y compris hors mode édition — un compromis produit (scroll natif vs fiabilité du drag) que je n'ai **pas** appliqué, faute de validation explicite. À ne faire qu'après retour de test réel et accord explicite.
+- **Le problème de fiabilité d'activation d'origine reste ouvert.** `TouchSensor`+`MouseSensor` a été essayé et a régressé (voir plus haut) ; le comportement est donc revenu à l'état d'avant ce chantier (intermittent, 1-2 essais parfois nécessaires). Pistes restantes, par ordre de risque croissant, à tester **une à la fois** avec confirmation de Vincent entre chaque : (a) affiner `delay`/`tolerance` sur `PointerSensor` (ex. délai légèrement réduit, tolérance légèrement augmentée) ; (b) en dernier recours, `touchAction: "none"` sur les tuiles supprimerait complètement le scroll natif pendant que le doigt est posé sur une tuile, y compris hors mode édition — un compromis produit (scroll natif vs fiabilité du drag) que je n'ai **pas** appliqué, faute de validation explicite.
 - **Test manuel obligatoire sur téléphone.** Cet environnement ne dispose pas d'écran tactile physique, et l'émulation CDP headless ne reproduit pas l'arbitrage de gestes natif du navigateur (voir §1) — elle ne peut donc pas garantir que le correctif résout réellement le problème en conditions réelles. Merci de tester l'appui long + drag (réordonnancement grille et épinglage barre du bas) sur ton téléphone après déploiement, dans plusieurs conditions (appui bien immobile, appui légèrement instable comme un usage normal) avant de considérer ce chantier définitivement validé.
 - RLS désactivée sur `preferences_navigation` (et les 31 autres tables du projet) : existant, cohérent avec le choix mono-utilisateur déjà acté pour toute l'app, sans lien avec ce chantier — signalé pour mémoire uniquement.
 
