@@ -9,6 +9,7 @@ import { getCreneauxDuJour } from "@/lib/agenda/planning-travail";
 import { AddTaskToggle } from "../taches/AddTaskToggle";
 import { TaskCard } from "../taches/TasksList";
 import { ghostButton, sectionTitle } from "@/lib/ui";
+import { ArchivedTasksSection } from "./ArchivedTasksSection";
 import { parseISODate, sortByHeure, toISODate } from "./date-utils";
 import {
   computeInitialScrollMinutes,
@@ -38,7 +39,7 @@ function TacheBlock({ tache, zoom }: { tache: TacheAvecRelations; zoom: number }
 
   return (
     <div
-      className={`absolute inset-x-1 overflow-hidden rounded-lg px-2 py-1 text-[12px] leading-tight font-semibold shadow-sm ${PRIORITE_BLOCK_CLASS[tache.priorite]} ${tache.fait ? "opacity-50 line-through" : ""}`}
+      className={`absolute inset-x-1 overflow-hidden rounded-lg px-2 py-1 text-[12px] leading-tight font-semibold shadow-sm ${PRIORITE_BLOCK_CLASS[tache.priorite]}`}
       style={{ top: style.top, height: style.height }}
     >
       <span className="block truncate">{plage} {tache.titre}</span>
@@ -64,9 +65,12 @@ export function DayView({
   // Les tâches sans heure sont regroupées après celles ayant une heure
   // (cohérent avec le tri "échéance nullsFirst: false" déjà utilisé par la
   // page Tâches).
-  const dayTaches = taches
-    .filter((t) => t.echeance && isSameDay(parseISODate(t.echeance), selectedDate))
-    .sort(sortByHeure);
+  const dayTachesJour = taches.filter(
+    (t) => t.echeance && isSameDay(parseISODate(t.echeance), selectedDate)
+  );
+
+  const dayTaches = dayTachesJour.filter((t) => !t.fait).sort(sortByHeure);
+  const dayTachesArchivees = dayTachesJour.filter((t) => t.fait).sort(sortByHeure);
 
   const dayTachesAvecHeure = dayTaches.filter((t) => t.heure);
 
@@ -141,7 +145,7 @@ export function DayView({
         label="+ Ajouter une tâche ce jour-là"
       />
 
-      {dayTaches.length === 0 ? (
+      {dayTaches.length === 0 && dayTachesArchivees.length === 0 ? (
         <p className="text-ink-2">Aucune tâche ce jour-là.</p>
       ) : (
         <ul className="flex flex-col gap-2.5">
@@ -150,6 +154,8 @@ export function DayView({
           ))}
         </ul>
       )}
+
+      <ArchivedTasksSection taches={dayTachesArchivees} listes={listes} tags={tags} />
     </div>
   );
 }

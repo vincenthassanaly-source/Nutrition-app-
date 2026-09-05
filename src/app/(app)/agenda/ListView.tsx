@@ -6,6 +6,7 @@ import type { TacheAvecRelations } from "@/app/actions/taches";
 import type { Tables } from "@/lib/supabase/types";
 import { TaskCard } from "../taches/TasksList";
 import { sectionTitle } from "@/lib/ui";
+import { ArchivedTasksSection } from "./ArchivedTasksSection";
 import { parseISODate, sortByHeure } from "./date-utils";
 
 export function ListView({
@@ -17,8 +18,17 @@ export function ListView({
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
 }) {
-  const withDate = taches.filter((t) => t.echeance);
-  const withoutDate = taches.filter((t) => !t.echeance);
+  const actives = taches.filter((t) => !t.fait);
+  const archivees = taches
+    .filter((t) => t.fait)
+    .sort((a, b) => {
+      const dateCompare = (b.echeance ?? "").localeCompare(a.echeance ?? "");
+      if (dateCompare !== 0) return dateCompare;
+      return (b.heure ?? "").localeCompare(a.heure ?? "");
+    });
+
+  const withDate = actives.filter((t) => t.echeance);
+  const withoutDate = actives.filter((t) => !t.echeance);
 
   const groups = new Map<string, TacheAvecRelations[]>();
   for (const t of withDate) {
@@ -31,7 +41,7 @@ export function ListView({
     compareAsc(parseISODate(a), parseISODate(b))
   );
 
-  if (sortedDates.length === 0 && withoutDate.length === 0) {
+  if (sortedDates.length === 0 && withoutDate.length === 0 && archivees.length === 0) {
     return <p className="text-ink-2">Aucune tâche pour l&apos;instant.</p>;
   }
 
@@ -63,6 +73,8 @@ export function ListView({
           </ul>
         </div>
       )}
+
+      <ArchivedTasksSection taches={archivees} listes={listes} tags={tags} />
     </div>
   );
 }

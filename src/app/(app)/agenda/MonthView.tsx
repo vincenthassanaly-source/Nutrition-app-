@@ -43,7 +43,7 @@ export function MonthView({
 
   const countByDay = new Map<string, number>();
   for (const t of taches) {
-    if (!t.echeance) continue;
+    if (!t.echeance || t.fait) continue;
     countByDay.set(t.echeance, (countByDay.get(t.echeance) ?? 0) + 1);
   }
 

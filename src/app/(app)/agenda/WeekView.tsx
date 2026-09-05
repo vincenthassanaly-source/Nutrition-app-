@@ -53,7 +53,7 @@ function TacheBlock({ tache, zoom }: { tache: Tache; zoom: number }) {
 
   return (
     <div
-      className={`absolute inset-x-0.5 overflow-hidden rounded-md px-1 py-0.5 text-[10px] leading-tight font-semibold ${PRIORITE_BLOCK_CLASS[tache.priorite]} ${tache.fait ? "opacity-50 line-through" : ""}`}
+      className={`absolute inset-x-0.5 overflow-hidden rounded-md px-1 py-0.5 text-[10px] leading-tight font-semibold ${PRIORITE_BLOCK_CLASS[tache.priorite]}`}
       style={{ top: style.top, height: style.height }}
     >
       <span className="block truncate">{tache.heure?.slice(0, 5)} {tache.titre}</span>
@@ -151,10 +151,10 @@ export function WeekView({
             {days.map((day) => {
               const creneauxJour = getCreneauxDuJour(creneaux, day);
               const dayTachesAvecHeure = taches.filter(
-                (t) => t.echeance && isSameDay(parseISODate(t.echeance), day) && t.heure
+                (t) => !t.fait && t.echeance && isSameDay(parseISODate(t.echeance), day) && t.heure
               );
               const dayTachesSansHeure = taches.filter(
-                (t) => t.echeance && isSameDay(parseISODate(t.echeance), day) && !t.heure
+                (t) => !t.fait && t.echeance && isSameDay(parseISODate(t.echeance), day) && !t.heure
               );
 
               return (
