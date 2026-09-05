@@ -4,18 +4,17 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useSwipeHorizontal, type SensSwipe } from "@/hooks/useSwipeHorizontal";
 import { useViewTransitionNavigate } from "@/hooks/useViewTransitionNavigate";
-
-// Ordre fixe des 4 onglets principaux à navigation linéaire : swipe à
-// gauche va au suivant, à droite au précédent, sans wrap-around. "Plus" est
-// exclu (pas de notion d'ordre linéaire, voir prompt de session).
-const ONGLETS_ORDRE = ["/", "/nutrition", "/taches", "/habitudes"];
+import { useNavigationEdit } from "@/lib/navigation/NavigationEditContext";
 
 /**
  * Enrobe le `<main>` commun à toutes les pages de `(app)` pour détecter un
- * swipe horizontal entre les 4 onglets principaux. Le hook de détection
- * (`useSwipeHorizontal`, déjà utilisé par Agenda et le Journal Nutrition
- * pour naviguer entre dates) n'est réellement branché sur `<main>` que sur
- * les 4 routes exactes ci-dessus : sur leurs sous-routes (/agenda,
+ * swipe horizontal entre les onglets épinglés en barre du bas. L'ordre suivi
+ * est celui, dynamique et personnalisable, de `modulesBarreBasse`
+ * (`NavigationEditContext`) — pas de notion d'ordre linéaire pour "Plus",
+ * toujours exclu de ce tableau. Le hook de détection (`useSwipeHorizontal`,
+ * déjà utilisé par Agenda et le Journal Nutrition pour naviguer entre dates)
+ * n'est réellement branché sur `<main>` que sur les 4 routes exactes
+ * présentes dans `modulesBarreBasse` : sur leurs sous-routes (/agenda,
  * /nutrition/journal, /nutrition/recettes...), les handlers ne sont pas
  * attachés du tout, pour ne jamais entrer en conflit avec le swipe
  * dates/semaines déjà présent sur ces écrans.
@@ -23,15 +22,16 @@ const ONGLETS_ORDRE = ["/", "/nutrition", "/taches", "/habitudes"];
 export function TabSwipeWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const navigate = useViewTransitionNavigate();
+  const { modulesBarreBasse } = useNavigationEdit();
 
-  const indexOngletActif = ONGLETS_ORDRE.indexOf(pathname);
+  const indexOngletActif = modulesBarreBasse.indexOf(pathname);
   const actif = indexOngletActif !== -1;
 
   function handleSwipe(sens: SensSwipe) {
     if (!actif) return;
     const prochainIndex = indexOngletActif + (sens === "suivant" ? 1 : -1);
-    if (prochainIndex < 0 || prochainIndex >= ONGLETS_ORDRE.length) return;
-    navigate(ONGLETS_ORDRE[prochainIndex]);
+    if (prochainIndex < 0 || prochainIndex >= modulesBarreBasse.length) return;
+    navigate(modulesBarreBasse[prochainIndex]);
   }
 
   const swipeHandlers = useSwipeHorizontal(handleSwipe);
