@@ -1,18 +1,20 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   pointerWithin,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+import { arraySwap } from "@dnd-kit/sortable";
 import { findNavItem } from "@/lib/navigation/registry";
 import { updateModulesBarreBasse, updateOrdreGrillePlus } from "@/app/actions/preferences-navigation";
 import { showToast } from "@/components/toast/toast-store";
@@ -105,52 +107,123 @@ export function NavigationEditProvider({
 
   // Appui long ~400ms (avec tolérance de mouvement pour ne pas gêner le
   // scroll) déclenche à la fois le mode édition et le drag : pas besoin
-  // d'un second système de détection de long-press séparé.
+  // d'un second système de détection de long-press séparé. PointerSensor a
+  // été remplacé par TouchSensor (+ MouseSensor pour la souris/trackpad) :
+  // les deux partagent la même logique d'activation dans dnd-kit, mais un
+  // `pointercancel` est déclenché par les navigateurs mobiles dès qu'un
+  // geste de pan natif est reconnu (c'est écrit dans la spec Pointer
+  // Events), alors qu'un `touchcancel` équivalent est beaucoup plus rare en
+  // pratique sur un simple pan — ce qui réduit la fenêtre de course entre
+  // la reconnaissance de geste native et les 400ms de dnd-kit sur mobile.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { delay: 400, tolerance: 8 } })
+    useSensor(MouseSensor, { activationConstraint: { delay: 400, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 400, tolerance: 8 } })
   );
+
+  // Instantané de l'état pris au tout début du drag : sert de base pure pour
+  // calculer le preview à chaque `dragOver` (voir handleDragOver) et de
+  // référence de rollback en cas d'échec de la Server Action ou d'annulation
+  // du drag — jamais l'état juste avant le dernier survol.
+  const dragStartSnapshotRef = useRef<{ ordreGrillePlus: string[]; modulesBarreBasse: string[] } | null>(null);
+  // Dernier id survolé traité par handleDragOver, pour ignorer les appels
+  // répétés tant que la cible survolée n'a pas changé (évite de recalculer
+  // et de re-render à chaque pointermove pendant un survol immobile).
+  const lastOverIdRef = useRef<string | null>(null);
 
   function handleDragStart(event: DragStartEvent) {
     setIsEditingRaw(true);
     setActiveHref(String(event.active.id));
+    lastOverIdRef.current = null;
+    dragStartSnapshotRef.current = { ordreGrillePlus, modulesBarreBasse };
+  }
+
+  // Le preview pendant le drag est toujours recalculé à partir de
+  // l'instantané du dragStart + la cible actuellement survolée (jamais en
+  // accumulant depuis l'état déjà mutable), pour rester cohérent quel que
+  // soit l'enchaînement de survols pendant le geste : à tout instant, l'état
+  // local montre exactement ce qui serait persisté si on lâchait maintenant.
+  function handleDragOver(event: DragOverEvent) {
+    const snapshot = dragStartSnapshotRef.current;
+    if (!snapshot) return;
+
+    const { active, over } = event;
+    const draggedHref = String(active.id);
+    const overId = over ? String(over.id) : null;
+
+    if (lastOverIdRef.current === overId) return;
+    lastOverIdRef.current = overId;
+
+    if (overId && overId.startsWith(BOTTOM_BAR_SLOT_PREFIX)) {
+      setOrdreGrillePlus(snapshot.ordreGrillePlus);
+      const index = Number(overId.slice(BOTTOM_BAR_SLOT_PREFIX.length));
+      if (Number.isNaN(index)) return;
+      const base = snapshot.modulesBarreBasse;
+      setModulesBarreBasse(base[index] === draggedHref ? base : base.map((href, i) => (i === index ? draggedHref : href)));
+      return;
+    }
+
+    setModulesBarreBasse(snapshot.modulesBarreBasse);
+
+    if (!overId || overId === draggedHref) {
+      setOrdreGrillePlus(snapshot.ordreGrillePlus);
+      return;
+    }
+
+    const base = snapshot.ordreGrillePlus;
+    const activeIndex = base.indexOf(draggedHref);
+    const overIndex = base.indexOf(overId);
+    setOrdreGrillePlus(activeIndex === -1 || overIndex === -1 ? base : arraySwap(base, activeIndex, overIndex));
   }
 
   function handleDragCancel() {
     setActiveHref(null);
+    lastOverIdRef.current = null;
+    const snapshot = dragStartSnapshotRef.current;
+    dragStartSnapshotRef.current = null;
+    if (!snapshot) return;
+    setOrdreGrillePlus(snapshot.ordreGrillePlus);
+    setModulesBarreBasse(snapshot.modulesBarreBasse);
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
     setActiveHref(null);
-    if (!over) return;
+    lastOverIdRef.current = null;
+    const snapshot = dragStartSnapshotRef.current;
+    dragStartSnapshotRef.current = null;
+    if (!snapshot) return;
 
-    const draggedHref = String(active.id);
-    const overId = String(over.id);
+    const { over } = event;
+    const overId = over ? String(over.id) : null;
 
-    if (overId.startsWith(BOTTOM_BAR_SLOT_PREFIX)) {
-      const index = Number(overId.slice(BOTTOM_BAR_SLOT_PREFIX.length));
-      if (Number.isNaN(index) || modulesBarreBasse[index] === draggedHref) return;
-
-      const previous = modulesBarreBasse;
-      const next = modulesBarreBasse.map((href, i) => (i === index ? draggedHref : href));
-      setModulesBarreBasse(next);
+    if (overId && overId.startsWith(BOTTOM_BAR_SLOT_PREFIX)) {
+      // Épinglage en barre du bas confirmé : un éventuel swap de grille
+      // prévisualisé plus tôt dans ce même drag (avant d'atteindre la barre
+      // du bas) n'a jamais été confirmé, on le défait.
+      setOrdreGrillePlus(snapshot.ordreGrillePlus);
+      const next = modulesBarreBasse;
+      if (next === snapshot.modulesBarreBasse) return; // Aucun changement réel (déjà épinglé à cet emplacement).
       updateModulesBarreBasse(next).catch(() => {
-        setModulesBarreBasse(previous);
+        setModulesBarreBasse(snapshot.modulesBarreBasse);
         showToast("Échec de l'épinglage, réessaie.");
       });
       return;
     }
 
-    if (overId === draggedHref) return;
-    const oldIndex = ordreGrillePlus.indexOf(draggedHref);
-    const newIndex = ordreGrillePlus.indexOf(overId);
-    if (oldIndex === -1 || newIndex === -1) return;
+    // Sinon : réordonnancement de grille confirmé, ou lâcher hors de toute
+    // cible (annulation) — dans les deux cas, un éventuel preview
+    // d'épinglage jamais confirmé ne doit pas être conservé.
+    setModulesBarreBasse(snapshot.modulesBarreBasse);
 
-    const previous = ordreGrillePlus;
-    const next = arrayMove(ordreGrillePlus, oldIndex, newIndex);
-    setOrdreGrillePlus(next);
+    const next = ordreGrillePlus;
+    if (!overId || next === snapshot.ordreGrillePlus) {
+      // Lâcher hors de toute cible, ou aucun swap réel (ex. lâcher sur la
+      // tuile d'origine) : rien à persister.
+      setOrdreGrillePlus(snapshot.ordreGrillePlus);
+      return;
+    }
+
     updateOrdreGrillePlus(next).catch(() => {
-      setOrdreGrillePlus(previous);
+      setOrdreGrillePlus(snapshot.ordreGrillePlus);
       showToast("Échec de la réorganisation, réessaie.");
     });
   }
@@ -174,6 +247,7 @@ export function NavigationEditProvider({
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
