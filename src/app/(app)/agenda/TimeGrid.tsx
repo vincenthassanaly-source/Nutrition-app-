@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
-import type { Tables } from "@/lib/supabase/types";
+import type { CreneauDuJour } from "@/lib/agenda/planning-travail";
 import { heureToMinutes } from "./date-utils";
 import { BASE_HOUR_HEIGHT, GUTTER_WIDTH } from "./useAgendaZoom";
 
@@ -79,7 +79,7 @@ export function computeInitialScrollMinutes({
   creneaux,
 }: {
   showCurrentTime: boolean;
-  creneaux: Tables<"horaires_travail_creneaux">[];
+  creneaux: CreneauDuJour[];
 }): number {
   if (showCurrentTime) {
     const now = new Date();
@@ -146,7 +146,7 @@ export function WorkHoursBand({
   creneaux,
   zoom,
 }: {
-  creneaux: Tables<"horaires_travail_creneaux">[];
+  creneaux: CreneauDuJour[];
   zoom: number;
 }) {
   return (

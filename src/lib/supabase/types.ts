@@ -361,6 +361,30 @@ export type Database = {
         }
         Relationships: []
       }
+      horaires_travail_exceptions: {
+        Row: {
+          date: string
+          heure_debut: string
+          heure_fin: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          date: string
+          heure_debut: string
+          heure_fin: string
+          id?: never
+          updated_at?: string
+        }
+        Update: {
+          date?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: never
+          updated_at?: string
+        }
+        Relationships: []
+      }
       journal_repas: {
         Row: {
           aliment_id: string | null

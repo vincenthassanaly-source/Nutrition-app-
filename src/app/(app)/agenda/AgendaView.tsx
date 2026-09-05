@@ -57,11 +57,13 @@ export function AgendaView({
   listes,
   tags,
   creneaux,
+  exceptions,
 }: {
   taches: TacheAvecRelations[];
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
   creneaux: Tables<"horaires_travail_creneaux">[];
+  exceptions: Tables<"horaires_travail_exceptions">[];
 }) {
   const [view, setView] = useState<ViewKey>("jour");
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
@@ -210,6 +212,7 @@ export function AgendaView({
                 listes={listes}
                 tags={tags}
                 creneaux={creneaux}
+                exceptions={exceptions}
                 selectedDate={selectedDate}
                 onChangeDate={handleChangeDate}
               />
@@ -218,6 +221,7 @@ export function AgendaView({
               <WeekView
                 taches={taches}
                 creneaux={creneaux}
+                exceptions={exceptions}
                 selectedDate={selectedDate}
                 onChangeDate={handleChangeDate}
                 onSelectDay={selectDay}
@@ -227,6 +231,7 @@ export function AgendaView({
               <MonthView
                 taches={taches}
                 creneaux={creneaux}
+                exceptions={exceptions}
                 selectedDate={selectedDate}
                 onChangeDate={handleChangeDate}
                 onSelectDay={selectDay}

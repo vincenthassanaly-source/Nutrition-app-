@@ -25,12 +25,14 @@ const WEEKDAY_LABELS = ["L", "M", "M", "J", "V", "S", "D"];
 export function MonthView({
   taches,
   creneaux,
+  exceptions,
   selectedDate,
   onChangeDate,
   onSelectDay,
 }: {
   taches: Tache[];
   creneaux: Tables<"horaires_travail_creneaux">[];
+  exceptions: Tables<"horaires_travail_exceptions">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
   onSelectDay: (date: Date) => void;
@@ -82,7 +84,7 @@ export function MonthView({
           const iso = toISODate(day);
           const count = countByDay.get(iso) ?? 0;
           const inMonth = isSameMonth(day, selectedDate);
-          const jourTravaille = getCreneauxDuJour(creneaux, day).length > 0;
+          const jourTravaille = getCreneauxDuJour(creneaux, day, exceptions).length > 0;
 
           return (
             <button

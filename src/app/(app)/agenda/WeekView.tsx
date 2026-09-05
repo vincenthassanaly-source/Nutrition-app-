@@ -64,12 +64,14 @@ function TacheBlock({ tache, zoom }: { tache: Tache; zoom: number }) {
 export function WeekView({
   taches,
   creneaux,
+  exceptions,
   selectedDate,
   onChangeDate,
   onSelectDay,
 }: {
   taches: Tache[];
   creneaux: Tables<"horaires_travail_creneaux">[];
+  exceptions: Tables<"horaires_travail_exceptions">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
   onSelectDay: (date: Date) => void;
@@ -103,7 +105,7 @@ export function WeekView({
   const { zoom, touchHandlers } = useAgendaZoom({ minZoom });
   const dayColumnWidth = BASE_DAY_COLUMN_WIDTH * zoom;
 
-  const creneauxSelectedJour = getCreneauxDuJour(creneaux, selectedDate);
+  const creneauxSelectedJour = getCreneauxDuJour(creneaux, selectedDate, exceptions);
   useInitialScroll(
     scrollRef,
     computeInitialScrollMinutes({ showCurrentTime: weekContainsToday, creneaux: creneauxSelectedJour }),
@@ -149,7 +151,7 @@ export function WeekView({
             </div>
 
             {days.map((day) => {
-              const creneauxJour = getCreneauxDuJour(creneaux, day);
+              const creneauxJour = getCreneauxDuJour(creneaux, day, exceptions);
               const dayTachesAvecHeure = taches.filter(
                 (t) => !t.fait && t.echeance && isSameDay(parseISODate(t.echeance), day) && t.heure
               );

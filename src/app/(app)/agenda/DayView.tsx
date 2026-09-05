@@ -52,6 +52,7 @@ export function DayView({
   listes,
   tags,
   creneaux,
+  exceptions,
   selectedDate,
   onChangeDate,
 }: {
@@ -59,6 +60,7 @@ export function DayView({
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
   creneaux: Tables<"horaires_travail_creneaux">[];
+  exceptions: Tables<"horaires_travail_exceptions">[];
   selectedDate: Date;
   onChangeDate: (date: Date) => void;
 }) {
@@ -74,7 +76,7 @@ export function DayView({
 
   const dayTachesAvecHeure = dayTaches.filter((t) => t.heure);
 
-  const creneauxJour = getCreneauxDuJour(creneaux, selectedDate);
+  const creneauxJour = getCreneauxDuJour(creneaux, selectedDate, exceptions);
   const { zoom, touchHandlers } = useAgendaZoom();
   const scrollRef = useRef<HTMLDivElement>(null);
   useInitialScroll(
