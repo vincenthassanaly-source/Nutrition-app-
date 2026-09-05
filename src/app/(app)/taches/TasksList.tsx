@@ -65,6 +65,26 @@ function couleurStyle(couleur: string | null): React.CSSProperties | undefined {
   return { backgroundColor: `${couleur}1a`, color: couleur };
 }
 
+// Poignée de drag dédiée (6 points), plutôt qu'une carte entière
+// "appui long" comme les tuiles de la page d'accueil : sur une LISTE
+// VERTICALE, le geste de drag (déplacer haut/bas) est sur le même axe que
+// le scroll de la page, contrairement à une grille 2D où pan-y peut laisser
+// le scroll vertical natif cohabiter avec le drag (cf. commentaire
+// touchAction dans ModulesGrid.tsx). Poser `touchAction: "none"` sur la
+// carte entière bloquerait tout scroll dès qu'un doigt touche une tâche ;
+// le limiter à cette petite poignée laisse le reste de la carte
+// scrollable normalement.
+const GRIP_ICON = (
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <circle cx="5" cy="3" r="1.3" />
+    <circle cx="11" cy="3" r="1.3" />
+    <circle cx="5" cy="8" r="1.3" />
+    <circle cx="11" cy="8" r="1.3" />
+    <circle cx="5" cy="13" r="1.3" />
+    <circle cx="11" cy="13" r="1.3" />
+  </svg>
+);
+
 function SousTachesList({ tache }: { tache: TacheAvecRelations }) {
   const [isPending, startTransition] = useTransition();
   const [titre, setTitre] = useState("");
@@ -381,18 +401,32 @@ export function TaskCard({
           {expanded && <SousTachesList tache={tache} />}
         </div>
       </div>
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
-          Modifier
-        </button>
-        <button
-          type="button"
-          disabled={deleteMutation.isPending}
-          onClick={() => deleteMutation.mutate()}
-          className={dangerButton}
-        >
-          Suppr.
-        </button>
+      <div className={`flex items-center gap-2 ${reorderable ? "justify-between" : "justify-end"}`}>
+        {reorderable && (
+          <button
+            type="button"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-2"
+            style={{ touchAction: "none", WebkitTouchCallout: "none" }}
+            aria-label="Réordonner : glisser pour déplacer la tâche"
+            {...attributes}
+            {...listeners}
+          >
+            {GRIP_ICON}
+          </button>
+        )}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+            Modifier
+          </button>
+          <button
+            type="button"
+            disabled={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate()}
+            className={dangerButton}
+          >
+            Suppr.
+          </button>
+        </div>
       </div>
     </>
   );
@@ -421,19 +455,15 @@ export function TaskCard({
   // Superposer les deux systèmes de transform sur le même nœud les ferait
   // s'écraser l'un l'autre (framer-motion recalcule `style.transform` dès
   // qu'un `animate` avec `y` est actif) — d'où la séparation en deux nœuds.
+  // `attributes`/`listeners` (déclencheurs du drag) sont posés sur la
+  // poignée dans `content`, pas ici : voir GRIP_ICON plus haut.
   const dragStyle: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
   return (
-    <li
-      ref={setNodeRef}
-      style={dragStyle}
-      className={isDragging ? "opacity-60" : undefined}
-      {...attributes}
-      {...listeners}
-    >
+    <li ref={setNodeRef} style={dragStyle} className={isDragging ? "opacity-60" : undefined}>
       <motion.div
         layout={!isDragging}
         initial={{ opacity: 0, y: 8 }}
@@ -448,12 +478,18 @@ export function TaskCard({
   );
 }
 
-// Appui long (~400ms, tolérance 8px) déclenche le drag, comme sur les
-// tuiles de la page d'accueil (cf. NavigationEditContext) : sous ce délai,
-// un tap normal (case à cocher, boutons, ouverture des sous-tâches) reste
-// intact, dnd-kit ne prend la main qu'après le délai écoulé sans mouvement.
+// Contrairement aux tuiles de la page d'accueil (appui long ~400ms sur
+// toute la tuile, cf. NavigationEditContext), ici le drag part d'une
+// poignée dédiée (GRIP_ICON) et non de la carte entière : sur une liste
+// verticale, le drag (haut/bas) est sur le même axe que le scroll de la
+// page, un appui long général aurait donc dû bloquer le scroll natif sur
+// toute la carte (`touchAction: "none"`) pour être fiable — au prix de
+// rendre le scroll impossible en touchant une tâche. La poignée isole ce
+// `touchAction: "none"` à une petite zone, donc pas besoin d'un délai pour
+// distinguer un tap normal d'un drag : un simple seuil de distance suffit
+// (la poignée ne fait rien d'autre).
 function useTaskDragSensors() {
-  return useSensors(useSensor(PointerSensor, { activationConstraint: { delay: 400, tolerance: 8 } }));
+  return useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 }
 
 // Liste réordonnable au drag & drop. N'est utilisée que lorsque la vue
