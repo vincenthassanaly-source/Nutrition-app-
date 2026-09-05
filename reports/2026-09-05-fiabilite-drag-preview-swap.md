@@ -50,6 +50,9 @@ C'est le correctif que dnd-kit recommande lui-même dans sa documentation pour c
 
 ## 3. Preview live en échange direct pendant le drag
 
+**⚠️ Cette fonctionnalité a été revert après déploiement (deuxième régression, voir plus bas) — conservée ici tel qu'initialement implémentée et raisonnée, par transparence sur la démarche.**
+
+
 Dans `NavigationEditContext.tsx` :
 
 - **Instantané au `dragStart`** (`dragStartSnapshotRef`) : capture `ordreGrillePlus` et `modulesBarreBasse` avant toute mutation, sert de base pure de calcul pour chaque survol et de référence de rollback (jamais l'état juste avant le dernier survol).
@@ -72,6 +75,20 @@ Ce résultat contredit directement l'hypothèse de la spec (`touchcancel` plus r
 
 **Conséquence** : le problème de fiabilité d'origine (activation intermittente, 1-2 essais parfois nécessaires) n'est donc **pas résolu** par ce chantier — seule la régression introduite par la tentative de correctif a été annulée, revenant au comportement antérieur (imparfait mais fonctionnel). Toute nouvelle tentative sur ce point (ajustement `delay`/`tolerance`, ou `touchAction: "none"` en dernier recours, voir plus bas) devrait être testée un changement à la fois, avec confirmation de Vincent entre chaque, plutôt que combinée avec d'autres changements.
 
+## Deuxième retour terrain : la preview live elle-même est en cause, pas le sensor
+
+Après le revert du sensor (ci-dessus), Vincent a retesté : **même erreur, à chaque fois**, alors même qu'un tap simple sur une tuile fonctionne normalement. Deux informations clés de ce second retour :
+
+- le tap simple marche → la distinction tap/drag et l'activation elle-même ne sont pas en cause ;
+- fermer complètement l'app/l'onglet et la rouvrir ne change rien → ce n'est pas un problème de cache PWA/Service Worker stale ;
+- le problème apparaît spécifiquement quand un **vrai drag** a lieu (pas juste un appui) → la cause est dans le code exécuté *pendant* le drag, commun aux deux tentatives (sensor `PointerSensor` et `TouchSensor`/`MouseSensor`) : la preview live du §3.
+
+**Hypothèse retenue** (non testée en conditions réelles, faute d'accès à l'appareil, mais structurellement solide) : `onDragOver` recalculait l'échange **entièrement depuis l'instantané du `dragStart`** à chaque changement d'id survolé. Mais un `arraySwap` déplace deux tuiles, et ce déplacement est animé par une transition CSS de ~200ms (`useSortable`, transition par défaut de `@dnd-kit/sortable`). Si le doigt reste immobile pile à la frontière entre les deux tuiles en train de s'échanger, l'id de la tuile "sous le doigt" peut changer plusieurs fois pendant que les deux tuiles se croisent visuellement — et puisque chaque nouveau `overId` redéclenche un nouveau calcul d'échange (toujours depuis l'instantané figé, donc potentiellement un résultat différent à chaque fois), ce changement peut lui-même redéclencher une nouvelle transition qui recroise à nouveau la position du doigt, etc. Une boucle de rétroaction potentiellement soutenue tant que le doigt ne bouge pas, invisible dans les tests desktop/headless (aucune vraie transition CSS interpolée n'a été exercée par un geste réel), mais susceptible de bloquer ou de faire planter le rendu sur un téléphone réel — ce qui correspondrait à l'écran d'erreur observé.
+
+**Décision** : plutôt que de risquer un troisième aller-retour de déploiement à l'aveugle pour patcher cette hypothèse (ex. un délai de stabilisation après chaque swap), `NavigationEditContext.tsx` est **intégralement revenu à l'état d'avant cette session** (identique au commit `49bb7d6`, vérifié par diff) : plus de preview live, plus d'`onDragOver`, retour au comportement d'origine (réordonnancement/épinglage appliqués seulement au lâcher, via `arrayMove`).
+
+**Conséquence** : les deux sujets de ce chantier (fiabilité d'activation ET preview live) restent non résolus. Seule la stabilité de l'app est restaurée. Toute reprise future de la preview live devra être conçue avec une garde explicite contre ce risque de boucle (ex. ignorer les changements de cible survolée pendant la durée de la transition en cours, pas seulement dédupliquer par id) et testée de façon incrémentale avec Vincent.
+
 ## Vérifications
 
 - `next build` (inclut le typecheck TypeScript) : ✅, 22 routes, aucune régression.
@@ -87,4 +104,4 @@ Ce résultat contredit directement l'hypothèse de la spec (`touchcancel` plus r
 
 ## Fichiers modifiés
 
-`src/lib/navigation/NavigationEditContext.tsx` (sensors, snapshot de drag, `onDragOver`, `handleDragEnd`, `handleDragCancel`). Aucun autre fichier touché.
+`src/lib/navigation/NavigationEditContext.tsx` — après les deux revert successifs (sensor, puis preview live), ce fichier est **identique** à son état avant ce chantier (commit `49bb7d6`, vérifié par diff). Aucun autre fichier touché. Ce chantier n'a donc, au final, changé aucun comportement fonctionnel de l'app — seule cette investigation et ce rapport en restent la trace.
