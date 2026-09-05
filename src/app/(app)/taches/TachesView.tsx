@@ -135,7 +135,7 @@ export function TachesView() {
       ) : tachesError ? (
         <p className={errorText}>Erreur de chargement des tâches. Réessaie.</p>
       ) : (
-        <TasksList taches={filtered} listes={listes} tags={tags} />
+        <TasksList taches={filtered} listes={listes} tags={tags} reordonnable={vue === "toutes"} />
       )}
     </div>
     </PullToRefresh>

@@ -397,45 +397,24 @@ export async function deleteTache(id: string) {
   revalidateTachesPaths();
 }
 
-// Réordonnance simple par échange avec la tâche voisine, au sein de la même
-// liste (pas de drag & drop dans le codebase, cf. deplacerEtape dans
-// src/app/actions/objectifs.ts).
-export async function reordonnerTaches(id: string, direction: "haut" | "bas") {
+// Persiste un nouvel ordre pour les tâches actives, après un drag & drop
+// dans TasksList (remplace l'ancien système de flèches ↑/↓ par échange de
+// voisin, cf. historique git : ambigu dès que le voisin visuel n'était pas
+// le voisin logique, ex. tâche archivée masquée). Le client recalcule déjà
+// l'ordre séquentiel par liste_id à partir de la position visuelle post-drop
+// (voir TasksList.tsx) et ne transmet que les tâches dont l'ordre a
+// effectivement changé.
+export async function enregistrerOrdreTaches(updates: { id: string; ordre: number }[]) {
+  if (updates.length === 0) return;
+
   const supabase = await createClient();
 
-  const { data: courante, error: fetchError } = await supabase
-    .from("taches")
-    .select("liste_id, fait")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
+  const results = await Promise.all(
+    updates.map(({ id, ordre }) => supabase.from("taches").update({ ordre }).eq("id", id))
+  );
 
-  const { data: taches, error } = await supabase
-    .from("taches")
-    .select("id, ordre")
-    .eq("liste_id", courante.liste_id)
-    .eq("fait", courante.fait)
-    .order("ordre", { ascending: true });
-
-  if (error) throw new Error(error.message);
-  if (!taches) return;
-
-  const index = taches.findIndex((t) => t.id === id);
-  if (index === -1) return;
-
-  const voisinIndex = direction === "haut" ? index - 1 : index + 1;
-  if (voisinIndex < 0 || voisinIndex >= taches.length) return;
-
-  const actuelle = taches[index];
-  const voisine = taches[voisinIndex];
-
-  const [{ error: err1 }, { error: err2 }] = await Promise.all([
-    supabase.from("taches").update({ ordre: voisine.ordre }).eq("id", actuelle.id),
-    supabase.from("taches").update({ ordre: actuelle.ordre }).eq("id", voisine.id),
-  ]);
-
-  if (err1) throw new Error(err1.message);
-  if (err2) throw new Error(err2.message);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(failed.error.message);
 
   revalidateTachesPaths();
 }

@@ -1,15 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   createSousTache,
   deleteSousTache,
   deleteTache,
+  enregistrerOrdreTaches,
   reordonnerSousTaches,
-  reordonnerTaches,
   toggleSousTache,
   toggleTache,
   type TacheAvecRelations,
@@ -195,15 +205,28 @@ export function TaskCard({
   tache,
   listes,
   tags,
+  reorderable = false,
 }: {
   tache: TacheAvecRelations;
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
+  // Uniquement true depuis SortableTachesList (liste active en vue non
+  // filtrée, cf. TasksList) : les tâches archivées ne sont jamais
+  // réordonnables (leur affichage suit updated_at, pas ordre). useSortable
+  // est appelé inconditionnellement (règle des Hooks) même quand
+  // `reorderable` est false : hors DndContext/SortableContext, dnd-kit
+  // retombe sur ses valeurs par défaut inertes (vérifié dans
+  // node_modules/@dnd-kit/{core,sortable} — `defaultInternalContext` /
+  // `Context` par défaut), donc sans effet ni erreur pour les usages
+  // statiques (archivées, agenda).
+  reorderable?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: tache.id,
+  });
 
   function invalidateTaches() {
     queryClient.invalidateQueries({ queryKey: queryKeys.taches });
@@ -290,19 +313,12 @@ export function TaskCard({
 
   const sousTachesFaites = tache.sous_taches.filter((s) => s.fait).length;
 
-  return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18 }}
-      className={listCard}
-    >
+  const content = (
+    <>
       <div className="flex items-start gap-3">
         <CheckToggle
           checked={tache.fait}
-          disabled={isPending}
+          disabled={toggleMutation.isPending}
           onToggle={() => toggleMutation.mutate()}
           className="mt-0.5"
           label={tache.fait ? "Marquer non fait" : "Marquer fait"}
@@ -365,52 +381,143 @@ export function TaskCard({
           {expanded && <SousTachesList tache={tache} />}
         </div>
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1">
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                await reordonnerTaches(tache.id, "haut");
-                invalidateTaches();
-              })
-            }
-            className={ghostButton}
-            aria-label="Monter"
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                await reordonnerTaches(tache.id, "bas");
-                invalidateTaches();
-              })
-            }
-            className={ghostButton}
-            aria-label="Descendre"
-          >
-            ↓
-          </button>
-        </div>
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
-            Modifier
-          </button>
-          <button
-            type="button"
-            disabled={deleteMutation.isPending}
-            onClick={() => deleteMutation.mutate()}
-            className={dangerButton}
-          >
-            Suppr.
-          </button>
-        </div>
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={() => setEditing(true)} className={ghostButton}>
+          Modifier
+        </button>
+        <button
+          type="button"
+          disabled={deleteMutation.isPending}
+          onClick={() => deleteMutation.mutate()}
+          className={dangerButton}
+        >
+          Suppr.
+        </button>
       </div>
-    </motion.li>
+    </>
+  );
+
+  // Sans `reorderable` (tâches archivées, ou vue filtrée où le drag est
+  // désactivé — voir TasksList) : carte statique, motion.li porte lui-même
+  // l'animation d'entrée/sortie/layout.
+  if (!reorderable) {
+    return (
+      <motion.li
+        layout
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.18 }}
+        className={listCard}
+      >
+        {content}
+      </motion.li>
+    );
+  }
+
+  // Avec `reorderable` : le <li> externe (non-motion) porte le transform
+  // brut de dnd-kit pendant le drag ; un <motion.div> interne gère
+  // l'animation d'entrée/sortie/layout des AUTRES tâches qui se décalent.
+  // Superposer les deux systèmes de transform sur le même nœud les ferait
+  // s'écraser l'un l'autre (framer-motion recalcule `style.transform` dès
+  // qu'un `animate` avec `y` est actif) — d'où la séparation en deux nœuds.
+  const dragStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={dragStyle}
+      className={isDragging ? "opacity-60" : undefined}
+      {...attributes}
+      {...listeners}
+    >
+      <motion.div
+        layout={!isDragging}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.18 }}
+        className={listCard}
+      >
+        {content}
+      </motion.div>
+    </li>
+  );
+}
+
+// Appui long (~400ms, tolérance 8px) déclenche le drag, comme sur les
+// tuiles de la page d'accueil (cf. NavigationEditContext) : sous ce délai,
+// un tap normal (case à cocher, boutons, ouverture des sous-tâches) reste
+// intact, dnd-kit ne prend la main qu'après le délai écoulé sans mouvement.
+function useTaskDragSensors() {
+  return useSensors(useSensor(PointerSensor, { activationConstraint: { delay: 400, tolerance: 8 } }));
+}
+
+// Liste réordonnable au drag & drop. N'est utilisée que lorsque la vue
+// affichée correspond exactement à l'ensemble complet des tâches actives de
+// chaque liste concernée (voir `reordonnable` dans TachesView) : c'est ce
+// qui permet de renuméroter l'ordre par liste_id à partir de la seule
+// position visuelle post-drop, sans avoir à interroger les tâches masquées
+// par un filtre de date.
+function SortableTachesList({
+  actives,
+  listes,
+  tags,
+}: {
+  actives: TacheAvecRelations[];
+  listes: Tables<"listes_taches">[];
+  tags: Tables<"tags">[];
+}) {
+  const queryClient = useQueryClient();
+  const sensors = useTaskDragSensors();
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = actives.findIndex((t) => t.id === active.id);
+    const newIndex = actives.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordonnees = arrayMove(actives, oldIndex, newIndex);
+
+    // Renumérote 0..n-1 par liste_id selon le nouvel ordre visuel ; ne
+    // transmet que les tâches dont l'ordre change réellement.
+    const compteurs = new Map<string, number>();
+    const updates: { id: string; ordre: number }[] = [];
+    for (const tache of reordonnees) {
+      const n = compteurs.get(tache.liste_id) ?? 0;
+      compteurs.set(tache.liste_id, n + 1);
+      if (tache.ordre !== n) updates.push({ id: tache.id, ordre: n });
+    }
+    if (updates.length === 0) return;
+
+    const parOrdre = new Map(updates.map((u) => [u.id, u.ordre]));
+    queryClient.setQueryData<TacheAvecRelations[]>(queryKeys.taches, (old) =>
+      old?.map((t) => (parOrdre.has(t.id) ? { ...t, ordre: parOrdre.get(t.id)! } : t))
+    );
+
+    enregistrerOrdreTaches(updates).catch(() => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.taches });
+      showToast("Échec de la réorganisation, réessaie.");
+    });
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={actives.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <ul className="flex flex-col gap-2.5">
+          <AnimatePresence initial={false}>
+            {actives.map((tache) => (
+              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} reorderable />
+            ))}
+          </AnimatePresence>
+        </ul>
+      </SortableContext>
+    </DndContext>
   );
 }
 
@@ -418,10 +525,12 @@ export function TasksList({
   taches,
   listes,
   tags,
+  reordonnable = false,
 }: {
   taches: TacheAvecRelations[];
   listes: Tables<"listes_taches">[];
   tags: Tables<"tags">[];
+  reordonnable?: boolean;
 }) {
   if (taches.length === 0) {
     return <p className="text-ink-2">Aucune tâche pour l&apos;instant.</p>;
@@ -437,15 +546,18 @@ export function TasksList({
 
   return (
     <>
-      {actives.length > 0 && (
-        <ul className="flex flex-col gap-2.5">
-          <AnimatePresence initial={false}>
-            {actives.map((tache) => (
-              <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
-            ))}
-          </AnimatePresence>
-        </ul>
-      )}
+      {actives.length > 0 &&
+        (reordonnable ? (
+          <SortableTachesList actives={actives} listes={listes} tags={tags} />
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            <AnimatePresence initial={false}>
+              {actives.map((tache) => (
+                <TaskCard key={tache.id} tache={tache} listes={listes} tags={tags} />
+              ))}
+            </AnimatePresence>
+          </ul>
+        ))}
       {archivees.length > 0 && (
         <details className={`${card} mt-2.5`}>
           <summary className="cursor-pointer text-[14.5px] font-semibold text-ink-2">
