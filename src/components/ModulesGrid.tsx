@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import { motion } from "framer-motion";
 import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -19,17 +19,39 @@ function ModuleTile({ href, isEditing }: { href: string; isEditing: boolean }) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0 : 1,
-    // "none" bloquerait le scroll vertical de la page dès qu'un doigt touche
-    // une tuile (touch-action est tranché par le navigateur au premier
-    // contact, indépendamment du délai JS de l'activationConstraint de
-    // PointerSensor) : "manipulation" laisse le scroll natif fonctionner
-    // normalement, tout en laissant l'appui long (400ms sans déplacement,
-    // voir NavigationEditContext) déclencher le drag.
-    touchAction: "manipulation",
+    // "none" bloquerait tout scroll vertical dès qu'un doigt touche une
+    // tuile ; "manipulation" laisse le navigateur récupérer la main sur un
+    // geste tenu mais quasi immobile (le cas exact d'un appui long) avant
+    // que l'activation à 400ms n'ait eu la main, ce qui casse le drag une
+    // fois le tremblement démarré. "pan-y" interdit tout geste horizontal
+    // natif (le navigateur doit donc laisser passer ces mouvements à
+    // dnd-kit) tout en laissant le scroll vertical fonctionner pour un
+    // simple swipe — meilleur compromis pour un drag 2D dans une grille.
+    touchAction: "pan-y",
   };
 
-  const content = (
-    <>
+  function handleClick(e: MouseEvent<HTMLAnchorElement>) {
+    // En mode édition, un tap sur une tuile ne doit pas naviguer (comme
+    // l'écran d'accueil iOS en mode jiggle) : seuls le drag et la sortie du
+    // mode édition (bouton "Terminé" ou tap en dehors) restent actifs.
+    // Le <Link> reste toujours monté (jamais remplacé par un <div>) pour ne
+    // pas démonter l'élément sous le doigt en plein geste quand le
+    // tremblement démarre : dnd-kit tolère un nœud qui change de props,
+    // pas un qui disparaît en cours de pointerdown.
+    if (isEditing) e.preventDefault();
+  }
+
+  return (
+    <Link
+      ref={setNodeRef}
+      href={mod.href}
+      onClick={handleClick}
+      data-nav-edit-tile
+      style={style}
+      className={`${card} flex flex-col gap-2.5${isEditing ? " select-none plus-tuile-edition" : ""}`}
+      {...attributes}
+      {...listeners}
+    >
       <span
         className="flex h-10 w-10 items-center justify-center rounded-xl"
         style={{ background: `color-mix(in oklch, ${mod.accentVar} 12%, transparent)` }}
@@ -40,24 +62,7 @@ function ModuleTile({ href, isEditing }: { href: string; isEditing: boolean }) {
         <p className="font-display text-[15px] font-semibold text-ink">{mod.label}</p>
         <p className="text-[12.5px] text-ink-2">{mod.description}</p>
       </div>
-    </>
-  );
-
-  // En mode édition, un <div> remplace <Link> : un tap sur une tuile ne doit
-  // pas naviguer (comme l'écran d'accueil iOS en mode jiggle), seuls le
-  // drag (réordonner / épingler en barre du bas) et la sortie du mode
-  // édition (bouton "Terminé" ou tap en dehors, voir NavigationEditContext)
-  // restent actifs.
-  return (
-    <div ref={setNodeRef} style={style} data-nav-edit-tile {...attributes} {...listeners}>
-      {isEditing ? (
-        <div className={`${card} flex flex-col gap-2.5 select-none plus-tuile-edition`}>{content}</div>
-      ) : (
-        <Link href={mod.href} className={`${card} flex flex-col gap-2.5`}>
-          {content}
-        </Link>
-      )}
-    </div>
+    </Link>
   );
 }
 

@@ -78,6 +78,31 @@ export function NavigationEditProvider({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [isEditing]);
 
+  // Bouton/geste "retour" (Android) pendant le mode édition : au lieu de
+  // quitter /plus, referme juste le mode édition, comme un tap dans le
+  // vide. Technique standard pour intercepter le retour dans une SPA :
+  // pousser une entrée d'historique "sentinelle" à l'entrée en édition, que
+  // le retour dépile (déclenchant "popstate" sans navigation réelle, même
+  // URL). Si on sort du mode édition autrement (bouton "Terminé", tap en
+  // dehors), on dépile nous-mêmes cette sentinelle pour ne pas laisser une
+  // entrée fantôme forcer un double retour plus tard.
+  useEffect(() => {
+    if (!isEditing) return;
+
+    window.history.pushState({ navEditSentinel: true }, "");
+
+    function handlePopState() {
+      setIsEditingRaw(false);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      const state = window.history.state as { navEditSentinel?: boolean } | null;
+      if (state?.navEditSentinel) window.history.back();
+    };
+  }, [isEditing]);
+
   // Appui long ~400ms (avec tolérance de mouvement pour ne pas gêner le
   // scroll) déclenche à la fois le mode édition et le drag : pas besoin
   // d'un second système de détection de long-press séparé.
